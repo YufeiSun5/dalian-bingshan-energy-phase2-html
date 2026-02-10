@@ -1,5 +1,9 @@
 /**
  * 热泵月度基础数据报表配置
+ * 
+ * 修改记录：
+ * - 2026-02-10: 添加电量负数处理，使用GREATEST函数确保420010设备差值计算不会出现负数 (修改人: SunYufei)
+ * - 2026-02-10: 修复能效比显示逻辑，电和热都是0时显示0，都是空时显示空 (修改人: SunYufei)
  */
 window.REPORT_CONFIG = {
     // ========== 区域和机组对应关系配置 ==========
@@ -137,7 +141,8 @@ window.REPORT_CONFIG = {
             unitName: unitName,
             heat: totalHeat.toFixed(2), // 求和
             power: totalPower.toFixed(2), // 求和
-            cop: totalPower == 0 ?0: (totalHeat/(totalPower*3.6)).toFixed(2),
+            // 【修改 2026-02-10】：电和热都是0时显示0，否则正常计算
+            cop: (totalPower == 0 && totalHeat == 0) ? 0 : (totalPower == 0 ? 0 : (totalHeat/(totalPower*3.6)).toFixed(2)),
             tempIn: (totaltempIn/data.length).toFixed(2),
             tempOut: (totaltempOut/data.length).toFixed(2),
             tempOutdoor: (totaltempOutdoor/data.length).toFixed(2),
@@ -232,7 +237,13 @@ function buildSQL(no,startDate) {
 	SELECT DATE_FORMAT(DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL days.n DAY),'%m-%d')  AS day ,
 	Round(heat.sum_heat * 1000,1)  as sum_heat ,
 	elec.sum_elec,
-	ROUND((sum_heat * 1000)/(elec.sum_elec*3.6),2) as sum_rated,
+	-- 【修改 2026-02-10】：电和热都是0时能效比为0，都是空时能效比为空，其他情况正常计算
+	CASE 
+		WHEN heat.sum_heat IS NULL AND elec.sum_elec IS NULL THEN NULL
+		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec = 0 OR elec.sum_elec IS NULL) THEN 0
+		WHEN elec.sum_elec = 0 OR elec.sum_elec IS NULL THEN NULL
+		ELSE ROUND((heat.sum_heat * 1000) / (elec.sum_elec * 3.6), 2)
+	END as sum_rated,
 	A_TEMP,
 	B_TEMP,
 	C_TEMP,
@@ -256,7 +267,8 @@ function buildSQL(no,startDate) {
 				sum(case when elec_name in ('elec_420007') then sum_elec else 0 end) as elec_420007,
 				sum(case when elec_name in ('elec_420008') then sum_elec else 0 end) as elec_420008,
 				sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) as elec_420009,
-				sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end)- sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) as elec_420010,
+				-- 【修改 2026-02-10】：使用GREATEST确保420010电量差值不为负数
+				GREATEST(0, sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end)- sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end)) as elec_420010,
 				sum(case when elec_name in ('elec_420011') then sum_elec else 0 end) as elec_420011,
 				sum(case when elec_name in ('elec_420012') then sum_elec else 0 end) AS elec_420012,
 				sum(case when elec_name in ('elec_420013') then sum_elec else 0 end) AS elec_420013,   
