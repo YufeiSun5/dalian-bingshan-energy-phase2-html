@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边菜单</title>
+    <script src="menu_config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            /* 完全禁用页面级别的滚动条 */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+        }
+        
+        #sideMenu {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(180deg, #2563a8 0%, #1e3a5f 50%, #0f1e3a 100%);
+            color: white;
+            overflow: hidden;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            /* 完全禁用滚动条显示 */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        
+        /* Chrome、Safari、Edge */
+        #sideMenu::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+        }
+        
+        /* Logo容器 - 固定在顶部 */
+        .logo-container {
+            width: 100%;
+            padding: clamp(10px, 2vh, 18px) clamp(8px, 4vw, 15px);
+            background: #ffffff;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        
+        .logo-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* 菜单内容区域 - 可滚动 */
+        .menu-content {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 60px; /* 为底部信息区域留出空间 */
+        }
+        
+        .menu-content::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+        }
+        
+        /* 动态粒子效果 - 固定在菜单区域 */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* 添加微妙的光效叠加 */
+        .particles::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.02) 0%, transparent 60%);
+            animation: shimmer 8s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* 电力脉冲线效果 */
+        .electric-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0.15;
+        }
+        
+        .electric-line {
+            position: absolute;
+            width: 2px;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, rgba(100, 200, 255, 0.8), transparent);
+            box-shadow: 0 0 10px rgba(100, 200, 255, 0.6);
+            animation: electric-pulse linear infinite;
+        }
+        
+        @keyframes electric-pulse {
+            0% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px);
+                opacity: 0;
+            }
+        }
+        
+        .electric-line:nth-child(1) { left: 30px; animation-duration: 8s; animation-delay: 0s; }
+        .electric-line:nth-child(2) { left: 80px; animation-duration: 10s; animation-delay: 2s; }
+        .electric-line:nth-child(3) { left: 130px; animation-duration: 9s; animation-delay: 4s; }
+        .electric-line:nth-child(4) { left: 170px; animation-duration: 11s; animation-delay: 1s; }
+        .electric-line:nth-child(5) { left: 50px; animation-duration: 12s; animation-delay: 5s; }
+        
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float-up ease-in-out infinite;
+        }
+        
+        /* 为部分粒子添加光晕 */
+        .particle:nth-child(3n) {
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+        }
+        
+        /* 为部分粒子添加更强光晕 */
+        .particle:nth-child(5n) {
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes float-up {
+            0% {
+                opacity: 0.3;
+                transform: translateY(0) translateX(0) scale(0.8);
+            }
+            25% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            75% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100vh) translateX(var(--drift)) scale(1.2);
+            }
+        }
+        
+        .particle:nth-child(1) { left: 8%; top: 10%; animation-duration: 30s; animation-delay: -5s; --drift: 15px; }
+        .particle:nth-child(2) { left: 18%; top: 25%; animation-duration: 35s; animation-delay: -10s; --drift: -12px; }
+        .particle:nth-child(3) { left: 28%; top: 40%; animation-duration: 32s; animation-delay: -15s; --drift: 18px; }
+        .particle:nth-child(4) { left: 38%; top: 55%; animation-duration: 38s; animation-delay: -8s; --drift: -10px; }
+        .particle:nth-child(5) { left: 48%; top: 70%; animation-duration: 33s; animation-delay: -20s; --drift: 14px; }
+        .particle:nth-child(6) { left: 58%; top: 15%; animation-duration: 36s; animation-delay: -12s; --drift: -16px; }
+        .particle:nth-child(7) { left: 68%; top: 30%; animation-duration: 34s; animation-delay: -25s; --drift: 12px; }
+        .particle:nth-child(8) { left: 78%; top: 45%; animation-duration: 31s; animation-delay: -18s; --drift: -14px; }
+        .particle:nth-child(9) { left: 88%; top: 60%; animation-duration: 37s; animation-delay: -22s; --drift: 10px; }
+        .particle:nth-child(10) { left: 13%; top: 75%; animation-duration: 35s; animation-delay: -30s; --drift: -11px; }
+        .particle:nth-child(11) { left: 23%; top: 20%; animation-duration: 33s; animation-delay: -7s; --drift: 16px; }
+        .particle:nth-child(12) { left: 33%; top: 35%; animation-duration: 36s; animation-delay: -28s; --drift: -13px; }
+        .particle:nth-child(13) { left: 43%; top: 50%; animation-duration: 32s; animation-delay: -16s; --drift: 15px; }
+        .particle:nth-child(14) { left: 53%; top: 65%; animation-duration: 37s; animation-delay: -24s; --drift: -17px; }
+        .particle:nth-child(15) { left: 63%; top: 80%; animation-duration: 34s; animation-delay: -11s; --drift: 11px; }
+        .particle:nth-child(16) { left: 73%; top: 12%; animation-duration: 31s; animation-delay: -19s; --drift: -15px; }
+        .particle:nth-child(17) { left: 83%; top: 27%; animation-duration: 35s; animation-delay: -32s; --drift: 13px; }
+        .particle:nth-child(18) { left: 93%; top: 42%; animation-duration: 33s; animation-delay: -9s; --drift: -12px; }
+        .particle:nth-child(19) { left: 3%; top: 57%; animation-duration: 36s; animation-delay: -26s; --drift: 17px; }
+        .particle:nth-child(20) { left: 10%; top: 72%; animation-duration: 32s; animation-delay: -14s; --drift: -10px; }
+        
+        .menu-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #ffffff;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        
+        .menu-level-1 {
+            padding: clamp(8px, 2vh, 14px) clamp(6px, 3vw, 12px);
+            font-size: clamp(11px, 3.5vw, 15px);
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: auto;
+            color: #ffffff;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(255,255,255,0.06) 50%, 
+                rgba(255,255,255,0.08) 100%);
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                inset 0 -1px 0 rgba(0,0,0,0.1),
+                0 2px 4px rgba(0,0,0,0.15);
+            position: relative;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+        }
+        
+        .menu-level-2 {
+            padding: clamp(6px, 1.5vh, 12px) clamp(6px, 3vw, 12px) clamp(6px, 1.5vh, 12px) clamp(15px, 6vw, 28px);
+            font-size: clamp(10px, 3vw, 14px);
+            background: linear-gradient(90deg, 
+                rgba(0,0,0,0.22) 0%, 
+                rgba(0,0,0,0.15) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: auto;
+            color: rgba(255,255,255,0.95);
+            border-left: 2px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 1px 0 rgba(0,0,0,0.15);
+        }
+        
+        .menu-level-3 {
+            padding: clamp(5px, 1.2vh, 10px) clamp(6px, 3vw, 12px) clamp(5px, 1.2vh, 10px) clamp(25px, 8vw, 45px);
+            font-size: clamp(9px, 2.5vw, 13px);
+            background: linear-gradient(90deg, 
+                rgba(0,0,0,0.38) 0%, 
+                rgba(0,0,0,0.28) 100%);
+            min-height: auto;
+            color: rgba(255,255,255,0.9);
+            border-left: 2px solid rgba(255,255,255,0.05);
+            box-shadow: inset 0 1px 0 rgba(0,0,0,0.2);
+        }
+        
+        .menu-item.clickable:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(2px);
+        }
+        
+        .menu-level-1.clickable:hover {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.2) 0%, 
+                rgba(255,255,255,0.12) 50%, 
+                rgba(255,255,255,0.15) 100%);
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 rgba(0,0,0,0.15),
+                0 3px 6px rgba(0,0,0,0.2);
+            transform: translateX(2px);
+        }
+        
+        .menu-item.clickable:active {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .menu-level-1.clickable:active {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.25) 0%, 
+                rgba(255,255,255,0.15) 50%, 
+                rgba(255,255,255,0.18) 100%);
+            box-shadow: 
+                inset 0 2px 4px rgba(0,0,0,0.2),
+                0 1px 2px rgba(0,0,0,0.15);
+        }
+        
+        .menu-item.active {
+            background: rgba(255,255,255,0.18);
+            border-left: 3px solid #ffffff;
+        }
+        
+        .menu-level-1.active {
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.25) 0%, 
+                rgba(255,255,255,0.15) 50%, 
+                rgba(255,255,255,0.2) 100%);
+            box-shadow: 
+                inset 0 1px 0 rgba(255,255,255,0.35),
+                inset 0 -1px 0 rgba(0,0,0,0.2),
+                0 3px 8px rgba(0,0,0,0.25),
+                inset 0 0 20px rgba(255,255,255,0.08);
+            border-left: 4px solid rgba(255,255,255,0.9);
+        }
+        
+        .menu-icon {
+            display: inline-block;
+            width: clamp(14px, 4vw, 20px);
+            height: clamp(14px, 4vw, 20px);
+            margin-right: clamp(6px, 2vw, 10px);
+            vertical-align: middle;
+            margin-top: -2px;
+            flex-shrink: 0;
+        }
+        
+        .menu-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: #ffffff;
+            fill: none;
+            filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+        }
+        
+        .menu-icon svg[fill="currentColor"] {
+            fill: #ffffff;
+            stroke: none;
+        }
+        
+        .arrow {
+            width: clamp(14px, 4vw, 20px);
+            height: clamp(14px, 4vw, 20px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .arrow svg {
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: rgba(255,255,255,0.85);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .arrow.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .arrow.expanded svg {
+            stroke: rgba(255,255,255,1);
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        }
+        
+        .menu-item:hover .arrow svg {
+            stroke: rgba(255,255,255,1);
+            transform: scale(1.1);
+        }
+        
+        .children {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            flex-shrink: 0;
+        }
+        
+        .children.expanded {
+            max-height: 2000px;
+        }
+        
+        .no-page {
+            opacity: 0.85;
+        }
+        
+        /* 响应式媒体查询 - 针对极端情况 */
+        @media (max-width: 120px) {
+            .menu-level-1 {
+                font-size: 10px;
+                padding: 6px 4px;
+            }
+            
+            .menu-level-2 {
+                font-size: 9px;
+                padding: 5px 4px 5px 10px;
+            }
+            
+            .menu-level-3 {
+                font-size: 8px;
+                padding: 4px 4px 4px 15px;
+            }
+            
+            .menu-icon {
+                width: 12px;
+                height: 12px;
+                margin-right: 3px;
+            }
+            
+            .arrow {
+                width: 12px;
+                height: 12px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .logo-container {
+                padding: 6px 8px;
+            }
+            
+            .menu-level-1 {
+                padding: 5px 8px;
+            }
+            
+            .menu-level-2 {
+                padding: 4px 8px 4px 15px;
+            }
+            
+            .menu-level-3 {
+                padding: 3px 8px 3px 20px;
+            }
+        }
+        
+        /* 底部信息区域 - 统一背景 */
+        .footer-info {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            background: rgba(15, 30, 58, 0.75);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 当前用户显示 */
+        .current-user {
+            padding: 5px 12px 3px 12px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: clamp(9px, 2.3vw, 11px);
+            display: none; /* 默认隐藏 */
+            position: relative;
+        }
+        
+        /* 用户信息下方的短分隔线 */
+        .current-user::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.1) 20%, 
+                rgba(255, 255, 255, 0.1) 80%, 
+                transparent 100%);
+        }
+        
+        .current-user.show {
+            display: block;
+        }
+        
+        .user-label {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .user-name {
+            color: rgba(100, 200, 255, 0.8);
+            margin-left: 4px;
+        }
+        
+        /* 底部厂牌标识 */
+        .company-badge {
+            padding: 3px 12px;
+            text-align: center;
+        }
+        
+        .badge-content {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: clamp(5px, 1.8vw, 7px);
+            letter-spacing: 0.2px;
+        }
+        
+        .separator {
+            margin: 0 5px;
+            color: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div id="sideMenu">
+        <div class="logo-container">
+            <img src="logo_Bsonyo.png" alt="Bsonyo Logo">
+        </div>
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        <div class="electric-lines">
+            <div class="electric-line"></div>
+            <div class="electric-line"></div>
+            <div class="electric-line"></div>
+            <div class="electric-line"></div>
+            <div class="electric-line"></div>
+        </div>
+        <div class="menu-content" id="menuContent"></div>
+        
+        <!-- 底部信息区域 -->
+        <div class="footer-info">
+            <!-- 当前用户 -->
+            <div class="current-user" id="currentUser">
+                <span class="user-label">当前用户：</span><span class="user-name" id="userName"></span>
+            </div>
+            <!-- 厂牌标识 -->
+            <div class="company-badge">
+                <div class="badge-content">
+                    数智方案 大连盛云科技有限公司<span class="separator">|</span>技术支持 1234567891234
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentIPCode = null;
+        let currentUserName = null;
+        let allowedPages = null; // 允许访问的页面列表
+        let isNameMode = false; // 标记当前是否为name模式（name模式优先级更高）
+        const API_BASE = 'http://192.168.7.229:8004/api/menu';
+        const SQL_API = 'http://192.168.7.229:8004/api/sql/run-sql';
+        
+        // 权限查询缓存：存储已查询过的用户及其权限状态
+        const permissionCache = new Map(); // key: userName, value: {hasPermission: boolean, allowedPages: array|null}
+        
+        // 发送SQL请求
+        async function sendSQL(sql) {
+            try {
+                const response = await fetch(SQL_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('SQL请求失败:', error);
+                throw error;
+            }
+        }
+        
+        // 查询用户权限（带缓存）
+        async function loadUserPermissions(idCode) {
+            // 检查缓存
+            if (permissionCache.has(idCode)) {
+                const cached = permissionCache.get(idCode);
+                console.log('📦 使用缓存的权限数据: ' + idCode, cached);
+                allowedPages = cached.allowedPages;
+                return cached.hasPermission;
+            }
+            
+            try {
+                console.log('🔍 查询用户权限，id_code: ' + idCode);
+                const sql = `SELECT id_code, dept_name, page_list FROM sy.sys_user_permissions WHERE id_code = '${idCode}'`;
+                console.log('📝 执行SQL:', sql);
+                
+                const result = await sendSQL(sql);
+                console.log('📦 查询结果:', result);
+                
+                // 兼容两种返回格式：{success: true, data: [...]} 或 {code: 0, data: [...]}
+                const isSuccess = result.success === true || result.code === 0;
+                const hasData = result.data && result.data.length > 0;
+                
+                if (isSuccess && hasData) {
+                    console.log('✅ 查询到数据:', result.data);
+                    const pageList = result.data[0].page_list;
+                    console.log('📋 page_list 字段值:', pageList);
+                    
+                    if (pageList && pageList.trim() !== '') {
+                        // 将逗号分隔的字符串转换为数字数组
+                        allowedPages = pageList.split(',').map(p => parseInt(p.trim()));
+                        console.log('✅ 用户权限加载成功，允许访问的页面:', allowedPages);
+                        
+                        // 缓存结果
+                        permissionCache.set(idCode, {
+                            hasPermission: true,
+                            allowedPages: allowedPages
+                        });
+                        
+                        return true;
+                    } else {
+                        console.warn('⚠️ page_list 字段为空');
+                        allowedPages = null;
+                        
+                        // 缓存结果
+                        permissionCache.set(idCode, {
+                            hasPermission: false,
+                            allowedPages: null
+                        });
+                        
+                        return false;
+                    }
+                } else {
+                    console.warn('⚠️ 未找到用户权限数据');
+                    console.log('success:', result.success, 'code:', result.code);
+                    console.log('数据长度:', result.data ? result.data.length : 0);
+                }
+                
+                allowedPages = null;
+                
+                // 缓存结果（未找到）
+                permissionCache.set(idCode, {
+                    hasPermission: false,
+                    allowedPages: null
+                });
+                
+                return false;
+            } catch (error) {
+                console.error('❌ 查询权限失败:', error);
+                allowedPages = null;
+                
+                // 缓存失败结果
+                permissionCache.set(idCode, {
+                    hasPermission: false,
+                    allowedPages: null
+                });
+                
+                return false;
+            }
+        }
+        
+        const MenuManager = {
+            config: null,
+            container: null,
+            
+            // SVG图标库
+            getIconSVG: function(iconName) {
+                var icons = {
+                    'chart': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+                    'bolt': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>',
+                    'droplet': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+                    'wind': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>',
+                    'leaf': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>',
+                    'industry': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M2 8l10-4v12M12 4l10 2v14M8 12h1M14 12h1M8 16h1M14 16h1"/></svg>',
+                    'gear': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"/></svg>',
+                    'warning': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+                    'solar': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M6 11h4M14 11h4M6 15h4M14 15h4M12 7V2M8 3l4-1M16 3l-4-1"/></svg>',
+                    'fire': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>'
+                };
+                return icons[iconName] || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+            },
+            
+            // 展开/收起箭头图标
+            getArrowSVG: function() {
+                return '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            },
+            
+            init: function() {
+                console.log('🚀 MenuManager 初始化开始...');
+                this.container = document.getElementById('menuContent');
+                
+                if (!this.container) {
+                    console.error('❌ 找不到 menuContent 元素');
+                    return;
+                }
+                
+                this.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center; font-size: 12px;">⏳ 正在加载菜单...</div>';
+                
+                this.loadConfig();
+                this.render();
+            },
+            
+            loadConfig: function() {
+                console.log('📥 开始加载配置...');
+                console.log('MENU_CONFIG 类型:', typeof MENU_CONFIG);
+                
+                if (typeof MENU_CONFIG !== 'undefined') {
+                    this.config = MENU_CONFIG;
+                    console.log('✅ 从 menu_config.js 加载配置成功');
+                    console.log('📋 菜单项数量:', this.config.menu_items ? this.config.menu_items.length : 0);
+                } else {
+                    console.error('❌ 配置文件加载失败，MENU_CONFIG 未定义');
+                    this.config = { menu_items: [] };
+                }
+            },
+            
+            // 排序函数：支持 order 字段排序
+            sortItems: function(items) {
+                if (!items || items.length === 0) return items;
+                
+                return items.slice().sort(function(a, b) {
+                    var orderA = a.order !== undefined ? a.order : 999999;
+                    var orderB = b.order !== undefined ? b.order : 999999;
+                    return orderA - orderB;
+                });
+            },
+            
+            // 检查菜单项是否有权限访问
+            hasPermission: function(item) {
+                // 如果没有设置权限列表，显示所有菜单
+                if (allowedPages === null) {
+                    return true;
+                }
+                
+                // 如果有page字段，检查是否在允许列表中
+                if (item.page !== undefined) {
+                    return allowedPages.includes(item.page);
+                }
+                
+                // 如果没有page字段但有子菜单，检查子菜单是否有可访问的
+                if (item.children && item.children.length > 0) {
+                    return item.children.some(function(child) {
+                        return MenuManager.hasPermission(child);
+                    });
+                }
+                
+                return false;
+            },
+            
+            // 过滤菜单项
+            filterMenuItems: function(items) {
+                var self = this;
+                if (!items) return [];
+                
+                return items.filter(function(item) {
+                    // 检查当前项是否有权限
+                    if (!self.hasPermission(item)) {
+                        return false;
+                    }
+                    
+                    // 如果有子菜单，递归过滤
+                    if (item.children && item.children.length > 0) {
+                        item.children = self.filterMenuItems(item.children);
+                    }
+                    
+                    return true;
+                });
+            },
+            
+            render: function() {
+                console.log('🎨 开始渲染菜单...');
+                var self = this;
+                
+                if (!this.config || !this.config.menu_items) {
+                    this.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center;">❌ 配置错误</div>';
+                    return;
+                }
+                
+                if (this.config.menu_items.length === 0) {
+                    this.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center;">📋 菜单为空</div>';
+                    return;
+                }
+                
+                // 过滤菜单项（根据权限）
+                var filteredItems = allowedPages !== null ? this.filterMenuItems(this.config.menu_items) : this.config.menu_items;
+                
+                if (filteredItems.length === 0) {
+                    this.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center;">⚠️ 您没有访问权限</div>';
+                    return;
+                }
+                
+                // 排序顶级菜单
+                var sortedItems = this.sortItems(filteredItems);
+                var html = sortedItems.map(function(item) { return self.renderLevel1(item); }).join('');
+                this.container.innerHTML = html;
+                this.attachEvents();
+                
+                console.log('✅ 菜单渲染完成！');
+            },
+            
+            renderLevel1: function(item) {
+                var hasChildren = item.children && item.children.length > 0;
+                var hasPage = item.page !== undefined;
+                var clickable = hasPage ? 'clickable' : '';
+                var noPage = !hasPage ? 'no-page' : '';
+                var self = this;
+                
+                var html = '<div class="menu-item menu-level-1 ' + clickable + ' ' + noPage + '" data-page="' + (item.page || '') + '" data-level="1">';
+                html += '<span>';
+                if (item.icon) {
+                    html += '<span class="menu-icon">' + this.getIconSVG(item.icon) + '</span>';
+                }
+                html += item.name + '</span>';
+                if (hasChildren) {
+                    html += '<span class="arrow">' + this.getArrowSVG() + '</span>';
+                }
+                html += '</div>';
+                
+                if (hasChildren) {
+                    html += '<div class="children">';
+                    // 排序二级菜单
+                    var sortedChildren = this.sortItems(item.children);
+                    html += sortedChildren.map(function(c) { return self.renderLevel2(c); }).join('');
+                    html += '</div>';
+                }
+                
+                return html;
+            },
+            
+            renderLevel2: function(item) {
+                var hasChildren = item.children && item.children.length > 0;
+                var hasPage = item.page !== undefined;
+                var clickable = hasPage ? 'clickable' : '';
+                var noPage = !hasPage ? 'no-page' : '';
+                var self = this;
+                
+                var html = '<div class="menu-item menu-level-2 ' + clickable + ' ' + noPage + '" data-page="' + (item.page || '') + '" data-level="2">';
+                html += '<span>◉ ' + item.name + '</span>';
+                if (hasChildren) {
+                    html += '<span class="arrow">' + this.getArrowSVG() + '</span>';
+                }
+                html += '</div>';
+                
+                if (hasChildren) {
+                    html += '<div class="children">';
+                    // 排序三级菜单
+                    var sortedChildren = this.sortItems(item.children);
+                    html += sortedChildren.map(function(c) { return self.renderLevel3(c); }).join('');
+                    html += '</div>';
+                }
+                
+                return html;
+            },
+            
+            renderLevel3: function(item) {
+                var hasPage = item.page !== undefined;
+                var clickable = hasPage ? 'clickable' : '';
+                var noPage = !hasPage ? 'no-page' : '';
+                
+                return '<div class="menu-item menu-level-3 ' + clickable + ' ' + noPage + '" data-page="' + (item.page || '') + '" data-level="3">◆ ' + item.name + '</div>';
+            },
+            
+            attachEvents: function() {
+                const self = this;
+                this.container.querySelectorAll('.menu-item').forEach(function(item) {
+                    item.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        
+                        const hasPage = item.dataset.page && item.dataset.page !== '';
+                        const nextSibling = item.nextElementSibling;
+                        const isExpandable = nextSibling && nextSibling.classList.contains('children');
+                        const isLevel1 = item.classList.contains('menu-level-1');
+                        
+                        if (isExpandable) {
+                            const arrow = item.querySelector('.arrow');
+                            // 顶级菜单：先收起其他所有顶级菜单，再切换当前项
+                            if (isLevel1) {
+                                self.container.querySelectorAll('.menu-level-1').forEach(function(l1) {
+                                    if (l1 !== item) {
+                                        const sib = l1.nextElementSibling;
+                                        if (sib && sib.classList.contains('children')) {
+                                            sib.classList.remove('expanded');
+                                            const arr = l1.querySelector('.arrow');
+                                            if (arr) arr.classList.remove('expanded');
+                                        }
+                                        // 收起该顶级菜单下的所有二级、三级子菜单
+                                        sib && sib.querySelectorAll('.children.expanded').forEach(function(c) {
+                                            c.classList.remove('expanded');
+                                        });
+                                        sib && sib.querySelectorAll('.arrow.expanded').forEach(function(a) {
+                                            a.classList.remove('expanded');
+                                        });
+                                    }
+                                });
+                            }
+                            nextSibling.classList.toggle('expanded');
+                            if (arrow) arrow.classList.toggle('expanded');
+                        }
+                        
+                        if (hasPage) {
+                            self.onMenuClick(parseInt(item.dataset.page));
+                            self.container.querySelectorAll('.menu-item').forEach(function(i) {
+                                i.classList.remove('active');
+                            });
+                            item.classList.add('active');
+                        }
+                    });
+                });
+            },
+            
+            onMenuClick: function(pageNum) {
+                if (!currentIPCode) {
+                    console.warn('⚠️ IP编号未设置，请先调用 setIPCode(ip)');
+                    return;
+                }
+                
+                console.log('📤 发送菜单请求: IP=' + currentIPCode + ', 页码=' + pageNum);
+                
+                fetch(API_BASE + '/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ip_code: currentIPCode,
+                        page_num: pageNum
+                    })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.code === 0) {
+                        console.log('✅ 菜单更新成功:', data.menu_string);
+                    } else {
+                        console.error('❌ 菜单更新失败:', data.message);
+                    }
+                })
+                .catch(function(err) {
+                    console.error('❌ 请求失败:', err);
+                });
+            }
+        };
+        
+        // 设置IP编号（不进行权限鉴权）
+        window.setIPCode = async function(ipCode) {
+            // 如果当前是name模式，忽略IP设置
+            if (isNameMode) {
+                return; // 静默忽略，不打印日志
+            }
+            
+            // 如果IP没有变化，跳过
+            if (!isNameMode && currentIPCode === ipCode && allowedPages === null) {
+                return; // 静默跳过
+            }
+            
+            currentIPCode = ipCode;
+            currentUserName = null;
+            isNameMode = false;
+            console.log('✅ IP编号已设置: ' + ipCode);
+            
+            // 不进行权限鉴权，显示所有菜单
+            allowedPages = null;
+            
+            // 隐藏用户名显示
+            const userElement = document.getElementById('currentUser');
+            userElement.classList.remove('show');
+            
+            // 重新渲染菜单
+            MenuManager.render();
+        };
+        
+        // 设置用户名（进行权限鉴权）- name优先级最高
+        window.setUserName = async function(userName) {
+            const userElement = document.getElementById('currentUser');
+            const userNameElement = document.getElementById('userName');
+            
+            if (userName && userName.trim() !== '') {
+                // 如果用户名没有变化，直接返回（避免重复查询和渲染）
+                if (currentUserName === userName) {
+                    return; // 静默跳过
+                }
+                
+                console.log('🔐 尝试设置用户名: ' + userName);
+                
+                // 查询权限（带缓存，只查询一次）
+                const hasPermission = await loadUserPermissions(userName);
+                
+                if (hasPermission) {
+                    // 查询到权限，使用name模式
+                    currentUserName = userName;
+                    currentIPCode = userName;
+                    isNameMode = true; // 标记为name模式
+                    userNameElement.textContent = userName;
+                    userElement.classList.add('show');
+                    console.log('✅ name模式已激活: ' + userName + '（后续IP设置将被忽略）');
+                    
+                    // 重新渲染菜单
+                    MenuManager.render();
+                } else {
+                    // 没查到权限，不使用name模式，保持IP模式
+                    console.log('⚠️ 数据库中未找到用户: ' + userName + '，保持IP模式');
+                    // 记录尝试过的用户名（避免重复查询）
+                    currentUserName = userName;
+                    // 不修改 isNameMode、currentIPCode 等状态
+                    // 隐藏用户名显示
+                    userElement.classList.remove('show');
+                    // 不重新渲染菜单，保持当前状态
+                }
+            } else {
+                // 清空用户名，退出name模式
+                if (currentUserName !== null || isNameMode) {
+                    userElement.classList.remove('show');
+                    currentUserName = null;
+                    allowedPages = null;
+                    isNameMode = false;
+                    console.log('ℹ️ 用户信息已清除，退出name模式');
+                    
+                    // 注意：不清空 currentIPCode，保持IP模式
+                    if (!currentIPCode) {
+                        // 如果连IP都没有，显示等待状态
+                        MenuManager.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center; font-size: 12px;">⏳ 等待设置用户信息...</div>';
+                    }
+                }
+            }
+        };
+        
+        window.clearMenuData = function() {
+            if (!currentIPCode) {
+                console.warn('⚠️ IP编号未设置');
+                return;
+            }
+            
+            console.log('🧹 清除IP=' + currentIPCode + '的菜单数据');
+            
+            fetch(API_BASE + '/remove-by-ip', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ ip_code: currentIPCode })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    console.log('✅ 清除成功，共删除 ' + (data.removed_items ? data.removed_items.length : 0) + ' 项');
+                    currentIPCode = null;
+                    currentUserName = null;
+                    isNameMode = false;
+                } else {
+                    console.error('❌ 清除失败:', data.message);
+                }
+            })
+            .catch(function(err) {
+                console.error('❌ 请求失败:', err);
+            });
+        };
+        
+        // 重置模式（用于测试或强制切换）
+        window.resetMode = function() {
+            currentIPCode = null;
+            currentUserName = null;
+            allowedPages = null;
+            isNameMode = false;
+            permissionCache.clear(); // 清除权限缓存
+            document.getElementById('currentUser').classList.remove('show');
+            MenuManager.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center; font-size: 12px;">⏳ 等待设置用户信息...</div>';
+            console.log('🔄 模式已重置，权限缓存已清除');
+        };
+        
+        // 清除权限缓存（用于强制重新查询权限）
+        window.clearPermissionCache = function() {
+            permissionCache.clear();
+            console.log('🧹 权限缓存已清除');
+        };
+        
+        window.getMenuStatus = function() {
+            fetch(API_BASE + '/list')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                console.log('📊 当前菜单状态:', data);
+                return data;
+            })
+            .catch(function(err) {
+                console.error('❌ 获取状态失败:', err);
+            });
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化菜单配置（但不渲染）
+            MenuManager.container = document.getElementById('menuContent');
+            MenuManager.loadConfig();
+            
+            // 显示等待状态
+            MenuManager.container.innerHTML = '<div style="padding: 20px; color: #fff; text-align: center; font-size: 12px;">⏳ 等待设置用户信息...</div>';
+            
+            console.log('%c🎉 菜单系统已就绪', 'color: #4CAF50; font-size: 14px; font-weight: bold;');
+            console.log('%c使用方法:', 'color: #2196F3; font-weight: bold;');
+            console.log('  setIPCode(ip)        - 设置IP编号（不鉴权，显示所有菜单）');
+            console.log('  setUserName(name)    - 设置用户名（鉴权，name优先级最高）');
+            console.log('  clearMenuData()      - 清除当前菜单数据');
+            console.log('  resetMode()          - 重置模式');
+            console.log('  getMenuStatus()      - 查看当前菜单状态');
+            console.log('%c示例:', 'color: #FF9800; font-weight: bold;');
+            console.log('  setIPCode("192")              // IP模式');
+            console.log('  setUserName("经营企划本部")    // name模式（优先级高）');
+            console.log('%c优先级规则:', 'color: #9C27B0; font-weight: bold;');
+            console.log('  • name优先级 > IP优先级');
+            console.log('  • 一旦设置name，后续的IP设置会被忽略');
+            console.log('  • 如果先设置IP，后来设置name，name会覆盖IP');
+            console.log('  • 调用 resetMode() 可重置，重新开始');
+        });
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (currentIPCode) {
+                const data = JSON.stringify({ ip_code: currentIPCode });
+                navigator.sendBeacon(API_BASE + '/remove-by-ip', data);
+            }
+        });
+    </script>
+</body>
+</html>

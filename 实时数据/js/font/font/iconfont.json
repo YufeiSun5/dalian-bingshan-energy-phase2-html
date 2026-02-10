@@ -1,0 +1,72 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "2900081",
+      "name": "服务器管理",
+      "font_class": "fuwuqiguanli",
+      "unicode": "e631",
+      "unicode_decimal": 58929
+    },
+    {
+      "icon_id": "7644431",
+      "name": "上箭头",
+      "font_class": "shangjiantou",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    },
+    {
+      "icon_id": "7644432",
+      "name": "下箭头",
+      "font_class": "xiajiantou",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "19858449",
+      "name": "PLC管理",
+      "font_class": "PLCguanli",
+      "unicode": "ea96",
+      "unicode_decimal": 60054
+    },
+    {
+      "icon_id": "22110907",
+      "name": "power-icon",
+      "font_class": "power-icon",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "26134427",
+      "name": "窗口最小化",
+      "font_class": "CZ_027",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "27951758",
+      "name": "PLC工控",
+      "font_class": "PLCgongkong",
+      "unicode": "e632",
+      "unicode_decimal": 58930
+    },
+    {
+      "icon_id": "33230084",
+      "name": "PLC信息管理",
+      "font_class": "PLCxinxiguanli",
+      "unicode": "e7a1",
+      "unicode_decimal": 59297
+    },
+    {
+      "icon_id": "36793281",
+      "name": "PLC管理",
+      "font_class": "PLCguanli1",
+      "unicode": "e850",
+      "unicode_decimal": 59472
+    }
+  ]
+}

@@ -1,0 +1,315 @@
+/**
+ * 曲线模块独立样式
+ * 与曲线模板样式保持一致
+ * 可移植到任何项目
+ */
+
+/* 曲线容器 */
+.curve-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #0f266c;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* 曲线主体 */
+.curve-main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 查询表单区域 */
+.curve-query-form {
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.curve-query-form .layui-form-item {
+    margin-bottom: 0;
+}
+
+.curve-query-form .layui-inline {
+    margin-bottom: 0;
+}
+
+.curve-form-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.curve-form-item {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+    margin-right: 25px;
+}
+
+.curve-form-label {
+    color: #fff;
+    font-size: 14px;
+    padding: 9px 15px 9px 0;
+    white-space: nowrap;
+    width: auto;
+}
+
+.curve-form-input,
+.curve-form-select {
+    background-color: rgba(40, 80, 167, 1);
+    border: 1px solid rgba(40, 80, 167, 0);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 2px;
+    font-size: 14px;
+    min-width: 150px;
+    height: 38px;
+    line-height: 1.3;
+}
+
+.curve-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.curve-form-input:hover,
+.curve-form-select:hover {
+    border-color: rgba(40, 80, 167, 0) !important;
+}
+
+.curve-form-input:focus,
+.curve-form-select:focus {
+    outline: none;
+    border-color: #409eff !important;
+    box-shadow: 0 0 0 3px rgba(40, 80, 167, 0.08);
+}
+
+/* 按钮样式 */
+.curve-btn {
+    display: inline-block;
+    padding: 0 18px;
+    height: 38px;
+    line-height: 38px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s;
+    margin-left: 10px;
+}
+
+.curve-btn-primary {
+    background-color: #009688;
+    color: #fff;
+}
+
+.curve-btn-primary:hover {
+    background-color: #00b3a0;
+}
+
+/* 曲线内容区域 */
+.curve-content {
+    flex: 1;
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.curve-title {
+    text-align: center;
+    color: #fff;
+    font-size: 20px;
+    font-weight: normal;
+    margin: 8px 0 10px 0;
+}
+
+.curve-unit {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #b9d3f4;
+    font-size: 14px;
+}
+
+/* 图表容器 */
+.curve-chart-wrapper {
+    flex: 1;
+    overflow: hidden;
+    margin-top: 25px;
+}
+
+#curve-chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* 空数据提示 */
+.curve-empty {
+    text-align: center;
+    color: #b9d3f4;
+    padding: 40px;
+    font-size: 14px;
+}
+
+/* 加载动画 */
+.curve-loading {
+    text-align: center;
+    color: #409eff;
+    padding: 40px;
+    font-size: 14px;
+}
+
+.curve-loading::after {
+    content: '...';
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* LayUI日期选择器使用默认样式 - 不做任何自定义 */
+
+/* LayUI输入框样式 */
+.layui-input {
+    background-color: rgba(40, 80, 167, 1) !important;
+    border-color: rgba(40, 80, 167, 0) !important;
+    color: white !important;
+}
+
+.layui-input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.layui-input:hover {
+    border-color: rgba(40, 80, 167, 0) !important;
+}
+
+.layui-input:focus {
+    border-color: #409eff !important;
+    box-shadow: 0 0 0 3px rgba(40, 80, 167, 0.08) !important;
+}
+
+/* LayUI表单标签样式 */
+.curve-query-form .layui-form-label {
+    color: #fff !important;
+    padding: 9px 15px 9px 0 !important;
+    background-color: transparent !important;
+}
+
+/* LayUI输入框内联容器 */
+.curve-query-form .layui-input-inline {
+    margin-bottom: 0;
+}
+
+/* LayUI表单中间文本 */
+.curve-query-form .layui-form-mid {
+    color: #fff !important;
+}
+
+/* LayUI下拉选择框样式 */
+.layui-form-select dl {
+    background-color: #1d386f !important;
+    border-color: #2a6dc8 !important;
+}
+
+.layui-form-select dl dd {
+    color: #fff !important;
+}
+
+.layui-form-select dl dd:hover {
+    background-color: #2a6dc8 !important;
+}
+
+.layui-form-select dl dd.layui-this {
+    background-color: #0f266c !important;
+    color: #409eff !important;
+    font-weight: 700 !important;
+}
+
+/* LayUI按钮样式 */
+.layui-btn {
+    background-color: #009688 !important;
+    border-color: #009688 !important;
+}
+
+.layui-btn:hover {
+    background-color: #00b3a0 !important;
+}
+
+.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125) !important;
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+

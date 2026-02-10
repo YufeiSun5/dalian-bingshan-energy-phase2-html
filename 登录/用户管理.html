@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #0f266c;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            padding: 20px;
+        }
+
+        /* 登录界面 */
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border 0.3s;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .login-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 管理界面 */
+        .admin-container {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            background: #1d386f;
+            border-bottom: 2px solid #2a6dc8;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            color: #fff7ca;
+            font-size: 24px;
+        }
+
+        .logout-button {
+            padding: 8px 20px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-button:hover {
+            background: #1976d2;
+        }
+
+        .admin-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .toolbar {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-button {
+            padding: 10px 20px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .add-button:hover {
+            background: #1976d2;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-table thead {
+            background: #0c6ed3;
+            color: white;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .user-table th {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-table tbody tr:hover {
+            background: rgba(48, 127, 190, 0.1);
+        }
+
+        .user-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #1976d2;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #1d386f 0%, #2a6dc8 100%);
+            padding: 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 18px;
+        }
+
+        .modal-body label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .modal-body input,
+        .modal-body select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+
+        .modal-body input:focus,
+        .modal-body select:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-top: 1px solid #eee;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-submit {
+            background: linear-gradient(45deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+
+        .error-message {
+            color: #f44336;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .info-text {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1d386f;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div class="login-container" id="loginContainer">
+        <h1>🔐 用户管理页面</h1>
+        <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="loginUsername">工号</label>
+                <input type="text" id="loginUsername" placeholder="请输入工号（admin）" required>
+                <div class="info-text">请输入工号，不是姓名</div>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码" required>
+            </div>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            <button type="submit" class="login-button" id="loginButton">登录</button>
+        </form>
+    </div>
+
+    <!-- 管理界面 -->
+    <div class="admin-container" id="adminContainer">
+        <div class="admin-header">
+            <h1>👥 用户管理</h1>
+        </div>
+        <div class="admin-body">
+            <div class="toolbar">
+                <h2 style="color: #333; font-size: 18px;">用户列表</h2>
+                <button class="add-button" onclick="openUserModal()">➕ 新增用户</button>
+            </div>
+            <div id="tableContainer">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>工号</th>
+                            <th>姓名</th>
+                            <th>密码</th>
+                            <th>所属单元</th>
+                            <th>在线状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑用户模态框 -->
+    <div id="userModal" class="modal" onclick="handleModalBackdropClick(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新增用户</h3>
+                <button class="close-button" onclick="closeUserModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="employeeId">工号 <span style="color: red;">*</span></label>
+                    <input type="text" id="employeeId" placeholder="请输入工号（用于登录）" required>
+                    <div class="info-text">工号用于登录，必须唯一</div>
+                </div>
+                <div class="form-group">
+                    <label for="username">姓名 <span style="color: red;">*</span></label>
+                    <input type="text" id="username" placeholder="请输入姓名" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码 <span style="color: red;">*</span></label>
+                    <input type="text" id="password" placeholder="请输入密码" required>
+                    <div class="info-text">密码明文显示，请妥善保管</div>
+                </div>
+                <div class="form-group">
+                    <label for="unitName">所属单元 <span style="color: red;">*</span></label>
+                    <select id="unitName" required>
+                        <option value="">请选择单元</option>
+                    </select>
+                </div>
+                <div id="modalError" class="error-message" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeUserModal()">取消</button>
+                <button type="button" class="btn-submit" onclick="submitUser()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const CONFIG = {
+            SQL_API: 'http://192.168.7.229:8004/api/sql/run-sql',
+            ADMIN_USERNAME: 'admin'
+        };
+
+        // 当前编辑的用户ID
+        let currentEditUserId = null;
+
+        // ==================== 发送SQL请求 ====================
+        async function sendSQL(sql) {
+            try {
+                const response = await fetch(CONFIG.SQL_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('SQL请求失败:', error);
+                throw error;
+            }
+        }
+
+        // ==================== 登录处理 ====================
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const loginButton = document.getElementById('loginButton');
+            const loginError = document.getElementById('loginError');
+            
+            loginError.style.display = 'none';
+            loginButton.disabled = true;
+            loginButton.textContent = '登录中...';
+            
+            try {
+                // 查询admin用户
+                const sql = `SELECT * FROM sys_users WHERE employee_id = '${username}' LIMIT 1`;
+                console.log('登录SQL:', sql);
+                const response = await sendSQL(sql);
+                console.log('登录响应:', response);
+                
+                if (!response || !response.data || response.data.length === 0) {
+                    console.error('查询结果为空:', response);
+                    loginError.textContent = '用户不存在';
+                    loginError.style.display = 'block';
+                    return;
+                }
+                
+                const user = response.data[0];
+                
+                // 验证是否是admin用户
+                if (user.employee_id !== CONFIG.ADMIN_USERNAME) {
+                    loginError.textContent = '您没有管理权限';
+                    loginError.style.display = 'block';
+                    return;
+                }
+                
+                // 验证密码
+                if (user.password !== password) {
+                    loginError.textContent = '密码错误';
+                    loginError.style.display = 'block';
+                    return;
+                }
+                
+                // 登录成功
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('adminContainer').style.display = 'flex';
+                
+                // 加载用户列表和单元列表
+                await Promise.all([loadUsers(), loadUnits()]);
+                
+            } catch (error) {
+                console.error('登录失败:', error);
+                loginError.textContent = '登录失败，请重试';
+                loginError.style.display = 'block';
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = '登录';
+            }
+        }
+
+        // ==================== 退出登录 ====================
+        function logout() {
+            document.getElementById('adminContainer').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // ==================== 加载用户列表 ====================
+        async function loadUsers() {
+            try {
+                const sql = `SELECT * FROM sys_users ORDER BY unit_name, employee_id`;
+                const response = await sendSQL(sql);
+                
+                const tbody = document.getElementById('userTableBody');
+                
+                if (!response || !response.data || response.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">暂无用户数据</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = response.data.map(user => `
+                    <tr>
+                        <td>${user.employee_id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.password}</td>
+                        <td>${user.unit_name}</td>
+                        <td>
+                            <span style="color: ${user.is_online ? '#4caf50' : '#666'}; font-weight: 600;">
+                                ${user.is_online ? '● 在线' : '○ 离线'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-edit" onclick="editUser(${user.id})">编辑</button>
+                                <button class="btn-delete" onclick="deleteUser(${user.id}, '${user.username}')">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } catch (error) {
+                console.error('加载用户列表失败:', error);
+                alert('加载用户列表失败');
+            }
+        }
+
+        // ==================== 加载单元列表 ====================
+        async function loadUnits() {
+            try {
+                const sql = `SELECT DISTINCT unit_name FROM sys_users WHERE unit_name IS NOT NULL AND unit_name != '' ORDER BY unit_name`;
+                const response = await sendSQL(sql);
+                
+                const select = document.getElementById('unitName');
+                select.innerHTML = '<option value="">请选择单元</option>';
+                
+                if (response && response.data && response.data.length > 0) {
+                    response.data.forEach(row => {
+                        const option = document.createElement('option');
+                        option.value = row.unit_name;
+                        option.textContent = row.unit_name;
+                        select.appendChild(option);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('加载单元列表失败:', error);
+            }
+        }
+
+        // ==================== 打开新增/编辑用户模态框 ====================
+        async function openUserModal(userId = null) {
+            currentEditUserId = userId;
+            const modal = document.getElementById('userModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalError = document.getElementById('modalError');
+            
+            modalError.style.display = 'none';
+            
+            if (userId) {
+                // 编辑模式
+                modalTitle.textContent = '编辑用户';
+                
+                try {
+                    const sql = `SELECT * FROM sys_users WHERE id = ${userId} LIMIT 1`;
+                    const response = await sendSQL(sql);
+                    
+                    if (response && response.data && response.data.length > 0) {
+                        const user = response.data[0];
+                        document.getElementById('employeeId').value = user.employee_id;
+                        document.getElementById('username').value = user.username;
+                        document.getElementById('password').value = user.password;
+                        document.getElementById('unitName').value = user.unit_name;
+                        
+                        // 编辑模式下工号不可修改
+                        document.getElementById('employeeId').readOnly = true;
+                        document.getElementById('employeeId').style.background = '#f5f5f5';
+                    }
+                } catch (error) {
+                    console.error('加载用户信息失败:', error);
+                    alert('加载用户信息失败');
+                    return;
+                }
+            } else {
+                // 新增模式
+                modalTitle.textContent = '新增用户';
+                document.getElementById('employeeId').value = '';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('unitName').value = '';
+                
+                // 新增模式下工号可修改
+                document.getElementById('employeeId').readOnly = false;
+                document.getElementById('employeeId').style.background = '';
+            }
+            
+            modal.classList.add('active');
+        }
+
+        // ==================== 关闭模态框 ====================
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('active');
+            currentEditUserId = null;
+        }
+
+        // ==================== 点击背景关闭模态框 ====================
+        function handleModalBackdropClick(event) {
+            if (event.target === document.getElementById('userModal')) {
+                closeUserModal();
+            }
+        }
+
+        // ==================== 提交用户信息 ====================
+        async function submitUser() {
+            const employeeId = document.getElementById('employeeId').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const unitName = document.getElementById('unitName').value;
+            const modalError = document.getElementById('modalError');
+            
+            modalError.style.display = 'none';
+            
+            // 验证必填字段
+            if (!employeeId || !username || !password || !unitName) {
+                modalError.textContent = '请填写所有必填字段';
+                modalError.style.display = 'block';
+                return;
+            }
+            
+            try {
+                let sql;
+                
+                if (currentEditUserId) {
+                    // 更新用户
+                    sql = `UPDATE sys_users 
+                           SET username = '${username.replace(/'/g, "''")}', 
+                               password = '${password.replace(/'/g, "''")}', 
+                               unit_name = '${unitName.replace(/'/g, "''")}'
+                           WHERE id = ${currentEditUserId}`;
+                } else {
+                    // 检查工号是否已存在
+                    const checkSql = `SELECT COUNT(*) as count FROM sys_users WHERE employee_id = '${employeeId}'`;
+                    const checkResponse = await sendSQL(checkSql);
+                    
+                    if (checkResponse && checkResponse.data && checkResponse.data[0].count > 0) {
+                        modalError.textContent = '工号已存在，请使用其他工号';
+                        modalError.style.display = 'block';
+                        return;
+                    }
+                    
+                    // 新增用户
+                    sql = `INSERT INTO sys_users (employee_id, username, password, unit_name, is_online, role) 
+                           VALUES ('${employeeId}', '${username.replace(/'/g, "''")}', '${password.replace(/'/g, "''")}', '${unitName.replace(/'/g, "''")}', 0, 'operator')`;
+                }
+                
+                const response = await sendSQL(sql);
+                
+                if (response && !response.error) {
+                    alert(currentEditUserId ? '用户更新成功' : '用户创建成功');
+                    closeUserModal();
+                    await loadUsers();
+                } else {
+                    throw new Error(response.error || '操作失败');
+                }
+                
+            } catch (error) {
+                console.error('提交用户信息失败:', error);
+                modalError.textContent = '操作失败: ' + error.message;
+                modalError.style.display = 'block';
+            }
+        }
+
+        // ==================== 编辑用户 ====================
+        function editUser(userId) {
+            openUserModal(userId);
+        }
+
+        // ==================== 删除用户 ====================
+        async function deleteUser(userId, username) {
+            if (!confirm(`确定要删除用户 "${username}" 吗？\n\n此操作不可恢复！`)) {
+                return;
+            }
+            
+            try {
+                const sql = `DELETE FROM sys_users WHERE id = ${userId}`;
+                const response = await sendSQL(sql);
+                
+                if (response && !response.error) {
+                    alert('用户删除成功');
+                    await loadUsers();
+                } else {
+                    throw new Error(response.error || '删除失败');
+                }
+                
+            } catch (error) {
+                console.error('删除用户失败:', error);
+                alert('删除失败: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

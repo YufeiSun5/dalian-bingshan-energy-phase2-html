@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>总统计_组装二课电量占比及统计</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	/* ========== 基础样式 ========== */
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;  /* <-- 【调整】统一为组装一课的字体 */
+		background: #0f266c;
+		color: #fff;
+		margin: 0;
+		padding: 0;
+		font-size: 13px;          /* <-- 【调整】全局字体从14px改为13px */
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 8px;      /* <-- 【调整】从10px改为8px */
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		background: #0f266c;
+	}
+	.content {
+		height: 100%;
+		padding: 8px;             /* <-- 【调整】从10px改为8px */
+		padding-top: 6px;         /* <-- 【调整】从8px改为6px */
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	/* ========== 表单样式 ========== */
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;      /* <-- 【调整】从10px改为8px */
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	#count,
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: #d2d2d2 !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	/* ========== 新版表格样式 ========== */
+	.table-wrap {
+		border: 1px solid #3c8ce7;
+		overflow: auto;
+		height: calc(100% - 30px);
+		min-height: 300px;
+		background: #102a5c;
+		margin-bottom: 10px;
+	}
+	
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		table-layout: fixed;
+		min-height: 300px;
+	}
+	
+	th, td {
+		border: 1px solid #3c8ce7;
+		padding: 8px 2px;          /* <-- 【调整】从3px改为8px，增加单元格高度 */
+		font-size: 12px;           /* <-- 【调整】从12px改为12px (保持) */
+		text-align: center;
+		background: #1e4e89;
+		color: #fff;
+		white-space: nowrap;
+		overflow: visible;
+	}
+	
+	/* 大分类列（组装、成品） - 通过类名选择 */
+	td.category-cell {
+		width: 50px !important;           
+		white-space: normal !important;
+		word-wrap: break-word !important;
+		min-width: 50px !important;         
+		font-size: 13px;       
+		font-weight: 500;
+	}
+	
+	/* 项目名称列（通过类名选择，避免nth-child在rowspan时出错） */
+	td.project-name-cell,
+	th.project-name-cell {
+		width: 150px !important;           
+		white-space: nowrap !important;
+		min-width: 150px !important;         
+		font-size: 13px;       
+		font-weight: 500;
+	}
+	
+	/* 月份数据列 - 通过类名选择 */
+	td.data-cell,
+	th.data-cell {
+		width: 65px !important;
+		min-width: 65px !important;
+	}
+	
+	/* ========== 合计和占比列 - 单独调整 ========== */
+	/* 合计列 */
+	thead th:nth-last-child(2),
+	tbody td:nth-last-child(2) {
+		width: 68px;             /* <-- 【新增】合计列宽度 */
+		min-width: 68px;
+		font-size: 13px;          /* <-- 【新增】合计列字体 */
+		font-weight: bold;
+	}
+	
+	/* 占比列 */
+	thead th:nth-last-child(1),
+	tbody td:nth-last-child(1) {
+		width: 68px;              /* <-- 【新增】占比列宽度 */
+		min-width: 68px;
+		font-size: 13px;          /* <-- 【新增】占比列字体 */
+		font-weight: bold;
+	}
+	
+	/* 层级分类列样式 */
+	.category-cell {
+		writing-mode: vertical-rl;
+		text-orientation: upright;
+		font-weight: bold;
+		font-size: 13px;
+		letter-spacing: 2px;
+		padding: 5px 2px;
+	}
+	
+	/* ========== 交错背景色设置 ========== */
+	/* 顶部三行的背景色 - 交错显示 */
+	.table-wrap table tr.total-elec-row td:not(.left-header):not(.col-hover) { 
+		background-color: #143a6b !important; 
+		color: #ffffff !important; 
+	}
+	.table-wrap table .layui-bg-yellow td:not(.left-header):not(.col-hover) { 
+		background-color: #ffff00 !important; 
+		color: #000000 !important; 
+	}
+	.table-wrap table .layui-bg-green td:not(.left-header):not(.col-hover):not(.manual-input) { 
+		background-color: #0f4470 !important; 
+		color: #ffffff !important; 
+	}
+	
+	/* 数据行交错背景色 - 排除人工录入单元格 */
+	.table-wrap table tr.unit-bg-1 td:not(.left-header):not(.col-hover):not(.manual-input) { 
+		background-color: #1e4e89 !important; 
+		color: #ffffff !important; 
+	}
+	.table-wrap table tr.unit-bg-2 td:not(.left-header):not(.col-hover):not(.manual-input) { 
+		background-color: #143a6b !important; 
+		color: #ffffff !important; 
+	}
+	
+	/* 所有左侧表头统一背景色 */
+	.table-wrap table tr.total-elec-row td.left-header,
+	.table-wrap table .layui-bg-yellow td.left-header, 
+	.table-wrap table .layui-bg-green td.left-header, 
+	.table-wrap table tr.unit-bg-1 td.left-header, 
+	.table-wrap table tr.unit-bg-2 td.left-header { 
+		background-color: #0c6ed3 !important; 
+		color: #ffffff !important; 
+		font-weight: bold; 
+	}
+	
+	/* 人工录入单元格的背景色 - 保持红色文字 */
+	.table-wrap table tr.unit-bg-1 td.manual-input:not(.col-hover) { 
+		background-color: #1e4e89 !important; 
+		color: #ff0000 !important; 
+	}
+	.table-wrap table tr.unit-bg-2 td.manual-input:not(.col-hover) { 
+		background-color: #143a6b !important; 
+		color: #ff0000 !important; 
+	}
+	.table-wrap table .layui-bg-green td.manual-input:not(.col-hover) { 
+		background-color: #0f4470 !important; 
+		color: #ff0000 !important; 
+	}
+	
+	/* 人工录入数据标红 - 最高优先级 */
+	.table-wrap table td.manual-input { 
+		color: #ff0000 !important; 
+	}
+	
+	/* 鼠标悬停时人工录入数据依然保持红色 */
+	.table-wrap table td.manual-input.col-hover { 
+		color: #ff0000 !important; 
+	}
+	
+	/* 生产合计行 - 标题文字为橙色 */
+	.production-total {
+		color: #ff8c00 !important;
+		font-weight: bold;
+	}
+	
+	thead th {
+		background: #0c6ed3;
+		font-weight: bold;
+	}
+	
+	.left-header {
+		background: #0c6ed3;
+		font-weight: bold;
+	}
+	
+	/* ========== 行hover效果 ========== */
+	tbody tr:hover td {
+		background: rgba(48, 127, 190, 0.91);
+	}
+	
+	/* ========== 列hover效果（月份列） ========== */
+	th[data-month], td[data-month] {
+		cursor: pointer;
+	}
+	
+	.col-hover {
+		background: rgb(112, 167, 255) !important;
+	}
+	
+	/* ========== 汇总信息样式 ========== */
+	#header-summary {
+		margin-top: 4px;          /* <-- 【调整】从6px改为4px */
+		text-align: center;
+		font-size: 13px;          /* <-- 【调整】从13px改为13px (保持) */
+		color: #fff7ca;
+		min-height: 16px;         /* <-- 【调整】从18px改为16px */
+	}
+	
+	#header-summary span {
+		color: #ff4d4f;
+	}
+	
+	/* ========== 固定字号样式（已移除自适应功能） ========== */
+	tbody td {
+		font-size: 11px;
+	}
+	
+	/* 自适应字号类已删除 - 使用固定1720x1080适配 */
+	
+	/* ========== 图表区域样式 ========== */
+	.charts-container {
+		display: flex;
+		gap: 15px;
+		min-height: 500px;
+		margin-top: 15px;
+		padding: 0 10px;
+	}
+	
+	.chart-card {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		border-radius: 5px;
+		display: flex;
+		flex-direction: column;
+		min-height: 500px;
+	}
+	
+	.line-chart-wrapper {
+		flex: 3;
+	}
+	
+	.pie-chart-wrapper {
+		flex: 2;
+	}
+	
+	.chart-header {
+		background-color: #29498e;
+		color: #fff;
+		padding: 8px 12px;
+		border-bottom: 1px solid #2a6dc8;
+		font-size: 15px;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 15px;
+	}
+	
+	.chart-header-title {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	
+	.main-title {
+		font-size: 15px;
+		font-weight: normal;
+		color: #fff7ca;
+	}
+	
+	.header-controls {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+	}
+	
+	.unit-label {
+		font-size: 13px;
+		font-weight: normal;
+		color: #b9d3f4;
+		flex-shrink: 0;
+	}
+	
+	.chart-content {
+		flex-grow: 1;
+		padding: 10px;
+		min-height: 450px;
+	}
+	
+	/* ========== 滚动条美化 - 统一样式 ========== */
+	.table-wrap::-webkit-scrollbar,
+	.content::-webkit-scrollbar,
+	.chart-content::-webkit-scrollbar,
+	body::-webkit-scrollbar,
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	
+	.table-wrap::-webkit-scrollbar-thumb,
+	.content::-webkit-scrollbar-thumb,
+	.chart-content::-webkit-scrollbar-thumb,
+	body::-webkit-scrollbar-thumb,
+	::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+		border-radius: 6px;
+		border: 1px solid #1d386f;
+		box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+	}
+	
+	.table-wrap::-webkit-scrollbar-thumb:hover,
+	.content::-webkit-scrollbar-thumb:hover,
+	.chart-content::-webkit-scrollbar-thumb:hover,
+	body::-webkit-scrollbar-thumb:hover,
+	::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+		box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+	}
+	
+	.table-wrap::-webkit-scrollbar-track,
+	.content::-webkit-scrollbar-track,
+	.chart-content::-webkit-scrollbar-track,
+	body::-webkit-scrollbar-track,
+	::-webkit-scrollbar-track {
+		background: linear-gradient(90deg, #0f266c 0%, #18589b 50%, #1d386f 100%);
+		border-radius: 6px;
+		border: 1px solid #0a1d4a;
+	}
+	
+	.table-wrap::-webkit-scrollbar-corner,
+	.content::-webkit-scrollbar-corner,
+	.chart-content::-webkit-scrollbar-corner,
+	body::-webkit-scrollbar-corner,
+	::-webkit-scrollbar-corner {
+		background-color: #1d386f;
+	}
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+						<div class="layui-form-item">
+							<div class="layui-inline" style = "margin-right : 20px;">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+								</div>
+							</div>
+							<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:5.5px;" id = "title">组装二课电量占比及统计</h2>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;left:1%; top:8px;" id = "h2_west">组装二课电量占比及统计</h2>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 37px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<div class="table-wrap">
+										<table id="data-table">
+											<thead>
+												<tr>
+													<th colspan="2">项目</th>
+													<th colspan="2" data-month="1">1月份</th>
+													<th colspan="2" data-month="2">2月份</th>
+													<th colspan="2" data-month="3">3月份</th>
+													<th colspan="2" data-month="4">4月份</th>
+													<th colspan="2" data-month="5">5月份</th>
+													<th colspan="2" data-month="6">6月份</th>
+													<th colspan="2" data-month="7">7月份</th>
+													<th colspan="2" data-month="8">8月份</th>
+													<th colspan="2" data-month="9">9月份</th>
+													<th colspan="2" data-month="10">10月份</th>
+													<th colspan="2" data-month="11">11月份</th>
+													<th colspan="2" data-month="12">12月份</th>
+													<th>合计</th>
+													<th>占比</th>
+												</tr>
+											</thead>
+											<tbody>
+												<!-- JavaScript 动态生成表格内容 -->
+											</tbody>
+										</table>
+									</div>
+									<div id="header-summary"></div>
+								</div>
+								
+							</div>
+						</div>
+					</div>
+					
+					<!-- 图表区域 - 左右布局 -->
+					<div class="charts-container">
+						<!-- 左侧曲线图 -->
+						<div class="chart-card line-chart-wrapper">
+							<div class="chart-header">
+								<div class="chart-header-title">
+									<div class="main-title">各单元月度用电趋势</div>
+								</div>
+								<div class="header-controls">
+									<span class="unit-label">电能单位（千瓦时）</span>
+								</div>
+							</div>
+							<div class="chart-content" id="line-chart"></div>
+						</div>
+						
+						<!-- 右侧饼图 -->
+						<div class="chart-card pie-chart-wrapper">
+							<div class="chart-header">
+								<div class="chart-header-title">
+									<div class="main-title" id="pie-chart-title">各单元用电占比</div>
+								</div>
+								<div class="header-controls">
+									<span class="unit-label">电量占比统计</span>
+								</div>
+							</div>
+							<div class="chart-content" id="pie-chart"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var excel = layui.excel;
+		var $ = layui.$;
+		
+		// 全局变量存储数据
+		var currentData = null;
+		var all_sum_elec = 0;
+		
+		// 图表实例
+		let myChart = null;
+		let pieChart = null;
+		
+		var date = new Date().setDate(1);
+		console.info(date);
+		let currentDay = new Date();
+		currentDay.setDate(1);
+
+		// 日期
+		laydate.render({
+			type:"year",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+
+		// ========= 生成空表结构 =========
+		function generateEmptyBody() {
+			const tbody = document.querySelector('#data-table tbody');
+			tbody.innerHTML = '';
+			
+		// 先生成合计行
+		const trTotal = document.createElement('tr');
+		trTotal.className = 'total-elec-row';
+		
+		// 两个项目列
+		const tdTotalLabel1 = document.createElement('td');
+		tdTotalLabel1.className = 'left-header';
+		tdTotalLabel1.setAttribute('colspan', '2');
+		tdTotalLabel1.textContent = '合计电量';
+		tdTotalLabel1.style.width = '200px';  // 50 + 150
+		tdTotalLabel1.style.minWidth = '200px';
+		trTotal.appendChild(tdTotalLabel1);
+		
+		// 12个月份，每个月份占2列（只显示电量，不显示占比）
+		for (let m = 1; m <= 12; m++) {
+			const tdVal = document.createElement('td');
+			tdVal.id = `total_m${m}_val`;
+			tdVal.dataset.month = String(m);
+			tdVal.className = 'data-cell';
+			tdVal.setAttribute('colspan', '2');
+			tdVal.style.width = '130px';  // 65px * 2
+			tdVal.style.minWidth = '130px';
+			trTotal.appendChild(tdVal);
+		}
+		
+		// 合计列
+		const tdSum = document.createElement('td');
+		tdSum.id = 'total_sum';
+		tdSum.className = 'data-cell';
+		tdSum.style.width = '65px';
+		tdSum.style.minWidth = '65px';
+		trTotal.appendChild(tdSum);
+		
+		const tdRatio = document.createElement('td');
+		tdRatio.id = 'total_ratio';
+		tdRatio.textContent = '100%';
+		tdRatio.className = 'data-cell';
+		tdRatio.style.width = '65px';
+		tdRatio.style.minWidth = '65px';
+			trTotal.appendChild(tdRatio);
+			
+			tbody.appendChild(trTotal);
+			
+			// 辅助合计行（荧光黄）
+			const trAuxiliary = createDataRow('', '辅助合计', 'elec_51', 'layui-bg-yellow');
+			tbody.appendChild(trAuxiliary);
+			
+			// 生产合计行（深蓝绿色，标题橙色）
+			const trProduction = createDataRow('', '生产合计', 'elec_26', 'layui-bg-green', 0, false);
+			tbody.appendChild(trProduction);
+			
+			// 组装部分
+			const assemblyItems = [
+				{ key: 'elec_asm_total', name: '组装合计' },
+				{ key: 'elec_17', name: '1#柜' },
+				{ key: 'elec_20', name: '2#柜' },
+				{ key: 'elec_16', name: '凸焊机' },
+				{ key: 'elec_hydrogen', name: '氢检' }
+			];
+			
+			assemblyItems.forEach((item, index) => {
+				const bgClass = index % 2 === 0 ? 'unit-bg-1' : 'unit-bg-2';
+				const tr = createDataRow(
+					index === 0 ? '组装' : '',
+					item.name,
+					item.key,
+					bgClass,
+					index === 0 ? assemblyItems.length : 0
+				);
+				tbody.appendChild(tr);
+			});
+			
+			// 成品部分
+			const productItems = [
+				{ key: 'elec_prod_total', name: '成品合计', isManualInput: false },
+				{ key: 'elec_1', name: 'GCS柜', isManualInput: true },  // GCS柜包含人工录入数据（电泳整流柜）
+				{ key: 'elec_12', name: '热水炉', isManualInput: false }
+			];
+			
+			productItems.forEach((item, index) => {
+				const bgClass = index % 2 === 0 ? 'unit-bg-1' : 'unit-bg-2';
+				const tr = createDataRow(
+					index === 0 ? '成品' : '',
+					item.name,
+					item.key,
+					bgClass,
+					index === 0 ? productItems.length : 0,
+					item.isManualInput || false
+				);
+				tbody.appendChild(tr);
+			});
+		}
+		
+		// 创建数据行的辅助函数
+		// category: 大分类（如"组装"、"成品"）
+		// name: 项目名称
+		// key: 数据key
+		// extraClass: 额外的CSS类
+		// rowspan: 大分类的行数（用于竖排文字）
+		// hasManualInput: 是否有人工录入数据（生产合计行需要标红）
+		function createDataRow(category, name, key, extraClass = '', rowspan = 0, hasManualInput = false) {
+			const tr = document.createElement('tr');
+			
+			// 添加CSS类
+			if (extraClass) {
+				tr.className = extraClass;
+			}
+			
+		// 第一列：大分类（竖排文字，如"组装"、"成品"）
+		if (category) {
+			const tdCategory = document.createElement('td');
+			tdCategory.className = 'left-header category-cell';
+			tdCategory.textContent = category;
+			tdCategory.style.width = '50px';  // 内联样式强制宽度
+			tdCategory.style.minWidth = '50px';
+			if (rowspan > 0) {
+				tdCategory.setAttribute('rowspan', rowspan);
+			}
+			tr.appendChild(tdCategory);
+		}
+		
+	// 第二列：项目名称
+	const tdName = document.createElement('td');
+	tdName.textContent = name;
+	tdName.style.whiteSpace = 'nowrap';  // 强制不换行
+	
+	// 顶级行（辅助合计、生产合计）跨2列，宽度为两列之和
+	if (name === '辅助合计' || name === '生产合计') {
+		tdName.setAttribute('colspan', '2');
+		tdName.style.width = '200px';  // 50px + 150px
+		tdName.style.minWidth = '200px';
+	} else {
+		tdName.style.width = '150px';  // 内联样式强制宽度
+		tdName.style.minWidth = '150px';
+	}
+	
+	// 生产合计的标题也是红色
+	if (name === '生产合计') {
+		tdName.className = 'left-header production-total project-name-cell';
+	} else {
+		tdName.className = 'left-header project-name-cell';
+	}
+		
+		tr.appendChild(tdName);
+			
+	// 12个月份 * 2列（值 + 占比）
+	for (let m = 1; m <= 12; m++) {
+		const tdVal = document.createElement('td');
+		const tdPct = document.createElement('td');
+		tdVal.id = `${key}_m${m}_val`;
+		tdPct.id = `${key}_m${m}_pct`;
+		tdVal.dataset.month = String(m);
+		tdPct.dataset.month = String(m);
+		tdVal.className = 'data-cell';  // 添加数据列类名
+		tdPct.className = 'data-cell';  // 添加数据列类名
+		tdVal.style.width = '65px';  // 内联样式强制宽度
+		tdVal.style.minWidth = '65px';
+		tdPct.style.width = '65px';  // 内联样式强制宽度
+		tdPct.style.minWidth = '65px';
+		
+		// 生产合计行的电量值是人工录入，需要标红（仅月度数据，不包括合计）
+		if (hasManualInput) {
+			tdVal.classList.add('manual-input');
+		}
+		
+		tr.appendChild(tdVal);
+		tr.appendChild(tdPct);
+	}
+	
+	// 合计 / 占比（不是人工录入，不标红）
+	const tdTotal = document.createElement('td');
+	tdTotal.id = `${key}_total`;
+	tdTotal.className = 'data-cell';  // 添加数据列类名
+	tdTotal.style.width = '65px';  // 内联样式强制宽度
+	tdTotal.style.minWidth = '65px';
+	tr.appendChild(tdTotal);
+	
+	const tdTotalPct = document.createElement('td');
+	tdTotalPct.id = `${key}_total_pct`;
+	tdTotalPct.className = 'data-cell';  // 添加数据列类名
+	tdTotalPct.style.width = '65px';  // 内联样式强制宽度
+	tdTotalPct.style.minWidth = '65px';
+	tr.appendChild(tdTotalPct);
+			
+			return tr;
+		}
+		
+		// ========= 设置列交互效果 =========
+		function setupColumnHover() {
+			const table = document.getElementById('data-table');
+			
+			table.addEventListener('mouseover', e => {
+				const cell = e.target;
+				const month = cell.dataset.month;
+				if (!month) return;
+				table.querySelectorAll('.col-hover').forEach(td => td.classList.remove('col-hover'));
+				table.querySelectorAll(`[data-month="${month}"]`).forEach(td => td.classList.add('col-hover'));
+			});
+			
+			table.addEventListener('mouseleave', () => {
+				table.querySelectorAll('.col-hover').forEach(td => td.classList.remove('col-hover'));
+			});
+			
+			table.addEventListener('click', e => {
+				const month = e.target.dataset.month;
+				if (!month || !currentData) return;
+				updateHeaderSummary(Number(month));
+				updatePieChartForMonth(Number(month));
+				showLineChartTooltipForMonth(Number(month));
+			});
+		}
+		
+		// ========= 更新汇总信息 =========
+		function updateHeaderSummary(month) {
+			if (!currentData || !currentData.data) return;
+			
+			const totalRow = currentData.data[currentData.data.length - 1];
+			const monthVal = totalRow[`month${month}_elec`] || 0;
+			
+			const dom = document.getElementById('h2_west');
+			if (monthVal === 0) {
+				dom.innerHTML = `组装二课${month}月无用电数据`;
+			} else {
+				const ratio = all_sum_elec > 0 ? (monthVal / all_sum_elec * 100).toFixed(2) : '0.00';
+				dom.innerHTML = 
+					`组装二课<span style="color: red;">${month}</span>月用电电量` +
+					`<span style="color: red;">${Math.round(monthVal).toLocaleString()}</span>千瓦时，` +  /* <-- 【调整】去掉小数点 */
+					`占公司总电量比<span style="color: red;">${ratio}%</span>。`;
+			}
+		}
+		
+		// ========= 填充数据 =========
+		function fillData(data) {
+			currentData = data;
+			
+			// 找到合计行
+			const totalRow = data.data.find(row => row.elec_name === '合计');
+			if (!totalRow) return;
+			
+			let totalSum = 0;
+			let latestMonth = 0;
+			
+		// 填充合计行（不显示月度占比）
+		for (let m = 1; m <= 12; m++) {
+			const val = totalRow[`month${m}_elec`] || 0;
+			
+			if (val > 0) {
+				const tdVal = document.getElementById(`total_m${m}_val`);
+				if (tdVal) tdVal.textContent = Math.round(val).toLocaleString();
+				// 合计行不显示月度占比，tdPct留空
+				totalSum += val;
+				latestMonth = m;
+			}
+		}
+			
+			const totalSumCell = document.getElementById('total_sum');
+			if (totalSumCell) {
+				totalSumCell.textContent = Math.round(totalSum).toLocaleString();
+			}
+			
+			// 填充业务行
+			data.data.forEach(row => {
+				const itemKey = getItemKey(row.elec_name);
+				if (!itemKey) return;
+				
+				let itemSum = 0;
+				for (let m = 1; m <= 12; m++) {
+					const monthVal = row[`month${m}_elec`] || 0;
+					const monthRatio = row[`month${m}_ratio`] || '';
+					
+					if (monthVal > 0) {
+						itemSum += monthVal;
+						const tdVal = document.getElementById(`${itemKey}_m${m}_val`);
+						const tdPct = document.getElementById(`${itemKey}_m${m}_pct`);
+						if (tdVal) tdVal.textContent = Math.round(monthVal).toLocaleString();
+						if (tdPct) tdPct.textContent = monthRatio;
+					}
+				}
+				
+				const tdTotal = document.getElementById(`${itemKey}_total`);
+				const tdTotalPct = document.getElementById(`${itemKey}_total_pct`);
+				if (tdTotal && itemSum > 0) {
+					tdTotal.textContent = Math.round(itemSum).toLocaleString();
+				}
+				if (tdTotalPct) {
+					tdTotalPct.textContent = row.sum_ratio || '';
+				}
+			});
+			
+			// 计算组装合计和成品合计
+			calculateSubtotals();
+			
+			if (latestMonth > 0) {
+				updateHeaderSummary(latestMonth);
+			} else {
+				document.getElementById('h2_west').textContent = '组装二课电量占比及统计';
+			}
+			
+			// 初始化和更新图表
+			if (!myChart) {
+				setTimeout(() => {
+					if (initChart()) {
+						updateChart();
+					}
+				}, 200);
+			} else {
+				updateChart();
+			}
+		}
+		
+		// 计算组装合计和成品合计
+		function calculateSubtotals() {
+			// 计算组装合计（1#柜 + 2#柜 + 凸焊机 + 氢检）
+			const asmKeys = ['elec_17', 'elec_20', 'elec_16', 'elec_hydrogen'];
+			calculateAndFillSubtotal('elec_asm_total', asmKeys);
+			
+			// 计算成品合计（GCS柜 + 热水炉）
+			const prodKeys = ['elec_1', 'elec_12'];
+			calculateAndFillSubtotal('elec_prod_total', prodKeys);
+		}
+		
+		// 计算并填充小计（组装合计、成品合计）
+		function calculateAndFillSubtotal(subtotalKey, itemKeys) {
+			let yearTotal = 0;
+			
+			for (let m = 1; m <= 12; m++) {
+				let monthTotal = 0;
+				
+				itemKeys.forEach(key => {
+					const cell = document.getElementById(`${key}_m${m}_val`);
+					if (cell && cell.textContent) {
+						const val = parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+						monthTotal += val;
+					}
+				});
+				
+				if (monthTotal > 0) {
+					const roundedMonthTotal = Math.round(monthTotal);
+					const tdVal = document.getElementById(`${subtotalKey}_m${m}_val`);
+					if (tdVal) tdVal.textContent = roundedMonthTotal.toLocaleString();
+					yearTotal += monthTotal;
+					
+					// 计算该月占比（相对于生产合计，使用四舍五入后的值）
+					const prodTotalCell = document.getElementById(`elec_26_m${m}_val`);
+					if (prodTotalCell && prodTotalCell.textContent) {
+						const prodTotal = parseFloat(prodTotalCell.textContent.replace(/,/g, '')) || 0;
+						const roundedProdTotal = Math.round(prodTotal);
+						if (roundedProdTotal > 0) {
+							const ratio = (Math.round(roundedMonthTotal * 10000 / roundedProdTotal) / 100) + '%';
+							const tdPct = document.getElementById(`${subtotalKey}_m${m}_pct`);
+							if (tdPct) tdPct.textContent = ratio;
+						}
+					}
+				}
+			}
+			
+			// 填充年度合计
+			const roundedYearTotal = Math.round(yearTotal);
+			const tdTotal = document.getElementById(`${subtotalKey}_total`);
+			if (tdTotal && roundedYearTotal > 0) {
+				tdTotal.textContent = roundedYearTotal.toLocaleString();
+				
+				// 计算年度占比（相对于生产合计，使用四舍五入后的值）
+				const prodTotalCell = document.getElementById('elec_26_total');
+				if (prodTotalCell && prodTotalCell.textContent) {
+					const prodYearTotal = parseFloat(prodTotalCell.textContent.replace(/,/g, '')) || 0;
+					const roundedProdYearTotal = Math.round(prodYearTotal);
+					if (roundedProdYearTotal > 0) {
+						const ratio = (Math.round(roundedYearTotal * 10000 / roundedProdYearTotal) / 100) + '%';
+						const tdPct = document.getElementById(`${subtotalKey}_total_pct`);
+						if (tdPct) tdPct.textContent = ratio;
+					}
+				}
+			}
+		}
+		
+		/* ========= 自动调整字号函数已移除（使用固定1720x1080适配） ========= */
+		
+		// 辅助函数：根据名称获取key
+		function getItemKey(name) {
+			switch(name) {
+				case 'GCS柜': return 'elec_1';
+				case '热水炉': return 'elec_12';
+				case '凸焊机': return 'elec_16';
+				case '1#柜': return 'elec_17';
+				case '2#柜': return 'elec_20';
+				case '生产合计': return 'elec_26';
+				case '辅助合计': return 'elec_51';
+				case '组装合计': return 'elec_asm_total';
+				case '成品合计': return 'elec_prod_total';
+				case '氢检': return 'elec_hydrogen';
+				default: return null;
+			}
+		}
+		
+		// 项目配置（用于曲线图 - 包含所有项）
+		const itemConfig = [
+			{ key: 'elec_asm_total', name: '组装合计' },
+			{ key: 'elec_17', name: '1#柜' },
+			{ key: 'elec_20', name: '2#柜' },
+			{ key: 'elec_16', name: '凸焊机' },
+			{ key: 'elec_hydrogen', name: '氢检' },
+			{ key: 'elec_prod_total', name: '成品合计' },
+			{ key: 'elec_1', name: 'GCS柜' },
+			{ key: 'elec_12', name: '热水炉' }
+		];
+		
+		// 项目配置（用于饼图 - 排除组装合计和成品合计）
+		const pieItemConfig = [
+			{ key: 'elec_17', name: '1#柜' },
+			{ key: 'elec_20', name: '2#柜' },
+			{ key: 'elec_16', name: '凸焊机' },
+			{ key: 'elec_hydrogen', name: '氢检' },
+			{ key: 'elec_1', name: 'GCS柜' },
+			{ key: 'elec_12', name: '热水炉' }
+		];
+		
+		// 初始化图表
+		function initChart() {
+			const lineDom = document.getElementById('line-chart');
+			const pieDom = document.getElementById('pie-chart');
+			if (!lineDom || !pieDom) return false;
+			
+			// 初始化曲线图
+			myChart = echarts.init(lineDom);
+			myChart.setOption({
+				backgroundColor: 'transparent',
+				tooltip: {
+					trigger: 'axis',
+					backgroundColor: '#1d386f',
+					borderColor: '#2a6dc8',
+					textStyle: { color: '#fff' },
+					formatter: (params) => {
+						if (!Array.isArray(params)) params = [params];
+						let result = params[0].axisValue + '<br/>';
+						params.forEach(param => {
+							const displayValue = param.value === null || param.value === undefined ? 0 : param.value;
+							result += `${param.seriesName}: ${displayValue}<br/>`;
+						});
+						return result;
+					}
+				},
+				legend: {
+					textStyle: { color: '#d0d2e0' },
+					top: 10
+				},
+				grid: { left: 60, right: 40, bottom: 40, top: 60 },
+				xAxis: {
+					type: 'category',
+					data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+					axisLine: { lineStyle: { color: '#2a6dc8' } },
+					axisLabel: { color: '#d0d2e0' }
+				},
+				yAxis: {
+					type: 'value',
+					name: '电量(kWh)',
+					nameTextStyle: { color: '#d0d2e0' },
+					axisLine: { lineStyle: { color: '#2a6dc8' } },
+					axisLabel: { color: '#d0d2e0' },
+					splitLine: { lineStyle: { color: '#2a6dc8', opacity: 0.3 } }
+				},
+				series: []
+			});
+			
+			// 初始化饼图
+			pieChart = echarts.init(pieDom);
+			pieChart.setOption({
+				backgroundColor: 'transparent',
+				tooltip: {
+					trigger: 'item',
+					backgroundColor: '#1d386f',
+					borderColor: '#2a6dc8',
+					textStyle: { color: '#fff' }
+					// 移除 formatter，在数据更新时再设置
+				},
+				legend: {
+					orient: 'horizontal',
+					bottom: '5%',
+					left: 'center',
+					textStyle: { color: '#d0d2e0', fontSize: 11 },
+					type: 'scroll'
+				},
+				series: [{
+					name: '用电占比',
+					type: 'pie',
+					radius: '65%',
+					center: ['50%', '45%'],
+					data: [],
+					itemStyle: { borderWidth: 0, borderColor: 'transparent' },
+					emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+					// 移除 label.formatter，在数据更新时再设置
+					labelLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.5)' } }
+				}]
+			});
+			
+			window.addEventListener('resize', () => {
+				myChart && myChart.resize();
+				pieChart && pieChart.resize();
+			});
+			return true;
+		}
+		
+		// 更新图表
+		function updateChart() {
+			if (!myChart || !pieChart) return;
+			
+			const lineSeries = [];
+			const pieData = [];
+			const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452'];
+			
+			// 曲线图使用所有项（包括组装合计和成品合计）
+			itemConfig.forEach((item, index) => {
+				// 读取12个月电量数据
+				const data = [];
+				for (let m = 1; m <= 12; m++) {
+					const val = $(`#${item.key}_m${m}_val`).text().replace(/,/g, '');
+					data.push(val ? Number(val) : null);
+				}
+				
+				// 添加曲线图系列
+				lineSeries.push({
+					name: item.name,
+					type: 'line',
+					data: data,
+					smooth: true,
+					connectNulls: false,
+					symbol: 'circle',
+					symbolSize: 4,
+					color: colors[index % colors.length]
+				});
+			});
+			
+			// 饼图只使用子项（排除组装合计和成品合计）
+			pieItemConfig.forEach((item, index) => {
+				// 计算饼图数据（总电量）- 四舍五入
+				const totalElec = $(`#${item.key}_total`).text().replace(/,/g, '');
+				const roundedValue = Math.round(Number(totalElec) || 0);
+				if (roundedValue > 0) {
+					pieData.push({
+						name: item.name,
+						value: roundedValue,
+						itemStyle: { color: colors[index % colors.length] }
+					});
+				}
+			});
+			
+			// 更新曲线图
+			myChart.setOption({
+				series: lineSeries
+			});
+			
+			// 更新饼图 - 手动计算百分比，确保与表格一致
+			pieChart.setOption({
+				tooltip: {
+					formatter: function(params) {
+						const total = pieData.reduce((sum, item) => sum + item.value, 0);
+						const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+						return `${params.seriesName}<br/>${params.name}: ${params.value.toLocaleString()} (${percentage}%)`;
+					}
+				},
+				series: [{
+					data: pieData,
+					label: { 
+						formatter: function(params) {
+							const total = pieData.reduce((sum, item) => sum + item.value, 0);
+							const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+							return `${percentage}%`;
+						}, 
+						color: '#fff', 
+						position: 'outside' 
+					}
+				}]
+			});
+		}
+		
+		// 显示曲线图指定月份的tooltip
+		function showLineChartTooltipForMonth(month) {
+			if (!myChart) return;
+			
+			const monthIndex = parseInt(month) - 1;
+			if (monthIndex >= 0 && monthIndex < 12) {
+				myChart.dispatchAction({
+					type: 'showTip',
+					seriesIndex: 0,
+					dataIndex: monthIndex
+				});
+			}
+		}
+		
+		// 更新饼图显示指定月份数据
+		function updatePieChartForMonth(month) {
+			if (!pieChart) return;
+			
+			const pieData = [];
+			const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452'];
+			
+			// 饼图只使用子项（排除组装合计和成品合计）
+			pieItemConfig.forEach((item, index) => {
+				const monthElec = $(`#${item.key}_m${month}_val`).text().replace(/,/g, '');
+				const roundedValue = Math.round(Number(monthElec) || 0);
+				if (roundedValue > 0) {
+					pieData.push({
+						name: item.name,
+						value: roundedValue,
+						itemStyle: { color: colors[index % colors.length] }
+					});
+				}
+			});
+			
+			// 更新饼图标题和数据 - 手动计算百分比，确保与表格一致
+			$('#pie-chart-title').text(`${month}月份各单元用电占比`);
+			pieChart.setOption({
+				tooltip: {
+					formatter: function(params) {
+						const total = pieData.reduce((sum, item) => sum + item.value, 0);
+						const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+						return `${params.seriesName}<br/>${params.name}: ${params.value.toLocaleString()} (${percentage}%)`;
+					}
+				},
+				series: [{
+					data: pieData,
+					label: { 
+						formatter: function(params) {
+							const total = pieData.reduce((sum, item) => sum + item.value, 0);
+							const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+							return `${percentage}%`;
+						}, 
+						color: '#fff', 
+						position: 'outside' 
+					}
+				}]
+			});
+		}
+		
+		// 初始化
+		generateEmptyBody();
+		setupColumnHover();
+		setupTooltip();  // <-- 【新增】设置单元格 title 提示
+		
+		/* 自动调整字号功能已移除 - 使用固定1720x1080适配 */
+		
+		// ========= 设置单元格 title 提示（鼠标悬浮显示） =========
+		function setupTooltip() {
+			const table = document.getElementById('data-table');
+			table.addEventListener('mouseover', e => {
+				const cell = e.target;
+				if (cell.tagName === 'TD') {
+					const text = cell.textContent.trim();
+					// 添加 title 属性用于浮窗显示
+					if (text) {
+						cell.title = text;
+					}
+				}
+			});
+		}
+		
+		$('#search').on('click', async function() {
+			try {
+				// ========================================================================
+				// 【组装二课数据结构配置说明】
+				// ========================================================================
+				// 合计电量 (320005+320008+320013+320014+320015)
+				// ├── 生产合计 (组装部分 + 成品部分)
+				// │   ├── 组装部分
+				// │   │   ├── 1#柜 (320014) - 系统采集
+				// │   │   ├── 2#柜 (320015) - 系统采集
+				// │   │   ├── 凸焊机 (320013) - 系统采集
+				// │   │   └── 氢检 (490005) - 系统采集
+				// │   └── 成品部分
+				// │       ├── GCS柜 (490008,490009,490003,490004,490007) + 电泳整流柜(40001人工录入) - 系统采集+人工录入
+				// │       └── 热水炉 (320008) - 系统采集
+				// └── 辅助合计 (差值计算 = 合计电量 - 生产合计)
+				//
+				// 数据来源：
+				// - 系统采集数据：sum_elec_group_by_day + data_all (今日实时)
+				// - 人工录入数据：data_elec_temp_input (40001=电泳整流柜，合并到GCS柜)
+				// - 合计电量：(320005, 320008, 320013, 320014, 320015)
+				// - 公司总用电：(1,12,16,17,20,26,51,52) - 230003
+				//
+				// 计算逻辑：
+				// 1. 查询系统采集的6个单元数据（历史+今日实时）
+				// 2. 查询人工录入的电泳整流柜数据，合并到GCS柜
+				// 3. 生产合计 = 1#柜 + 2#柜 + 凸焊机 + 氢检 + GCS柜（含电泳整流柜） + 热水炉
+				// 4. 辅助合计 = 合计电量 - 生产合计
+				// 5. 占比 = 各单元电量 / 合计电量 * 100%
+				// ========================================================================
+				
+				// ========= 重新查询前清空表格 =========
+				generateEmptyBody();
+				
+				var startdate = $("#ID-laydate-start-date-1")[0].value + "-01-01";
+				var enddate = $("#ID-laydate-start-date-1")[0].value + "-12-31";
+				
+				let now = new Date();
+				let compareDate = new Date(now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate());
+				
+				// ========= 构建系统采集数据查询SQL =========
+				var sql = ""
+				+" with basedata as ( \n"
+				// 1#柜（320014）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '1#柜' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (320014) \n"
+				+" 		UNION ALL \n"
+				// 2#柜（320015）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '2#柜' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (320015) \n"
+				+" 		UNION ALL \n"
+				// 凸焊机（320013）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '凸焊机' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (320013) \n"
+				+" 		UNION ALL \n"
+				// 氢检（490005）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '氢检' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (490005) \n"
+				+" 		UNION ALL \n"
+				// GCS柜（490008,490009,490003,490004,490007）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, 'GCS柜' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (490008, 490009, 490003, 490004, 490007) \n"
+				+" 		UNION ALL \n"
+				// 热水炉（320008）
+				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '热水炉' as elec_name, sum_elec \n"
+				+" 		FROM sum_elec_group_by_day \n"
+				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+				+" 		AND no IN (320008) \n";
+				
+				// 如果当前日期在查询范围内，添加今日实时数据
+				if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+					const todaySql = ""
+					// 今日数据 - 1#柜
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       '1#柜' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (320014) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (320014) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_320014 \n"
+					// 今日数据 - 2#柜
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       '2#柜' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (320015) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (320015) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_320015 \n"
+					// 今日数据 - 凸焊机
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       '凸焊机' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (320013) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (320013) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_320013 \n"
+					// 今日数据 - 氢检
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       '氢检' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (490005) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (490005) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_490005 \n"
+					// 今日数据 - GCS柜
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       'GCS柜' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (490008, 490009, 490003, 490004, 490007) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (490008, 490009, 490003, 490004, 490007) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_gcs \n"
+					// 今日数据 - 热水炉
+					+" 		UNION ALL \n"
+					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+" 		       '热水炉' as elec_name, \n"
+					+" 		       SUM(CASE WHEN `NO` IN (320008) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		FROM ( \n"
+					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+" 		        AND `NO` IN (320008) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		    GROUP BY `NO` \n"
+					+" 		) AS data_320008 \n";
+					
+					sql += todaySql;
+				}
+				
+				sql += ""
+				+" ) \n"
+				+" SELECT elec_name \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 1 THEN t.sum_elec ELSE null END) AS month1_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 2 THEN t.sum_elec ELSE null END) AS month2_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 3 THEN t.sum_elec ELSE null END) AS month3_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 4 THEN t.sum_elec ELSE null END) AS month4_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 5 THEN t.sum_elec ELSE null END) AS month5_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 6 THEN t.sum_elec ELSE null END) AS month6_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 7 THEN t.sum_elec ELSE null END) AS month7_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 8 THEN t.sum_elec ELSE null END) AS month8_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 9 THEN t.sum_elec ELSE null END) AS month9_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 10 THEN t.sum_elec ELSE null END) AS month10_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 11 THEN t.sum_elec ELSE null END) AS month11_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 12 THEN t.sum_elec ELSE null END) AS month12_elec \n"
+			+" FROM basedata t \n"
+			+" GROUP BY elec_name \n";
+				
+				console.info('系统采集数据SQL:', sql);
+				
+				// ========= 查询人工录入数据（电泳整流柜） =========
+				const manualSql = ""
+				+" SELECT 'GCS柜_电泳' as elec_name \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 1 THEN sum_elec ELSE null END) AS month1_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 2 THEN sum_elec ELSE null END) AS month2_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 3 THEN sum_elec ELSE null END) AS month3_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 4 THEN sum_elec ELSE null END) AS month4_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 5 THEN sum_elec ELSE null END) AS month5_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 6 THEN sum_elec ELSE null END) AS month6_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 7 THEN sum_elec ELSE null END) AS month7_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 8 THEN sum_elec ELSE null END) AS month8_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 9 THEN sum_elec ELSE null END) AS month9_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 10 THEN sum_elec ELSE null END) AS month10_elec \n"
+				+" ,SUM(CASE WHEN MONTH(date) = 11 THEN sum_elec ELSE null END) AS month11_elec \n"
+			+" ,SUM(CASE WHEN MONTH(date) = 12 THEN sum_elec ELSE null END) AS month12_elec \n"
+			+" FROM data_elec_temp_input \n"
+			+" WHERE no = 40001 \n"
+			+" AND date >= '"+startdate+"' \n"
+			+" AND date <= '"+enddate+"' \n";
+				
+				console.info('人工录入数据SQL:', manualSql);
+				
+			// ========= 并行执行查询 =========
+			const [systemData, manualData] = await Promise.all([
+				sendSQL(sql),
+				sendSQL(manualSql)
+			]);
+			
+			console.info('系统采集数据结果:', systemData);
+			console.info('人工录入数据结果:', manualData);
+			
+			// 【修正】为每行数据计算 sum_elec（先四舍五入再累加）
+			if (systemData.data) {
+				systemData.data.forEach(row => {
+					row.sum_elec = 0;
+					for (let m = 1; m <= 12; m++) {
+						const monthVal = row[`month${m}_elec`] || 0;
+						if (monthVal > 0) {
+							row.sum_elec += Math.round(monthVal);
+						}
+					}
+				});
+			}
+			
+			if (manualData.data && manualData.data.length > 0) {
+				manualData.data[0].sum_elec = 0;
+				for (let m = 1; m <= 12; m++) {
+					const monthVal = manualData.data[0][`month${m}_elec`] || 0;
+					if (monthVal > 0) {
+						manualData.data[0].sum_elec += Math.round(monthVal);
+					}
+				}
+			}
+			
+			// ========= 合并数据 =========
+			let mergedData = systemData.data || [];
+			
+			// 找到GCS柜数据，合并电泳整流柜数据
+			const gcsRow = mergedData.find(row => row.elec_name === 'GCS柜');
+			if (gcsRow && manualData.data && manualData.data.length > 0) {
+				const dianrongRow = manualData.data[0];
+				
+				// 【修正】先计算GCS柜原有的sum_elec，再加上电泳数据
+				// 重新计算GCS柜的sum_elec（因为要包含电泳数据）
+				gcsRow.sum_elec = 0;
+				for (let m = 1; m <= 12; m++) {
+					if (dianrongRow[`month${m}_elec`]) {
+						gcsRow[`month${m}_elec`] = (gcsRow[`month${m}_elec`] || 0) + dianrongRow[`month${m}_elec`];
+					}
+					// 【修正】月度合并后，先四舍五入再累加
+					const monthVal = gcsRow[`month${m}_elec`] || 0;
+					if (monthVal > 0) {
+						gcsRow.sum_elec += Math.round(monthVal);
+					}
+				}
+			}
+				
+				// ========= 计算合计电量（320005 + 320008 + 320013 + 320014 + 320015） =========
+				// 查询合计电量的NO
+				let totalSql = "with total_data as ( \n"
+					+ "     select DATE_FORMAT(date, '%Y-%m-%d') as jDay, sum_elec \n"
+					+ "     from sum_elec_group_by_day \n"
+					+ "     where date <= '"+enddate+"' \n"
+					+ "     AND date >= '"+startdate+"' \n"
+					+ "     and no in (320005, 320008, 320013, 320014, 320015) \n";
+				
+				// 如果当前日期在查询范围内，添加今日实时数据
+				if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+					totalSql += "     union all \n"
+					+ "     SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+ "            SUM(`d_elec`) AS sum_elec \n"
+					+ "     FROM ( \n"
+					+ "         SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+ "         FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+ "         WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+					+ "                            DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+					+ "                            DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+ "             AND `NO` IN (320005, 320008, 320013, 320014, 320015) \n"
+					+ "             AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+ "         GROUP BY `NO` \n"
+					+ "     ) AS total_today \n";
+				}
+				
+			totalSql += " ) \n"
+				+ " SELECT \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 1 THEN sum_elec ELSE null END) AS month1_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 2 THEN sum_elec ELSE null END) AS month2_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 3 THEN sum_elec ELSE null END) AS month3_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 4 THEN sum_elec ELSE null END) AS month4_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 5 THEN sum_elec ELSE null END) AS month5_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 6 THEN sum_elec ELSE null END) AS month6_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 7 THEN sum_elec ELSE null END) AS month7_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 8 THEN sum_elec ELSE null END) AS month8_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 9 THEN sum_elec ELSE null END) AS month9_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 10 THEN sum_elec ELSE null END) AS month10_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 11 THEN sum_elec ELSE null END) AS month11_elec, \n"
+				+ " SUM(CASE WHEN MONTH(jDay) = 12 THEN sum_elec ELSE null END) AS month12_elec \n"
+				+ " from total_data \n";
+				
+				console.info('合计电量SQL:', totalSql);
+				const totalElecData = await sendSQL(totalSql);
+				console.info('合计电量结果:', totalElecData);
+				
+			// ========= 计算生产合计、辅助合计、合计行 =========
+			const totalElecRow = totalElecData.data && totalElecData.data.length > 0 ? totalElecData.data[0] : {};
+			
+			// 【修正】先计算totalElecRow的年度合计（先四舍五入再累加）
+			totalElecRow.sum_elec = 0;
+			for (let m = 1; m <= 12; m++) {
+				const monthVal = totalElecRow[`month${m}_elec`] || 0;
+				if (monthVal > 0) {
+					totalElecRow.sum_elec += Math.round(monthVal);
+				}
+			}
+			
+			// 生产合计 = 组装部分（含氢检）+ 成品部分
+			const productionRow = {
+				elec_name: '生产合计',
+				sum_elec: 0
+			};
+			
+			// 计算组装部分（1#柜 + 2#柜 + 凸焊机 + 氢检）
+			const asmKeys = ['1#柜', '2#柜', '凸焊机', '氢检'];
+			// 计算成品部分（GCS柜 + 热水炉）
+			const prodKeys = ['GCS柜', '热水炉'];
+			
+			for (let m = 1; m <= 12; m++) {
+				let monthTotal = 0;
+				[...asmKeys, ...prodKeys].forEach(key => {
+					const row = mergedData.find(r => r.elec_name === key);
+					if (row && row[`month${m}_elec`]) {
+						monthTotal += row[`month${m}_elec`];
+					}
+				});
+				productionRow[`month${m}_elec`] = monthTotal > 0 ? monthTotal : null;
+				// 【修正】先四舍五入再累加
+				if (monthTotal > 0) {
+					productionRow.sum_elec += Math.round(monthTotal);
+				}
+			}
+			
+			mergedData.push(productionRow);
+			
+			// 辅助合计 = 总和 - 生产合计
+			const auxiliaryRow = {
+				elec_name: '辅助合计',
+				sum_elec: 0
+			};
+			
+			for (let m = 1; m <= 12; m++) {
+				const totalMonth = totalElecRow[`month${m}_elec`] || 0;
+				const prodMonth = productionRow[`month${m}_elec`] || 0;
+				const auxMonth = totalMonth - prodMonth;
+				auxiliaryRow[`month${m}_elec`] = auxMonth > 0 ? auxMonth : null;
+				// 【修正】先四舍五入再累加
+				if (auxMonth > 0) {
+					auxiliaryRow.sum_elec += Math.round(auxMonth);
+				}
+			}
+			
+			mergedData.push(auxiliaryRow);
+				
+				// 合计行
+				const totalRow = {
+					elec_name: '合计',
+					...totalElecRow
+				};
+				
+				mergedData.push(totalRow);
+				
+				// ========= 计算占比（先四舍五入，再计算百分比） =========
+				const finalData = { data: mergedData };
+				
+				// 循环拼接添加各项月度占比
+				for(let i=1; i<=12; i++){
+					if(totalRow[`month${i}_elec`] == null || totalRow[`month${i}_elec`] == undefined){
+						continue;
+					}
+					
+					// 获取合计电量和生产合计（先四舍五入）
+					const roundedTotalElec = Math.round(totalRow[`month${i}_elec`]);
+					const roundedProductionElec = Math.round(productionRow[`month${i}_elec`] || 0);
+					
+					for(let j=0; j<finalData.data.length; j++){
+						const itemName = finalData.data[j].elec_name;
+						const itemElec = finalData.data[j][`month${i}_elec`];
+						
+						if(itemElec == null || itemElec == undefined) continue;
+						
+						const roundedItemElec = Math.round(itemElec);
+						
+						// 判断该项应该占谁的百分比
+						if(itemName === '合计') {
+							// 合计行显示100%
+							finalData.data[j][`month${i}_ratio`] = "100%";
+						} else if(itemName === '生产合计' || itemName === '辅助合计') {
+							// 生产合计和辅助合计占"合计电量"的百分比
+							if(roundedTotalElec > 0) {
+								finalData.data[j][`month${i}_ratio`] = (Math.round(roundedItemElec * 10000 / roundedTotalElec) / 100) + "%";
+							}
+						} else {
+							// 组装部分和成品部分的子项占"生产合计"的百分比
+							if(roundedProductionElec > 0) {
+								finalData.data[j][`month${i}_ratio`] = (Math.round(roundedItemElec * 10000 / roundedProductionElec) / 100) + "%";
+							}
+						}
+					}
+				}
+				
+				// 计算年度合计占比（先四舍五入）
+				const roundedTotalSum = Math.round(totalRow.sum_elec);
+				const roundedProductionSum = Math.round(productionRow.sum_elec || 0);
+				
+				for(let j=0; j<finalData.data.length-1; j++){
+					const itemName = finalData.data[j].elec_name;
+					const itemSum = finalData.data[j].sum_elec;
+					
+					if(itemSum == null || itemSum == undefined) continue;
+					
+					const roundedItemSum = Math.round(itemSum);
+					
+					// 判断该项应该占谁的百分比
+					if(itemName === '生产合计' || itemName === '辅助合计') {
+						// 生产合计和辅助合计占"合计电量"的百分比
+						if(roundedTotalSum > 0) {
+							finalData.data[j]["sum_ratio"] = (Math.round(roundedItemSum * 10000 / roundedTotalSum) / 100) + "%";
+						}
+					} else {
+						// 组装部分和成品部分的子项占"生产合计"的百分比
+						if(roundedProductionSum > 0) {
+							finalData.data[j]["sum_ratio"] = (Math.round(roundedItemSum * 10000 / roundedProductionSum) / 100) + "%";
+						}
+					}
+				}
+				
+				totalRow["sum_ratio"] = "100%";
+				
+				// ========= 获取公司总用电量（与动力实施课页面一致） =========
+				let companySql = "with company_data as ( \n"
+					+ "     select DATE_FORMAT(date, '%Y-%m-%d') as jDay, \n"
+					+ "            CASE WHEN no IN (1,12,16,17,20,26,51,52) THEN sum_elec ELSE 0 END as main_elec, \n"
+					+ "            CASE WHEN no = 230003 THEN sum_elec ELSE 0 END as bingshan_elec \n"
+					+ "     from sum_elec_group_by_day \n"
+					+ "     where date <= '"+enddate+"' \n"
+					+ "     AND date >= '"+startdate+"' \n"
+					+ "     and no in (1,12,16,17,20,26,51,52,230003) \n";
+				
+				// 如果当前日期在查询范围内，添加今日实时数据
+				if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+					companySql += "     union all \n"
+					+ "     SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+					+ "            SUM(CASE WHEN `NO` IN (1,12,16,17,20,26,51,52) THEN `d_elec` ELSE 0 END) AS main_elec, \n"
+					+ "            SUM(CASE WHEN `NO` = 230003 THEN `d_elec` ELSE 0 END) AS bingshan_elec \n"
+					+ "     FROM ( \n"
+					+ "         SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+					+ "         FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+					+ "         WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+					+ "                            DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+					+ "                            DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+					+ "             AND `NO` IN (1,12,16,17,20,26,51,52,230003) \n"
+					+ "             AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+ "         GROUP BY `NO` \n"
+					+ "     ) AS company_today \n";
+				}
+				
+				companySql += " ) \n"
+					+ " select (SUM(main_elec) - SUM(bingshan_elec)) as sum_elec \n"
+					+ " from company_data \n";
+				
+				console.info('公司总用电量SQL:', companySql);
+				var sum_elec_data = await sendSQL(companySql);
+				all_sum_elec = sum_elec_data.data && sum_elec_data.data.length > 0 ? sum_elec_data.data[0].sum_elec : 0;
+				
+				console.info('公司总用电量:', all_sum_elec);
+				
+				// 填充数据到新表格
+				fillData(finalData);
+				
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		$('#export').on('click', async function() {
+			try {
+				if (!currentData || !currentData.data) {
+					layer.msg('请先查询数据');
+					return;
+				}
+				
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				
+				// 生成表头数据（单行表头）
+				var dataArr = [];
+				//先动态添加表头
+				var colsData = {
+					category1:"项目"
+					,elec_name:""
+					,month1_elec:"1月份"
+					,month1_ratio:""
+					,month2_elec:"2月份"
+					,month2_ratio:""
+					,month3_elec:"3月份"
+					,month3_ratio:""
+					,month4_elec:"4月份"
+					,month4_ratio:""
+					,month5_elec:"5月份"
+					,month5_ratio:""
+					,month6_elec:"6月份"
+					,month6_ratio:""
+					,month7_elec:"7月份"
+					,month7_ratio:""
+					,month8_elec:"8月份"
+					,month8_ratio:""
+					,month9_elec:"9月份"
+					,month9_ratio:""
+					,month10_elec:"10月份"
+					,month10_ratio:""
+					,month11_elec:"11月份"
+					,month11_ratio:""
+					,month12_elec:"12月份"
+					,month12_ratio:""
+					,sum_elec:"合计"
+					,sum_ratio:"占比"
+				};
+				dataArr.push(colsData);
+				
+				// 从DOM中提取数据，包含层级结构
+				// 注意：合计电量、辅助合计、生产合计这3行的category1需要设置为项目名称本身
+				// 因为在Excel中A列和B列会合并显示同一个名称
+				const exportData = [
+					{ category1: '合计电量', name: '', key: 'total' },
+					{ category1: '辅助合计', name: '', key: 'elec_51' },
+					{ category1: '生产合计', name: '', key: 'elec_26' },
+					{ category1: '组装', name: '组装合计', key: 'elec_asm_total' },
+					{ category1: '组装', name: '1#柜', key: 'elec_17' },
+					{ category1: '组装', name: '2#柜', key: 'elec_20' },
+					{ category1: '组装', name: '凸焊机', key: 'elec_16' },
+					{ category1: '组装', name: '氢检', key: 'elec_hydrogen' },
+					{ category1: '成品', name: '成品合计', key: 'elec_prod_total' },
+					{ category1: '成品', name: 'GCS柜', key: 'elec_1' },
+					{ category1: '成品', name: '热水炉', key: 'elec_12' }
+				];
+				
+				// 辅助函数：从文本中提取纯数字（移除千分号）
+				function parseNumberFromCell(text) {
+					if (!text || text.trim() === '') return '';
+					// 移除千分号，然后转换为数字
+					const numStr = text.replace(/,/g, '').trim();
+					const num = parseFloat(numStr);
+					return isNaN(num) ? '' : num;
+				}
+				
+				exportData.forEach(item => {
+					let rowData = {
+						category1: item.category1,
+						elec_name: item.name
+					};
+					
+					// 判断是否是合计电量行
+					const isTotalRow = (item.key === 'total');
+					
+					// 提取12个月的数据
+					for (let m = 1; m <= 12; m++) {
+						const valCell = document.getElementById(`${item.key}_m${m}_val`);
+						const pctCell = document.getElementById(`${item.key}_m${m}_pct`);
+						
+						// 电量：转换为纯数字（移除千分号）
+						if (valCell && valCell.textContent) {
+							rowData[`month${m}_elec`] = parseNumberFromCell(valCell.textContent);
+						} else {
+							rowData[`month${m}_elec`] = '';
+						}
+						
+						// 占比：合计电量行不显示月度占比
+						if (isTotalRow) {
+							rowData[`month${m}_ratio`] = '';
+						} else {
+							rowData[`month${m}_ratio`] = pctCell ? pctCell.textContent : '';
+						}
+					}
+					
+					// 提取合计和占比
+					const totalCell = document.getElementById(`${item.key}_total`);
+					const totalPctCell = document.getElementById(`${item.key}_total_pct`);
+					
+					// 合计：转换为纯数字（移除千分号）
+					if (totalCell && totalCell.textContent) {
+						rowData.sum_elec = parseNumberFromCell(totalCell.textContent);
+					} else {
+						rowData.sum_elec = '';
+					}
+					
+					// 占比：保持原样
+					rowData.sum_ratio = totalPctCell ? totalPctCell.textContent : '';
+					
+					dataArr.push(rowData);
+				});
+				console.info('导出数据:', dataArr);
+				//拼接合并配置项
+				let mergeObj = [
+					// 表头：项目列占2列，每个月份占2列
+					['A1', 'B1'],  // 项目
+					['C1', 'D1'],  // 1月份
+					['E1', 'F1'],  // 2月份
+					['G1', 'H1'],  // 3月份
+					['I1', 'J1'],  // 4月份
+					['K1', 'L1'],  // 5月份
+					['M1', 'N1'],  // 6月份
+					['O1', 'P1'],  // 7月份
+					['Q1', 'R1'],  // 8月份
+					['S1', 'T1'],  // 9月份
+					['U1', 'V1'],  // 10月份
+					['W1', 'X1'],  // 11月份
+					['Y1', 'Z1'],  // 12月份
+					// 顶级行：项目列（A-B列）合并
+					['A2', 'B2'],  // 合计电量
+					['A3', 'B3'],  // 辅助合计
+					['A4', 'B4'],  // 生产合计
+					// 组装的大分类列（A列竖向合并，从第5行到第9行）
+					['A5', 'A9'],  // 组装（竖排，跨5行：组装合计+1#柜+2#柜+凸焊机+氢检）
+					// 成品的大分类列（A列竖向合并，从第10行到第12行）
+					['A10', 'A12'], // 成品（竖排，跨3行：成品合计+GCS柜+热水炉）
+					// 合计电量行：月份列合并（每月占2列，不显示占比）
+					['C2', 'D2'],//1月
+					['E2', 'F2'],//2月
+					['G2', 'H2'],//3月
+					['I2', 'J2'],//4月
+					['K2', 'L2'],//5月
+					['M2', 'N2'],//6月
+					['O2', 'P2'],//7月
+					['Q2', 'R2'],//8月
+					['S2', 'T2'],//9月
+					['U2', 'V2'],//10月
+					['W2', 'X2'],//11月
+					['Y2', 'Z2'] //12月
+				];
+				
+				var mergeConf = excel.makeMergeConfig(mergeObj);
+				
+				//拼接列宽配置项
+				// 【1720x1080适配】列宽调整，节省空间
+				let colLengthObj = {
+					'A': 45 * 0.75,   // 大分类列
+					'B': 80 * 0.75,   // 项目名称列
+					'AA': 80 * 0.75,  // 合计列
+					'AB': 75 * 0.75   // 占比列
+				};
+				// 为12个月份设置列宽（每月2列，从C列开始）
+				for(let i = 0; i < 24; i++) {
+					let col = String.fromCharCode(67 + i); // C, D, E, F...
+					colLengthObj[col] = 80 * 0.75;  // 电量和占比列
+				}
+				
+				var colConf = excel.makeColConfig(colLengthObj, 90);
+				
+				// 设置单元格样式
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					// 处理数字类型（电量值）
+					if(Object.prototype.toString.call(cell).slice(8,-1) === "Number"){
+						return {
+							v: cell,
+							t: 'n',  // 数字类型
+							s: newCell.s
+						};
+					}
+					// 处理字符串类型（包括中文、百分比等）
+					if(typeof cell === 'string' && cell !== ''){
+						return {
+							v: cell,
+							t: 's',  // 字符串类型
+							s: newCell.s
+						};
+					}
+					return newCell;
+				});
+				
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '组装二课电量占比及统计_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						sheet1: {
+							'!merges': mergeConf,
+							'!cols': colConf
+						}
+					}
+				});
+				
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+		}
+	
+		// ========= 页面加载完成后自动触发查询 =========
+		setTimeout(function() {
+			console.log('自动触发查询...');
+			$('#search').click();  // <-- 【新增】页面加载完成后自动触发查询
+		}, 800);
+	});
+	
+	</script>
+	
+</body>
+</html>

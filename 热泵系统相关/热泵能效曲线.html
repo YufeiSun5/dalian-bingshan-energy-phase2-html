@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+    <title>热泵能效曲线分析</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script src="./heatpump-config.js"></script>
+    
+    <style>
+        /* ========== 1. 严格复用您提供的基础样式 ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        /* 强制全局不换行 */
+        .nowrap-style {
+            white-space: nowrap !important;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 (复用您的样式) */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 50px; /* 恢复标准高度 */
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .toolbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toolbar-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff7ca;
+            white-space: nowrap;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 控件组样式 (严格横向排列：标签在左，输入框在右) */
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* 标签和输入框的间距 */
+        }
+
+        /* 日期范围组特殊样式 */
+        .control-group input[type="text"][readonly] {
+            cursor: pointer;
+        }
+
+        .control-group label {
+            color: #b9d3f4;
+            white-space: nowrap;
+        }
+
+        .control-group input, 
+        .control-group select {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0); /* 保持您的透明边框设定，或改为 #3c8ce7 */
+            color: white;
+            padding: 0 10px; /* 调整padding适应高度 */
+            border-radius: 4px;
+            height: 28px;    /* 固定高度 */
+            line-height: 28px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .control-group select {
+            border: 1px solid #3c8ce7; /* 下拉框给个边框明显一点 */
+            width: 150px;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            border-color: #409eff;
+        }
+
+        /* 切换按钮组 (复用 .time-type-btn 样式) */
+        .switch-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 10px;
+        }
+
+        .switch-btn, .date-mode-btn {
+            padding: 5px 14px;
+            border: 1px solid #2a6dc8;
+            background: transparent;
+            color: #b9d3f4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .switch-btn:hover, .date-mode-btn:hover {
+            background: rgba(42, 109, 200, 0.3);
+            color: #fff;
+        }
+
+        .switch-btn.active, .date-mode-btn.active {
+            background: #1e88e5;
+            border-color: #1e88e5;
+            color: white;
+        }
+
+        /* 按钮样式 (Layui 覆盖) */
+        .layui-btn {
+            height: 28px;
+            line-height: 28px;
+            padding: 0 15px;
+            border-radius: 2px;
+            border: 1px solid transparent;
+            background-color: #16baaa;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .layui-btn:hover { background-color: #0e9688; }
+        .layui-bg-orange { background-color: #ffb800 !important; }
+        .layui-bg-orange:hover { background-color: #ffa500 !important; }
+
+        /* ========== 内容区域布局 ========== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* 图表区 (上) */
+        .charts-section {
+            flex: 7; /* 70% */
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .chart-body {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 表格区 (下) */
+        .tables-section {
+            flex: 3; /* 30% */
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .table-scroll {
+            flex: 1;
+            overflow: auto; /* 允许横向和纵向滚动 */
+            position: relative;
+        }
+
+        /* 表格样式 (完全复用) */
+        .data-table {
+            min-width: 100%; /* 最小宽度100%，但可以更宽 */
+            border-collapse: collapse;
+            table-layout: auto; /* 改为auto，允许根据内容自动调整宽度 */
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #3c8ce7;
+            padding: 8px 6px;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap; /* 核心：不换行 */
+            min-width: 60px; /* 设置最小宽度，确保可读性 */
+        }
+
+        .data-table thead th {
+            background: #0c6ed3;
+            color: #fff;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* 第一列固定（设备名称列）*/
+        .data-table td:first-child, .data-table th:first-child {
+            position: sticky;
+            left: 0;
+            background: #0c6ed3;
+            z-index: 12;
+            border-right: 2px solid #3c8ce7;
+            min-width: 150px;
+            max-width: 200px;
+        }
+        
+        /* 表头第一列固定在左上角，最高优先级 */
+        .data-table thead th:first-child {
+            position: sticky;
+            left: 0;
+            top: 0;
+            z-index: 15;
+            background: #0c6ed3;
+        }
+        
+        .data-table tbody td:first-child {
+            background: #1e4e89;
+        }
+        
+        .data-table tbody tr:hover td:first-child {
+            background: rgba(48, 127, 190, 0.91);
+        }
+
+        .data-table tbody td { background: #1e4e89; color: #fff; }
+        .data-table tbody tr:hover td { background: rgba(48, 127, 190, 0.91); }
+
+        /* 平均值列固定在右侧 */
+        .col-avg {
+            position: sticky;
+            right: 0;
+            background: #2e4e7e !important;
+            color: #fff7ca;
+            font-weight: bold;
+            min-width: 80px;
+            z-index: 11;
+            border-left: 2px solid #3c8ce7;
+        }
+        
+        .data-table thead th.col-avg {
+            background: #0c6ed3 !important;
+            z-index: 13;
+        }
+        
+        .data-table tbody tr:hover td.col-avg {
+            background: #3e5e8e !important;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%); border-radius: 6px; }
+        ::-webkit-scrollbar-track { background: #1d386f; }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar nowrap-style">
+            <div class="toolbar-left">
+                <div class="switch-group">
+                    <button class="switch-btn active" data-mode="equipment">按设备</button>
+                    <button class="switch-btn" data-mode="time">按时间</button>
+                </div>
+
+                <div class="switch-group" style="margin-left: 10px;">
+                    <button class="date-mode-btn active" data-datemode="day">日</button>
+                    <button class="date-mode-btn" data-datemode="month">月</button>
+                </div>
+
+                <div class="control-group" id="day-date-group">
+                    <label>日期范围</label>
+                    <input type="text" id="start-date" placeholder="开始日期" readonly style="width: 110px;">
+                    <span style="color: #b9d3f4; margin: 0 5px;">-</span>
+                    <input type="text" id="end-date" placeholder="结束日期" readonly style="width: 110px;">
+                </div>
+
+                <div class="control-group" id="month-date-group" style="display: none;">
+                    <label>月份范围</label>
+                    <input type="text" id="start-month" placeholder="开始月份" readonly style="width: 110px;">
+                    <span style="color: #b9d3f4; margin: 0 5px;">-</span>
+                    <input type="text" id="end-month" placeholder="结束月份" readonly style="width: 110px;">
+                </div>
+            </div>
+
+            <div class="toolbar-center">
+                <span class="toolbar-title" id="page-title">热泵能效曲线分析</span>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="control-group" style="margin-right: 15px;">
+                    <label>机组选择</label>
+                    <select id="unit-select">
+                        <option value="all">全部机组 (默认)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" style="margin-right: 15px;">
+                    <label>参数</label>
+                    <select id="param-select" style="width: 110px;">
+                        <option value="cop">能效COP</option>
+                        <option value="power">耗电量</option>
+                        <option value="heat">热量</option>
+                    </select>
+                </div>
+                
+                <button type="button" id="btn-search" class="layui-btn">
+                    <i class="layui-icon layui-icon-search"></i> 查询
+                </button>
+                <button type="button" id="btn-export" class="layui-btn layui-bg-orange">
+                    <i class="layui-icon layui-icon-export"></i> 导出
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="charts-section">
+                <div id="main-chart" class="chart-body"></div>
+            </div>
+
+            <div class="tables-section">
+                <div class="table-scroll">
+                    <table class="data-table" id="analysis-table"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$; 
+
+        var currentMode = 'equipment'; 
+        var currentDateMode = 'day';  // 日期模式：day | month
+
+        // 日期范围选择器
+        var now = new Date();
+        
+        laydate.render({
+            elem: '#start-date',
+            type: 'date',
+            format: 'yyyy-MM-dd',
+            value: now,  // 默认今天
+            theme: '#1e88e5'
+        });
+
+        laydate.render({
+            elem: '#end-date',
+            type: 'date',
+            format: 'yyyy-MM-dd',
+            value: now,  // 默认今天
+            theme: '#1e88e5'
+        });
+
+        // 月份范围选择器
+        laydate.render({
+            elem: '#start-month',
+            type: 'month',
+            format: 'yyyy-MM',
+            value: now,  // 默认当月
+            theme: '#1e88e5'
+        });
+
+        laydate.render({
+            elem: '#end-month',
+            type: 'month',
+            format: 'yyyy-MM',
+            value: now,  // 默认当月
+            theme: '#1e88e5'
+        });
+
+        // 初始化
+        if(window.HEATPUMP_CONFIG) {
+            window.HEATPUMP_CONFIG.init('main-chart');
+            updateControls();
+            loadData();
+        }
+
+        // 切换查询模式（按设备/按时间）
+        $('.switch-btn').on('click', function() {
+            var mode = $(this).data('mode');
+            if(mode === currentMode) return;
+
+            $('.switch-btn').removeClass('active');
+            $(this).addClass('active');
+            currentMode = mode;
+
+            updateControls();
+            loadData();
+        });
+
+        // 切换日期模式（日/月）
+        $('.date-mode-btn').on('click', function() {
+            var dateMode = $(this).data('datemode');
+            if(dateMode === currentDateMode) return;
+
+            $('.date-mode-btn').removeClass('active');
+            $(this).addClass('active');
+            currentDateMode = dateMode;
+
+            // 切换日期选择器显示
+            if(currentDateMode === 'day') {
+                $('#day-date-group').show();
+                $('#month-date-group').hide();
+            } else {
+                $('#day-date-group').hide();
+                $('#month-date-group').show();
+            }
+
+            loadData();
+        });
+
+        // 状态更新
+        function updateControls() {
+            var unitSelect = $('#unit-select');
+            var title = $('#page-title');
+
+            if(currentMode === 'equipment') {
+                unitSelect.html('<option value="all">全部机组 (默认)</option>');
+                unitSelect.prop('disabled', true);
+                unitSelect.css('color', '#aaa'); // 视觉禁用
+                title.text('热泵能效对比 (多设备)');
+            } else {
+                unitSelect.prop('disabled', false);
+                unitSelect.css('color', '#fff'); // 恢复颜色
+                unitSelect.html(`
+                    <option value="420001">大办_天加01</option>
+                    <option value="420002">大办_天加02</option>
+                    <option value="420003">电机_冷机</option>
+                    <option value="420004">电机_欧亚</option>
+                    <option value="420008">研发_欧亚1</option>
+                    <option value="420006">研发_欧亚2</option>
+                    <option value="420007">研发_冷机1</option>
+                    <option value="420005">研发_冷机2</option>
+                    <option value="420009">大办_雅士</option>
+                    <option value="420010">大办_冷机</option>
+                    <option value="420011">大办_欧亚</option>
+                    <option value="420012">大办_冰山</option>
+                    <option value="420013">电机_扬子1</option>
+                    <option value="420014">电机_扬子2</option>
+                    <option value="420015">电机_冰山</option>
+                `);
+                title.text('热泵运行趋势 (多日期)');
+            }
+        }
+
+        $('#btn-search').click(function() { loadData(); });
+
+        // 参数切换监听
+        $('#param-select').on('change', function() {
+            loadData();
+        });
+
+        // 获取查询参数
+        function getQueryParams() {
+            var startDate, endDate;
+            
+            if (currentDateMode === 'day') {
+                // 日模式：使用日期范围
+                startDate = $('#start-date').val();
+                endDate = $('#end-date').val();
+            } else {
+                // 月模式：使用月份范围
+                var startMonth = $('#start-month').val(); // 格式：yyyy-MM
+                var endMonth = $('#end-month').val();     // 格式：yyyy-MM
+                
+                if (startMonth && endMonth) {
+                    // 开始月份的第一天
+                    startDate = startMonth + '-01';
+                    
+                    // 结束月份的最后一天
+                    var year = parseInt(endMonth.substring(0, 4));
+                    var month = parseInt(endMonth.substring(5, 7));
+                    var lastDay = new Date(year, month, 0).getDate();
+                    endDate = endMonth + '-' + (lastDay < 10 ? '0' + lastDay : lastDay);
+                }
+            }
+            
+            var selectedUnit = $('#unit-select').val();
+            var selectedParam = $('#param-select').val();
+
+            return {
+                startDate: startDate,
+                endDate: endDate,
+                unit: selectedUnit,
+                param: selectedParam,
+                mode: currentMode,
+                dateMode: currentDateMode  // 新增：日期模式
+            };
+        }
+
+        async function loadData() {
+            var params = getQueryParams();
+            
+            // 验证日期范围
+            if (!params.startDate || !params.endDate) {
+                layer.msg('请选择完整的日期范围');
+                return;
+            }
+
+            var idx = layer.load(1, {shade: 0.1});
+            
+            try {
+                var data;
+                if(currentMode === 'equipment') {
+                    data = await window.HEATPUMP_CONFIG.getMockData_ByEquipment(params);
+                } else {
+                    data = await window.HEATPUMP_CONFIG.getMockData_ByTime(params);
+                }
+                
+                // 传递参数类型到图表更新函数
+                window.HEATPUMP_CONFIG.updateChart(data, params.param);
+                renderTable(data, params.param);
+            } catch(error) {
+                console.error('加载数据失败:', error);
+                layer.msg('加载数据失败: ' + error.message);
+            } finally {
+                layer.close(idx);
+            }
+        }
+
+        function renderTable(data, paramType) {
+            paramType = paramType || 'cop';
+            var axis = data.axis;
+            var series = data.series;
+            var html = '';
+            
+            html += '<thead><tr><th>对象 / 时间</th>';
+            axis.forEach(function(t) { html += '<th>' + t + '</th>'; });
+            html += '<th class="col-avg">平均值</th></tr></thead><tbody>';
+
+            series.forEach(function(item) {
+                html += '<tr>';
+                html += `<td style="text-align:left; padding-left:10px;">
+                            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${item.color};margin-right:6px;"></span>
+                            ${item.name}
+                          </td>`;
+                var sum = 0;
+                var count = 0;
+                item.data.forEach(function(val) {
+                    // 只有非空字符串且可以转换为数字的才计入统计
+                    if (val !== null && val !== undefined && val !== '' && !isNaN(parseFloat(val))) {
+                        sum += parseFloat(val);
+                        count++;
+                    }
+                    // 空值显示为 '-'
+                    var displayVal = (val !== null && val !== undefined && val !== '') ? val : '-';
+                    html += `<td>${displayVal}</td>`;
+                });
+                var decimals = (paramType === 'power' || paramType === 'heat') ? 1 : 2;
+                var avg = count > 0 ? (sum / count).toFixed(decimals) : '-';
+                html += `<td class="col-avg">${avg}</td>`;
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            $('#analysis-table').html(html);
+        }
+
+        window.addEventListener('resize', () => window.HEATPUMP_CONFIG.resize());
+    });
+    </script>
+</body>
+</html>

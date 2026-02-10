@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各区域用电量及占比统计</title>
+    <!-- ECharts 核心库 -->
+    <script type="text/javascript" src="js/echarts.js"></script>
+    <style>
+        /* --- 全局与基础样式 --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background-color: #0f266c; /* 深蓝色背景，定义项目主色调 */
+            color: #d0d2e0; /* 浅灰色文字，保证在深色背景上的可读性 */
+        }
+
+        /* --- 主要布局容器 --- */
+        /* dashboard-container: 整个页面的最外层容器，负责整体布局 */
+        .dashboard-container {
+            display: flex; /* 启用Flexbox布局 */
+            flex-direction: column; /* 子元素垂直排列（表格卡片在上，图表容器在下） */
+            height: 100%; /* 占满整个视口高度 */
+            padding: 15px; /* 页面内边距 */
+            box-sizing: border-box; /* padding不计入总宽高，便于布局计算 */
+            gap: 15px; /* 设置子元素（卡片）之间的垂直间距 */
+        }
+
+        /* card-block: 所有卡片（表格、图表）的通用样式 */
+        .card-block {
+            background-color: #1d386f; /* 卡片背景色，比主背景稍亮 */
+            border: 1px solid #2a6dc8; /* 卡片边框，增加层次感 */
+            border-radius: 5px; /* 圆角 */
+            display: flex; /* 启用Flexbox，用于卡片内部布局 */
+            flex-direction: column; /* 卡片内部元素（头部、内容区）垂直排列 */
+            overflow: hidden; /* 隐藏超出卡片范围的内容，确保圆角效果 */
+        }
+
+        /* table-block: 表格卡片的特定样式 */
+        .table-block {
+            flex: 6; /* 在垂直方向上占据6份空间，与图表区形成6:4的比例 */
+        }
+
+        /* --- 卡片头部样式 --- */
+        .card-header {
+            background-color: #29498e; /* 头部背景色，更深以示区分 */
+            color: #fff; /* 头部文字为白色 */
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a6dc8;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0; /* 防止在flex布局中被压缩，保持固定高度 */
+            display: flex;
+            justify-content: space-between; /* 标题和控件两端对齐 */
+            align-items: center; /* 垂直居中对齐 */
+        }
+
+        .card-header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        /* card-header-icon: 标题前的装饰性小竖条 */
+        .card-header-icon {
+            width: 5px;
+            height: 20px;
+            background-color: #5470c6;
+            margin-right: 10px;
+        }
+        
+        .main-title {
+            font-size: 16px;
+        }
+
+        /* header-controls: 头部右侧控件的容器 */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 控件之间的间距 */
+        }
+
+        .unit-label {
+            font-size: 14px;
+            color: #b9d3f4;
+            font-weight: normal;
+        }
+
+        /* refresh-button: 刷新按钮样式 */
+        .refresh-button {
+            background: none;
+            border: 1px solid #5470c6;
+            color: #d0d2e0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%; /* 圆形按钮 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease; /* 平滑过渡效果 */
+            padding: 0;
+            margin-left: 10px; /* 与标题的间距 */
+        }
+        .refresh-button:hover {
+            background-color: #5470c6;
+            color: #fff;
+        }
+        .refresh-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .refresh-button svg {
+            width: 16px;
+            height: 16px;
+        }
+        /* loading: 刷新按钮加载中的旋转动画 */
+        .refresh-button.loading svg {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- 表格区域样式 --- */
+        .table-container {
+            flex-grow: 1; /* 占据卡片内除了头部的所有剩余空间 */
+            overflow: hidden; /* 禁用滚动条，行高由JS控制 */
+            padding: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            color: #b9d3f4;
+            text-align: center;
+            table-layout: fixed; /* 固定表格布局，让JS可以精确控制列宽（虽然这里没设置）和行高 */
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #2a6dc8;
+            padding: 0 4px; /* 移除垂直padding，行高完全由JS的height属性控制 */
+            white-space: nowrap; /* 防止单元格内文字换行 */
+            vertical-align: middle; /* 单元格内容垂直居中 */
+        }
+
+        /* thead th: 表头单元格的粘性定位，实现固定表头效果 */
+        .data-table thead th {
+            background-color: #18589b;
+            color: #ffffff;
+            font-weight: 600;
+            position: sticky; /* 关键属性：开启粘性定位 */
+            top: 0; /* 粘在容器顶部 */
+            z-index: 10; /* 层级更高，确保在滚动内容之上 */
+            height: 28px; /* 给表头一个固定高度，方便JS计算 */
+        }
+        .data-table thead tr:last-child th {
+             height: 24px;
+        }
+
+        /* label-col: 第一列（月份/合计）的粘性定位，实现固定列效果 */
+        .data-table .label-col {
+            position: sticky; /* 关键属性：开启粘性定位 */
+            left: 0; /* 粘在容器左侧 */
+            background-color: #18589b; /* 需要重新定义背景色，因为粘性定位会脱离普通文档流 */
+            font-weight: bold;
+            color: #ffffff;
+            z-index: 5; /* 层级比普通单元格高 */
+        }
+        
+        /* 左上角固定的单元格（月份表头）需要最高的层级 */
+        .data-table thead th:first-child {
+            left: 0;
+            z-index: 15;
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background-color: #162c58; /* 偶数行背景色 */
+        }
+        
+        .data-table .clickable-row:hover {
+            background-color: #2b5597; /* 鼠标悬停高亮 */
+            cursor: pointer;
+        }
+        
+        .data-table .active-row {
+            background-color: #3b74c4 !important; /* 当前激活行高亮，用!important确保覆盖其他样式 */
+        }
+
+        .data-table .highlight-col {
+            background-color: #695d31; /* “损耗”列的特殊背景色 */
+        }
+        .data-table .pending-row td {
+            background-color: #173842; /* “待发生”行的背景色 */
+            color: #a0a0a0;
+        }
+
+        .data-table .total-row {
+            font-weight: bold; /* “合计”行加粗 */
+        }
+        
+        /* --- 图表区域样式 --- */
+        .charts-container {
+            display: flex;
+            flex: 4; /* 在垂直方向上占据4份空间，与表格区形成6:4的比例 */
+            gap: 15px; /* 两个图表卡片之间的水平间距 */
+        }
+        
+        .chart-block {
+            flex-grow: 1; /* 每个图表卡片都会成长以填充可用空间 */
+            min-height: 0; /* 在flex布局中，这是防止子元素溢出的重要设置 */
+        }
+        
+        /* 设置两个图表卡片的宽度比例为3:2 */
+        .bar-chart-wrapper { flex-basis: 60%; flex: 3; } /* 占据3份宽度 */
+        .pie-chart-wrapper { flex-basis: 40%; flex: 2; } /* 占据2份宽度 */
+        
+        .chart-content {
+            flex-grow: 1; /* 图表本身占据卡片内除了头部的所有剩余空间 */
+        }
+        
+        /* 响应式布局：当屏幕宽度小于992px时，图表垂直排列 */
+        @media (max-width: 992px) {
+            .charts-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- 表格卡片 -->
+    <div class="card-block table-block">
+        <div class="card-header">
+            <div class="card-header-title">
+                <div class="card-header-icon"></div>
+                <span class="main-title">各区域用电量及占比统计</span>
+                <button id="refresh-btn" class="refresh-button" title="刷新数据">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></svg>
+                </button>
+            </div>
+            <div class="header-controls">
+                <span class="unit-label">电量单位（千瓦时）</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <!-- 表格头部是固定的HTML结构 -->
+                    <tr>
+                        <th rowspan="2">月份</th>
+                        <th colspan="2">工厂</th><th colspan="2">设备</th><th colspan="2">辅助</th>
+                        <th colspan="2">开发本部</th><th colspan="2">经营企划部</th><th colspan="2">品质本部</th>
+                        <th colspan="2">营业本部</th><th colspan="2">动力设施课</th><th colspan="2" class="highlight-col">损耗</th>
+                        <th rowspan="2">公司总用电量</th>
+                    </tr>
+                    <tr>
+                        <th>用电量</th><th>占比</th><th>用电量</th><th>占比</th><th>用电量</th><th>占比</th>
+                        <th>用电量</th><th>占比</th><th>用电量</th><th>占比</th><th>用电量</th><th>占比</th>
+                        <th>用电量</th><th>占比</th><th>用电量</th><th>占比</th>
+                        <th class="highlight-col">损耗</th><th class="highlight-col">占比</th>
+                    </tr>
+                </thead>
+                <!-- 表格主体内容将由JS动态填充到这里 -->
+                <tbody id="data-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="charts-container">
+        <!-- 柱状图卡片 -->
+        <div class="card-block chart-block bar-chart-wrapper">
+            <div class="card-header" id="bar-chart-header"></div>
+            <div id="barChart" class="chart-content"></div>
+        </div>
+        <!-- 饼图卡片 -->
+        <div class="card-block chart-block pie-chart-wrapper">
+            <div class="card-header" id="pie-chart-header"></div>
+            <div id="pieChart" class="chart-content"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 全局变量定义 ---
+    let barChartInstance, pieChartInstance; // ECharts实例，用于后续的图表操作
+    let globalData = {}; // 用于存储从API获取并处理后的数据，避免重复请求和构建
+
+    // --- 数据获取与处理模块 ---
+
+    /**
+     * @description 发送SQL查询到后端API。
+     * @param {string} strsql - 要执行的SQL语句。
+     * @returns {Promise<object>} - API返回的数据。如果请求失败，返回一个空结构以防止后续代码崩溃。
+     * @example
+     * const result = await sendSQL("SELECT * FROM users");
+     */
+    async function sendSQL(strsql) {
+        try {
+            // 注意：这里的IP地址是硬编码的，在生产环境中可能需要配置为可变的。
+            const res = await fetch('http://192.168.10.103:8004/api/sql/run-sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ sql: strsql })
+            });
+            if (!res.ok) throw new Error(`API request failed with status ${res.status}`);
+            return await res.json();
+        } catch (err) {
+            console.error('sendSQL Error:', err);
+            return { data: [] };
+        }
+    }
+
+    /**
+     * @description 从API获取数据，并将其处理成仪表盘所需的标准格式。
+     * @returns {Promise<object>} - 格式化后的仪表盘数据对象，包含 categories, monthlyData, pendingMonths。
+     */
+    async function fetchAndProcessData() {
+        // SQL查询：这是整个仪表盘的数据核心。
+        // 它通过子查询按月份和编号(no)分组计算电量，然后在主查询中通过CASE WHEN实现数据透视，将不同编号的电量聚合到对应的分类中。
+        const sql = `
+            SELECT sub.month,
+                SUM(CASE WHEN sub.no IN (1,2) THEN sub.total_elec ELSE 0 END) AS factory_elec,
+                SUM(CASE WHEN sub.no IN (3,4) THEN sub.total_elec ELSE 0 END) AS equipment_elec,
+                SUM(CASE WHEN sub.no IN (5,6) THEN sub.total_elec ELSE 0 END) AS auxiliary_elec,
+                SUM(CASE WHEN sub.no IN (7,8) THEN sub.total_elec ELSE 0 END) AS dev_elec,
+                SUM(CASE WHEN sub.no IN (9,10) THEN sub.total_elec ELSE 0 END) AS planning_elec,
+                SUM(CASE WHEN sub.no IN (11,12) THEN sub.total_elec ELSE 0 END) AS quality_elec,
+                SUM(CASE WHEN sub.no IN (15,16) THEN sub.total_elec ELSE 0 END) AS sales_elec,
+                SUM(CASE WHEN sub.no IN (17,18) THEN sub.total_elec ELSE 0 END) AS power_elec,
+                0 AS loss_elec /* 根据需求，损耗直接设为0 */
+            FROM (
+                SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                FROM sum_elec_group_by_day
+                WHERE YEAR(\`date\`) = YEAR(CURDATE())
+                GROUP BY no, MONTH(\`date\`)
+            ) AS sub
+            GROUP BY sub.month
+            ORDER BY sub.month
+        `.trim();
+
+        const apiResult = await sendSQL(sql);
+        const rawData = apiResult.data || [];
+
+        // 定义API返回的字段名到我们前端展示的中文名的映射关系。
+        // 修改这里的映射关系可以改变表格和图表中的分类名称。
+        const categoryMap = { factory_elec: '工厂', equipment_elec: '设备', auxiliary_elec: '辅助', dev_elec: '开发本部', planning_elec: '经营企划部', quality_elec: '品质本部', sales_elec: '营业本部', power_elec: '动力设施课', loss_elec: '损耗' };
+        
+        const categories = Object.values(categoryMap);
+        const allMonths = Array.from({ length: 12 }, (_, i) => `${i + 1}月`);
+        const processedMonths = new Set();
+
+        // 将API返回的扁平数据转换为按月份组织的结构化数据。
+        const monthlyData = rawData.map(item => {
+            const monthStr = `${item.month}月`;
+            processedMonths.add(monthStr);
+            const values = {};
+            for (const apiKey in categoryMap) {
+                // 确保值为数字，null或undefined转为0，防止计算错误。
+                values[categoryMap[apiKey]] = Number(item[apiKey]) || 0;
+            }
+            return { month: monthStr, values };
+        });
+
+        // 计算哪些月份没有数据，用于在表格中显示“待发生”。
+        const pendingMonths = allMonths.filter(m => !processedMonths.has(m));
+
+        return { categories, monthlyData, pendingMonths };
+    }
+
+    // --- 界面更新与交互模块 ---
+
+    /**
+     * @description 动态调整表格行高，使其填满容器。
+     * 这是实现自适应行高的核心函数，通过JS计算来弥补CSS的不足。
+     */
+    function adjustTableRowHeight() {
+        const tableContainer = document.querySelector('.table-container');
+        const tableHeader = tableContainer.querySelector('thead');
+        const tableBody = tableContainer.querySelector('tbody');
+        if (!tableContainer || !tableHeader || !tableBody) return;
+
+        const allRows = tableBody.querySelectorAll('tr');
+        if (allRows.length === 0) return;
+
+        // 计算tbody可用的垂直空间
+        const containerHeight = tableContainer.clientHeight;
+        const headerHeight = tableHeader.offsetHeight;
+        const availableBodyHeight = containerHeight - headerHeight - 20; // 减去容器的上下padding
+
+        if (availableBodyHeight <= 0) return;
+
+        // 计算每行的平均高度
+        const heightPerRow = availableBodyHeight / allRows.length;
+        
+        // 设置一个最小行高，防止在容器过小时内容被过度压缩。
+        const minHeight = 24; 
+        const finalHeight = Math.max(heightPerRow, minHeight);
+
+        // 应用计算出的高度到每一行
+        allRows.forEach(row => { row.style.height = `${finalHeight}px`; });
+    }
+
+    /**
+     * @description 核心状态更新函数。仅更新高亮和图表，不重新构建DOM，以避免闪烁。
+     * @param {string} activeIdentifier - 当前激活的标识符 ('6月' 或 '合计')。
+     */
+    function updateDashboard(activeIdentifier) {
+        // 1. 高效更新高亮行：仅切换CSS类，而不是重建整个表格。
+        const tableBody = document.getElementById('data-table-body');
+        const allClickableRows = tableBody.querySelectorAll('.clickable-row');
+        allClickableRows.forEach(row => {
+            // 使用 `dataset` 来判断是否为当前点击的行。
+            row.classList.toggle('active-row', row.dataset.identifier === activeIdentifier);
+        });
+
+        // 2. 根据标识符准备数据并更新图表。
+        if (activeIdentifier === '合计') {
+            // 如果是'合计'，则累加所有月份的数据。
+            const totalValues = globalData.monthlyData.reduce((acc, entry) => {
+                for (const cat in entry.values) acc[cat] = (acc[cat] || 0) + entry.values[cat];
+                return acc;
+            }, {});
+            updateCharts('合计', totalValues, globalData.categories);
+        } else {
+            // 如果是具体月份，则查找对应月份的数据。
+            const chartDataEntry = globalData.monthlyData.find(d => d.month === activeIdentifier);
+            if (chartDataEntry) updateCharts(chartDataEntry.month, chartDataEntry.values, globalData.categories);
+        }
+    }
+
+    /**
+     * @description 仅在页面加载或刷新时执行一次，用于构建表格的DOM结构和绑定事件。
+     * @param {object} data - 全局数据对象。
+     */
+    function buildTable(data) {
+        const { categories, monthlyData, pendingMonths } = data;
+        const tableBody = document.getElementById('data-table-body');
+        tableBody.innerHTML = ''; 
+        const totals = categories.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
+        let grandTotal = 0;
+
+        // 遍历已发生月份的数据，创建行
+        monthlyData.forEach(entry => {
+            const row = document.createElement('tr');
+            row.className = 'clickable-row';
+            row.dataset.identifier = entry.month; // 将月份存入dataset，用于点击时识别
+            row.addEventListener('click', () => updateDashboard(entry.month)); // 绑定点击事件
+
+            const monthTotal = Object.values(entry.values).reduce((sum, val) => sum + val, 0);
+            row.innerHTML += `<td class="label-col">${entry.month}</td>`;
+            categories.forEach(cat => {
+                const value = entry.values[cat] || 0;
+                const percentage = monthTotal > 0 ? (value / monthTotal * 100).toFixed(2) + '%' : '0.00%';
+                row.innerHTML += `<td class="${cat === '损耗' ? 'highlight-col' : ''}">${value.toLocaleString()}</td><td class="${cat === '损耗' ? 'highlight-col' : ''}">${percentage}</td>`;
+                totals[cat] += value;
+            });
+            row.innerHTML += `<td>${monthTotal.toLocaleString()}</td>`;
+            tableBody.appendChild(row);
+            grandTotal += monthTotal;
+        });
+
+        // 创建“待发生”的行
+        pendingMonths.forEach(month => {
+            const row = document.createElement('tr');
+            row.className = 'pending-row';
+            row.innerHTML = `<td class="label-col">${month}</td><td colspan="19">待发生</td>`;
+            tableBody.appendChild(row);
+        });
+
+        // 创建“合计”行
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'total-row clickable-row';
+        totalRow.dataset.identifier = '合计';
+        totalRow.addEventListener('click', () => updateDashboard('合计'));
+        totalRow.innerHTML = `<td class="label-col">合计</td>`;
+        categories.forEach(cat => {
+            const value = totals[cat];
+            const percentage = grandTotal > 0 ? (value / grandTotal * 100).toFixed(2) + '%' : '0.00%';
+            totalRow.innerHTML += `<td class="${cat === '损耗' ? 'highlight-col' : ''}">${value.toLocaleString()}</td><td class="${cat === '损耗' ? 'highlight-col' : ''}">${percentage}</td>`;
+        });
+        totalRow.innerHTML += `<td>${grandTotal.toLocaleString()}</td>`;
+        tableBody.appendChild(totalRow);
+    }
+
+    /**
+     * @description 更新两个ECharts图表。
+     * @param {string} identifier - 当前图表的标识符 ('6月' 或 '合计')。
+     * @param {object} values - 当前要展示的数据。
+     * @param {string[]} allCategories - 全部分类名称。
+     */
+    function updateCharts(identifier, values, allCategories) {
+        const isTotal = identifier === '合计';
+        const barTitle = `各区域${identifier}${isTotal ? '用电量' : '份'}`;
+        const pieTitle = `${identifier}${isTotal ? '用电' : '份各区域用电'}占比`;
+
+        // 动态更新图表标题
+        document.getElementById('bar-chart-header').innerHTML = `<div class="card-header-title"><div class="card-header-icon"></div><span>${barTitle}</span></div>`;
+        document.getElementById('pie-chart-header').innerHTML = `<div class="card-header-title"><div class="card-header-icon"></div><span>${pieTitle}</span></div>`;
+
+        // 从图表数据中排除 "损耗"
+        const chartCategories = allCategories.filter(cat => cat !== '损耗');
+        const colors = ['#5470c6', '#ee6666', '#91cc75', '#fac858', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'];
+        const barChartData = chartCategories.map((cat, i) => ({ value: values[cat] || 0, itemStyle: { color: colors[i % colors.length] } }));
+        const pieChartData = chartCategories.map(cat => ({ name: cat, value: values[cat] || 0 }));
+        
+        // 为柱状图X轴标签前的彩色方块准备样式
+        const richStyles = {};
+        chartCategories.forEach((cat, i) => { richStyles[`c${i}`] = { backgroundColor: colors[i % colors.length], height: 10, width: 10, borderRadius: 3, lineHeight: 10 }; });
+
+        // 柱状图配置项
+        const barOption = { backgroundColor: 'transparent', tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, legend: { show: false }, grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true }, xAxis: [{ type: 'category', data: chartCategories, axisLabel: { color: '#ccc', interval: 0, rotate: 0, formatter: (v, i) => `{c${i}|}  ${v}`, rich: richStyles }, axisTick: { alignWithLabel: true } }], yAxis: [{ type: 'value', name: '电量单位 (千瓦时)', nameTextStyle: { color: '#ccc', padding: [0, 0, 0, 80] }, axisLabel: { color: '#ccc' }, splitLine: { lineStyle: { type: 'dashed', color: 'rgba(255,255,255,0.1)' } } }], series: [{ name: '用电量', type: 'bar', barWidth: '50%', data: barChartData, label: { show: true, position: 'top', color: '#fff', formatter: '{c}', fontSize: 10 } }] };
+        
+        // 饼图配置项
+        const pieOption = {
+            backgroundColor: 'transparent',
+            tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
+            legend: { orient: 'horizontal', bottom: '0', left: 'center', data: chartCategories, textStyle: { color: '#ccc' }, type: 'scroll' },
+            series: [{
+                name: '用电占比',
+                type: 'pie',
+                radius: '65%',
+                center: ['50%', '48%'],
+                data: pieChartData,
+                color: colors,
+                // 核心：通过设置与背景色相同的边框来实现“裂开”效果。
+                itemStyle: {
+                    borderWidth: 5,
+                    borderColor: '#1d386f' 
+                },
+                emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+                label: { formatter: '{d}%', color: 'rgba(255, 255, 255, 0.9)', position: 'outside' },
+                labelLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.5)' } }
+            }]
+        };
+        barChartInstance.setOption(barOption, true);
+        pieChartInstance.setOption(pieOption, true);
+    }
+
+    /**
+     * @description 防抖函数，用于优化高频触发的事件（如resize）。
+     * 它可以确保函数在事件停止触发的一小段时间后才执行，避免性能问题。
+     * @param {Function} func - 要执行的函数。
+     * @param {number} delay - 延迟时间 (ms)。
+     */
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    /**
+     * @description 刷新按钮的点击处理函数。
+     */
+    async function reloadData() {
+        const refreshBtn = document.getElementById('refresh-btn');
+        refreshBtn.classList.add('loading'); // 显示加载动画
+        refreshBtn.disabled = true; // 禁用按钮防止重复点击
+        try {
+            globalData = await fetchAndProcessData(); // 重新获取和处理数据
+            buildTable(globalData); // 重新构建表格
+            const latestMonth = globalData.monthlyData.length > 0 ? globalData.monthlyData[globalData.monthlyData.length - 1].month : '合计';
+            updateDashboard(latestMonth); // 更新到最新月份
+            setTimeout(adjustTableRowHeight, 0); // 重新计算行高
+        } catch (error) {
+            console.error("Failed to reload data:", error);
+        } finally {
+            refreshBtn.classList.remove('loading'); // 移除加载动画
+            refreshBtn.disabled = false; // 重新启用按钮
+        }
+    }
+
+    // --- 页面加载入口 ---
+    window.onload = async function() {
+        // 初始化ECharts实例
+        barChartInstance = echarts.init(document.getElementById('barChart'), 'dark');
+        pieChartInstance = echarts.init(document.getElementById('pieChart'), 'dark');
+        
+        // 绑定刷新按钮事件
+        document.getElementById('refresh-btn').addEventListener('click', reloadData);
+        
+        // 执行首次数据加载
+        await reloadData();
+
+        // 创建防抖版的resize处理函数
+        const handleResize = debounce(() => {
+            if (barChartInstance && pieChartInstance) {
+                barChartInstance.resize();
+                pieChartInstance.resize();
+            }
+            adjustTableRowHeight();
+        }, 150);
+
+        // 监听窗口大小变化事件
+        window.addEventListener('resize', handleResize);
+    };
+</script>
+
+</body>
+</html>

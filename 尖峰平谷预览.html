@@ -1,0 +1,139 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	
+	
+	<meta charset="utf-8" /> 
+	<title> New Document </title>
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<!--<link>-->
+	<script type="text/javascript" src="js/echarts.js"></script>
+	<script type="text/javascript" src="js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="js/CppCallJsFunc.js"></script>
+</head>
+<body style="height:100%;margin:0;background-size:cover;background-color:rgba(255,255,255,0.5);overflow:hidden;">
+<div id="main" style="height: 100%"></div>
+<script type="text/javascript">
+// 基于准备好的dom，初始化echarts实例
+var myChart = echarts.init(document.getElementById('main'));
+const colorList = [
+    '#91cc75','#5470c6','#fac858','#ee6666'
+];
+var data = [
+  /*['00:00:00', '05:00:00', 1, '谷'],
+  ['05:00:00', '07:30:00', 2, '平'],
+  ['07:30:00', '10:30:00', 3, '峰'],
+  ['10:30:00', '11:30:00', 4, '尖'],
+  ['11:30:00', '12:30:00', 1, '谷'],
+  ['12:30:00', '16:00:00', 2, '平'],
+  ['16:00:00', '17:00:00', 3, '峰'],
+  ['17:00:00', '20:00:00', 4, '尖'],
+  ['20:00:00', '21:00:00', 1, '谷'],
+  ['21:00:00', '22:00:00', 4, '尖'],
+  ['22:00:00', '00:00:00', 1, '谷'],*/
+].map(function (item, index) {
+  //debugger;
+  return {
+    value: item,
+    itemStyle: {
+      color: colorList[item[2]-1]
+    }
+  };
+});
+/*option = {
+  title: {
+    text: '尖峰平谷时间预览',
+    left: 'center'
+  },
+  tooltip: {
+    formatter: function (params) {
+				// params 是一个数组，包含当前鼠标悬浮的所有系列的数据信息
+				debugger;
+				var result = '';
+				result += params.marker + "\t"+params.data.value[0]+"\t"+params.data.value[1]+"\t"+params.data.value[3] + '<br/>';
+				return result; // 返回自定义的 tooltip 内容
+			}
+  },
+  xAxis: {
+    scale: true
+    ,type: 'category'
+  },
+  yAxis: {},
+  series: [
+    {
+      type: 'custom',
+      renderItem: function (params, api) {
+        debugger;
+        var yValue = api.value(2);
+        var start = api.coord([data[params.dataIndex].value[0], yValue]);
+        var size = api.size([getTimeDifferenceInSeconds(data[params.dataIndex].value[0],data[params.dataIndex].value[1]) , yValue]);
+        var style = api.style();
+        if(params.dataIndex == 0){
+          origin = getx(origin, params.coordSys.x);
+        }else{
+          origin = getx(origin, params.coordSys.width*getTimeDifferenceInSeconds(data[params.dataIndex-1].value[0],data[params.dataIndex-1].value[1])/24);
+        }
+        //origin = getx(origin, params.coordSys.width*getTimeDifferenceInSeconds(data[params.dataIndex].value[0],data[params.dataIndex].value[1])/24);
+        //origin = getx(origin, add);
+        return {
+          type: 'rect',
+          shape: {
+            x: origin,
+            y: start[1],
+            width: params.coordSys.width*getTimeDifferenceInSeconds(data[params.dataIndex].value[0],data[params.dataIndex].value[1])/24,
+            height: size[1]
+          },
+          style: style
+        };
+      },
+      label: {
+        show: true,
+        position: 'top',
+        formatter: function (params) {
+			    //debugger;
+			    return params.value[3] ;
+	    	}
+      },
+      dimensions: ['from', 'to', 'profit'],
+      encode: {
+        x: [0, 1],
+        y: 2,
+        tooltip: [0, 1, 2],
+        itemName: 3
+      },
+      data: data
+    }
+  ]
+};*/
+var origin = 0;
+function getx(origin, add){
+    origin = origin + add;
+    return origin;
+}
+function getTimeDifferenceInSeconds(time1, time2) {
+	//debugger;
+	// 将时间转换为Date对象
+	var date1 = new Date('1970-01-01T' + time1 + 'Z');
+	var date2 = new Date('1970-01-01T' + time2 + 'Z');
+	if(time2 == "00:00:00"){
+		date2 = new Date('1970-01-02T' + time2 + 'Z');
+	}
+	// 计算差值（以毫秒为单位）
+	var diff = date2.getTime() - date1.getTime();
+	
+	// 将差值转换为秒
+	return diff / 3600000;
+}
+
+
+if (option && typeof option === "object") {
+    myChart.setOption(option, true);
+}
+
+       </script>
+   </body>
+</html>

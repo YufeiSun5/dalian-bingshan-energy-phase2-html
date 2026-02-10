@@ -1,0 +1,989 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>变压器温度明细曲线</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/'
+		}).extend({
+			excel: 'layui_exts/excel',
+			xmSelect: "xm-select"
+		});
+	</script>
+	</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+
+	/* 调整新增的变电所下拉框样式 */
+	.layui-input-inline[style*="margin-right: 15px"] {
+		min-width: 120px;
+	}
+
+	/* 调整电表选择下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 20px"] {
+		min-width: 180px;
+	}
+
+	/* 调整分类能耗下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 10px"] {
+		min-width: 100px;
+	}
+
+	/* 调整时间选择模式下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 25px"] {
+		min-width: 110px;
+	}
+
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<div class="layui-inline" style = "margin-right : 25px;float:left">
+								<label class="layui-form-label" style = "width:auto" >时间选择模式</label>
+								<div class="layui-input-inline">
+									<select id = "timeMode" name="timeMode" lay-filter="timeMode">
+										<option value="day" selected>单日</option>
+										<option value="multi" >多日</option>
+										<option value="range" >自定义范围</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="layui-inline" style = "margin-right : 20px;float:left">
+								<label class="layui-form-label" style = "width:auto" >日期选择</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid" style="display: none;" >-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+								<!-- 多选组件容器 -->
+								<div class="layui-inline" id = "selectedDate" style = "width:300px;display: none;" >
+								</div>
+							</div>
+
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变电所：</label>
+							<div class="layui-input-inline" style = "margin-right : 15px">
+								<select id = "substation" name="substation" lay-filter="substation">
+									<option value="1" selected>一号变电所</option>
+									<option value="2">二号变电所</option>
+									<option value="3">三号变电所</option>
+								</select>
+							</div>
+
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变压器选择：</label>
+							<div class="layui-input-inline" style = "margin-right : 20px">
+								<select id = "sreachNo" name="sreachNo" lay-filter="sreachNo">
+									<option value="all" selected>全部</option>
+									<option value="1_1">1#变压器</option>
+									<option value="1_2">2#变压器</option>
+								</select>
+							</div>
+
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>-->
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">变压器温度明细曲线</h2>
+								<div  class="all_unit">
+									<label >温度单位:</label> <span data-v-1520c17f="">℃</span>
+								</div>
+								<div id = "chart" style = "height:100%;padding:0 10 0 10" >
+								
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel','xmSelect'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		var xmSelect = layui.xmSelect; // 从layui获取xmSelect
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var timeMode = "day";
+
+
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 变电所选择联动逻辑
+		form.on('select(substation)', function(data){
+			updateMeterOptions(data.value);
+		});
+
+		// 更新变压器选择选项的函数
+		function updateMeterOptions(substationId) {
+			var meterSelect = document.getElementById('sreachNo');
+			meterSelect.innerHTML = ''; // 清空现有选项
+
+			var options = '';
+			
+			if (substationId === '1') {
+				// 只显示一号变电所的变压器
+				options = `
+					<option value="all" selected>全部</option>
+					<option value="1_1">1#变压器</option>
+					<option value="1_2">2#变压器</option>
+				`;
+			} else if (substationId === '2') {
+				// 只显示二号变电所的变压器
+				options = `
+					<option value="all" selected>全部</option>
+					<option value="2_1">1#变压器</option>
+					<option value="2_2">2#变压器</option>
+					<option value="2_3">3#变压器</option>
+					<option value="2_4">4#变压器</option>
+				`;
+			} else if (substationId === '3') {
+				// 只显示三号变电所的变压器
+				options = `
+					<option value="all" selected>全部</option>
+					<option value="3_1">1#变压器</option>
+					<option value="3_2">2#变压器</option>
+				`;
+			}
+
+			meterSelect.innerHTML = options;
+			form.render('select'); // 重新渲染下拉框
+		}
+
+		// 时间选择模式切换逻辑
+		form.on('select(timeMode)', function(data){
+			switchTimeMode(data.value);
+		});
+
+		// 切换时间选择模式的函数 - 按照原始文件模式重构
+		function switchTimeMode(mode) {
+			timeMode = mode;
+			console.log('切换到时间模式：', mode);
+
+			// 隐藏多选组件
+			$("#selectedDate").hide();
+
+			// 保存当前值（如果有的话）
+			var currentStartDate = $('#ID-laydate-start-date-1').val();
+			var currentEndDate = $('#ID-laydate-end-date-1').val();
+
+			if(mode === "day"){
+				// 单日模式：显示单个输入框
+				$("#ID-laydate-rangeLinked .layui-form-mid").hide();
+				$("#ID-laydate-end-date-1").parent().hide();
+
+				// 清理并重新渲染到容器
+				$('.layui-laydate').remove();
+				laydate.render({
+					type: "date",
+					elem: '#ID-laydate-rangeLinked',
+					range: false  // 关键：明确设置range:false
+				});
+
+				laydate.render({
+					type: "date",
+					elem: '#ID-laydate-start-date-1',
+					value: currentStartDate || new Date(),
+					done: function(value, date, endDate){
+						console.log('单日模式选择：', value);
+						$('#ID-laydate-start-date-1').val(value);
+					}
+				});
+
+			} else if(mode === "multi"){
+				// 多日模式：显示单个输入框 + 多选组件
+				$("#ID-laydate-rangeLinked .layui-form-mid").hide();
+				$("#ID-laydate-end-date-1").parent().hide();
+
+				// 清理并重新渲染到容器
+				$('.layui-laydate').remove();
+				laydate.render({
+					type: "date",
+					elem: '#ID-laydate-rangeLinked',
+					range: false  // 关键：明确设置range:false
+				});
+
+				laydate.render({
+					type: "date",
+					elem: '#ID-laydate-start-date-1',
+					value: currentStartDate || new Date(),
+					done: function(value, date, endDate){
+						console.log('多日模式选择：', value);
+						$('#ID-laydate-start-date-1').val(value);
+						addDateToMultiSelect(value);
+					}
+				});
+
+				// 初始化多选组件
+				initMultiSelect();
+				$("#selectedDate").show();
+
+			} else if(mode === "range"){
+				// 范围模式：显示两个输入框
+				$("#ID-laydate-rangeLinked .layui-form-mid").show();
+				$("#ID-laydate-end-date-1").parent().show();
+
+				let now = new Date();
+				let sevenDaysAgo = new Date(now);
+				sevenDaysAgo.setDate(now.getDate() - 6); // 6天前，加上今天就是7天范围
+
+				// 格式化日期字符串
+				let startDateStr = sevenDaysAgo.getFullYear() + "-" +
+					((sevenDaysAgo.getMonth() + 1) >= 10 ? (sevenDaysAgo.getMonth() + 1) : "0" + (sevenDaysAgo.getMonth() + 1)) + "-" +
+					(sevenDaysAgo.getDate() >= 10 ? sevenDaysAgo.getDate() : "0" + sevenDaysAgo.getDate());
+
+				let endDateStr = now.getFullYear() + "-" +
+					((now.getMonth() + 1) >= 10 ? (now.getMonth() + 1) : "0" + (now.getMonth() + 1)) + "-" +
+					(now.getDate() >= 10 ? now.getDate() : "0" + now.getDate());
+
+				// 清理并重新渲染
+				$('.layui-laydate').remove();
+
+				// 设置默认范围值到容器
+				$('#ID-laydate-start-date-1').val(currentStartDate || startDateStr);
+				$('#ID-laydate-end-date-1').val(currentEndDate || endDateStr);
+
+				laydate.render({
+					type: "date",
+					elem: '#ID-laydate-rangeLinked',
+					range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+					rangeLinked: true,
+					value: (currentStartDate && currentEndDate) ? (currentStartDate + ' - ' + currentEndDate) : (startDateStr + ' - ' + endDateStr),
+					done: function(value, date){
+						console.log('范围选择完成：', value);
+						let dates = value.split(' - ');
+						if(dates.length === 2) {
+							let startDate = new Date(dates[0]);
+							let endDate = new Date(dates[1]);
+							const millisecondsPerDay = 24 * 60 * 60 * 1000;
+							const diffInMilliseconds = Math.abs(endDate.getTime() - startDate.getTime());
+							const diffInDays = diffInMilliseconds / millisecondsPerDay;
+
+							if(diffInDays > 30){
+								layer.alert("开始时间和结束时间最多相差三十天");
+								// 重置为默认范围（7天）
+								let resetStart = new Date(now);
+								resetStart.setDate(now.getDate() - 6);
+								let resetStartStr = resetStart.getFullYear() + "-" +
+									((resetStart.getMonth() + 1) >= 10 ? (resetStart.getMonth() + 1) : "0" + (resetStart.getMonth() + 1)) + "-" +
+									(resetStart.getDate() >= 10 ? resetStart.getDate() : "0" + resetStart.getDate());
+								let resetEndStr = now.getFullYear() + "-" +
+									((now.getMonth() + 1) >= 10 ? (now.getMonth() + 1) : "0" + (now.getMonth() + 1)) + "-" +
+									(now.getDate() >= 10 ? now.getDate() : "0" + now.getDate());
+
+								$('#ID-laydate-start-date-1').val(resetStartStr);
+								$('#ID-laydate-end-date-1').val(resetEndStr);
+							}
+						}
+					}
+				});
+			}
+
+			// 重新渲染表单
+			form.render();
+			console.log('模式', mode, '切换完成');
+		}
+
+		// 初始化多选组件 - 简化版本
+		function initMultiSelect() {
+			try {
+				console.log('开始初始化xmSelect多选组件');
+
+				// 检查xmSelect是否可用
+				if (!xmSelect) {
+					console.error('xmSelect组件未加载，请检查layui配置');
+					layer.alert('日期多选组件加载失败，请检查layui配置');
+					$("#selectedDate").html('<input type="text" class="layui-input" placeholder="组件加载失败，请检查配置" readonly>');
+					return;
+				}
+
+				// 清理旧实例
+				if(window.xmSelectInstance) {
+					try {
+						window.xmSelectInstance.destroy();
+						window.xmSelectInstance = null;
+					} catch(e) {
+						console.log('销毁旧实例失败，忽略：', e);
+					}
+				}
+
+				// 清理DOM
+				$('#selectedDate').empty();
+				$('.xm-select-parent').remove();
+
+				// 创建新实例
+				window.xmSelectInstance = xmSelect.render({
+					el: '#selectedDate',
+					data: [],
+					name: 'multiDateSelect',
+					filterable: false,
+					toolbar: { show: true, list: ['ALL', 'CLEAR', 'REVERSE'] },
+					on: function(data){
+						console.log('多选变化：', data);
+					},
+				});
+				console.log('xmSelect多选组件初始化成功');
+			} catch (error) {
+				console.error('xmSelect初始化失败：', error);
+				layer.alert('日期多选组件初始化失败：' + error.message);
+				$("#selectedDate").html('<input type="text" class="layui-input" placeholder="多选组件初始化失败" readonly>');
+			}
+		}
+
+		// 添加日期到多选组件 - 优化版本
+		function addDateToMultiSelect(dateValue) {
+			if(!dateValue) {
+				console.warn('要添加的日期值为空');
+				return;
+			}
+
+			try {
+				console.log('尝试添加日期到多选组件：', dateValue);
+
+				// 检查xmSelect是否可用
+				if (!xmSelect) {
+					console.error('xmSelect组件未加载，无法添加日期');
+					layer.alert('多选组件未加载，请刷新页面重试');
+					return;
+				}
+
+				// 检查全局实例是否存在
+				if (!window.xmSelectInstance) {
+					console.warn('xmSelect全局实例不存在，重新初始化');
+					initMultiSelect();
+					return;
+				}
+
+				// 获取当前选中的数据
+				let currentValues = [];
+				try {
+					currentValues = window.xmSelectInstance.getValue() || [];
+				} catch(e) {
+					console.warn('获取当前值失败，重新初始化：', e);
+					initMultiSelect();
+					return;
+				}
+
+				// 检查日期是否已存在
+				let exists = currentValues.some(item => item.value === dateValue);
+				if(exists) {
+					console.log('日期已存在，跳过添加：', dateValue);
+					return;
+				}
+
+				// 添加新日期到数组
+				let newValues = [...currentValues, {
+					name: dateValue,
+					value: dateValue,
+					selected: true
+				}];
+
+				// 更新组件数据
+				try {
+					window.xmSelectInstance.update({
+						data: newValues
+					});
+					console.log('成功添加日期到多选组件：', dateValue);
+				} catch(e) {
+					console.error('更新xmSelect数据失败：', e);
+					// 备用方案：重新渲染整个组件
+					renderMultiSelectWithNewData(newValues);
+				}
+
+			} catch (error) {
+				console.error('添加日期到多选组件失败：', error);
+				layer.alert('添加日期失败：' + error.message);
+			}
+		}
+
+		// 备用方案：重新渲染整个多选组件
+		function renderMultiSelectWithNewData(data) {
+			try {
+				// 销毁旧实例
+				if(window.xmSelectInstance) {
+					window.xmSelectInstance.destroy();
+					window.xmSelectInstance = null;
+				}
+
+				// 清理DOM
+				$('#selectedDate').empty();
+				$('.xm-select-parent').remove();
+
+				// 重新创建实例
+				window.xmSelectInstance = xmSelect.render({
+					el: '#selectedDate',
+					data: data,
+					name: 'multiDateSelect',
+					filterable: false,
+					toolbar: { show: true, list: ['ALL', 'CLEAR', 'REVERSE'] },
+					on: function(data){
+						console.log('多选组件重新渲染后的变化：', data);
+					},
+				});
+				console.log('备用渲染方案成功，数据：', data);
+			} catch(e) {
+				console.error('备用渲染方案也失败了：', e);
+				layer.alert('多选组件渲染失败，请刷新页面');
+			}
+		}
+
+		// 初始化为单日模式
+		switchTimeMode("day");
+		
+		
+		// 查询功能
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				let xAxisData = [];
+				let legendData = [];
+				let seriesData = [];
+				let selectDatas = [];
+
+				if(timeMode === "day"){
+					// 单日模式：查询一天数据
+					let startdate = $("#ID-laydate-start-date-1")[0].value;
+					if(!startdate){
+						layer.alert("请选择日期");
+						return;
+					}
+					selectDatas.push(startdate);
+				} else if(timeMode === "multi"){
+					// 多日模式：查询多天数据
+					try {
+						if (!xmSelect) {
+							layer.alert("多选组件未加载，无法查询");
+							return;
+						}
+
+						let multiData;
+						if (window.xmSelectInstance) {
+							// 使用全局实例获取数据
+							multiData = {
+								options: {
+									data: window.xmSelectInstance.getValue()
+								}
+							};
+						} else {
+							// 备用方案：尝试通过ID获取
+							multiData = xmSelect.get('#selectedDate', true);
+						}
+
+						if (!multiData || !multiData.options || multiData.options.data.length === 0) {
+							layer.alert("请选择至少一个日期");
+							return;
+						}
+						for(let i = 0; i < multiData.options.data.length; i++){
+							selectDatas.push(multiData.options.data[i].value);
+						}
+						console.log('多日模式，选中日期：', selectDatas);
+					} catch (error) {
+						console.error('多选数据获取失败：', error);
+						layer.alert('获取多选日期失败：' + error.message);
+						return;
+					}
+				} else if(timeMode === "range"){
+					// 范围模式：查询日期范围内的数据
+					let startdate = $("#ID-laydate-start-date-1")[0].value;
+					let enddate = $("#ID-laydate-end-date-1")[0].value;
+					if(!startdate || !enddate){
+						layer.alert("请选择开始和结束日期");
+						return;
+					}
+
+					// 生成日期范围内的所有日期
+					let startDate = new Date(startdate);
+					let endDate = new Date(enddate);
+					const millisecondsPerDay = 24 * 60 * 60 * 1000;
+					const diffInMilliseconds = Math.abs(endDate.getTime() - startDate.getTime());
+					const days = Math.ceil(diffInMilliseconds / millisecondsPerDay) + 1;
+
+					for(let i = 0; i < days; i++){
+						let tempDate = new Date(startDate);
+						tempDate.setDate(startDate.getDate() + i);
+						let dateStr = tempDate.getFullYear() + "-" +
+							((tempDate.getMonth() + 1) >= 10 ? (tempDate.getMonth() + 1) : "0" + (tempDate.getMonth() + 1)) + "-" +
+							(tempDate.getDate() >= 10 ? tempDate.getDate() : "0" + tempDate.getDate());
+						selectDatas.push(dateStr);
+					}
+				}
+
+				// 按日期排序
+				selectDatas.sort(function(a, b){
+					return new Date(a) - new Date(b);
+				});
+
+				var substationId = $('#substation').val();
+				var transformerId = $('#sreachNo').val();
+				
+				// 获取该变电所下的所有变压器列表
+				var transformers = [];
+				if(transformerId === 'all'){
+					// 选择了全部，需要查询所有变压器
+					if(substationId === '1'){
+						transformers = [{id: '1_1', name: '1#变压器'}, {id: '1_2', name: '2#变压器'}];
+					} else if(substationId === '2'){
+						transformers = [
+							{id: '2_1', name: '1#变压器'}, 
+							{id: '2_2', name: '2#变压器'},
+							{id: '2_3', name: '3#变压器'},
+							{id: '2_4', name: '4#变压器'}
+						];
+					} else if(substationId === '3'){
+						transformers = [{id: '3_1', name: '1#变压器'}, {id: '3_2', name: '2#变压器'}];
+					}
+				} else {
+					// 只查询选中的变压器
+					var transformerName = $('#sreachNo option:selected').text();
+					transformers = [{id: transformerId, name: transformerName}];
+				}
+				
+				// 循环查询每一天、每个变压器的数据
+				for(let i = 0; i < selectDatas.length; i++){
+					for(let t = 0; t < transformers.length; t++){
+						var transformer = transformers[t];
+						// 查询三个温度字段
+						var sql = " select DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as datetime, temperature1, temperature2, temperature3 from data_all \n";
+						sql+=" where date > DATE_ADD(DATE_SUB(DATE_FORMAT('"+selectDatas[i]+"','%Y-%m-%d 7:00:00'),INTERVAL 5 MINUTE ),INTERVAL 0 day) \n"
+						+ "  and date < DATE_ADD(DATE_SUB(DATE_FORMAT('"+selectDatas[i]+"','%Y-%m-%d 7:00:00'),INTERVAL 5 MINUTE ),INTERVAL 1 day )   \n"
+						+ "  and no = "+transformer.id+" " ;
+						console.info(sql);
+						const data = await sendSQL(sql);
+						console.info(data);
+
+						// 在第一次循环的时候确立时间x轴
+						if(xAxisData.length == 0 && data.data.length != 0){
+							for(let j = 0; j < data.data.length; j++){
+								let tempdate = new Date(data.data[j].datetime);
+								xAxisData.push((tempdate.getHours()>=10?tempdate.getHours():"0"+tempdate.getHours())+":"+(tempdate.getMinutes() >= 10?tempdate.getMinutes():"0"+tempdate.getMinutes())+":"+(tempdate.getSeconds()>=10?tempdate.getSeconds():"0"+tempdate.getSeconds()));
+							}
+						}
+
+						// 处理数据：为每个温度创建独立的曲线
+						if(data.data.length>0){
+							// 为三个温度分别创建数据数组
+							let temp1Data = [];
+							let temp2Data = [];
+							let temp3Data = [];
+							
+							for(let j = 0; j < data.data.length; j++){
+								temp1Data.push(data.data[j].temperature1);
+								temp2Data.push(data.data[j].temperature2);
+								temp3Data.push(data.data[j].temperature3);
+							}
+							
+							let tempdate = new Date(data.data[0].datetime);
+							let dateStr = tempdate.getFullYear() + "-"+( (tempdate.getMonth() + 1) >= 10 ? (tempdate.getMonth() + 1):"0"+(tempdate.getMonth() + 1)) + "-" + (tempdate.getDate()>=10 ? tempdate.getDate() :"0"+tempdate.getDate());
+							
+							// 根据是否选择"全部"决定legend名称前缀
+							var prefix = (transformerId === 'all') ? (dateStr + " " + transformer.name) : dateStr;
+							
+							// 添加温度1的曲线
+							let legend1 = prefix + '温度1';
+							legendData.push(legend1);
+							seriesData.push({
+								name: legend1,
+								type: 'line',
+								markPoint: {
+									data: [
+										{ type: 'max', name: '最大值' },
+										{ type: 'min', name: '最小值' }
+									]
+								},
+								data: temp1Data,
+								smooth: 0.5
+							});
+							
+							// 添加温度2的曲线
+							let legend2 = prefix + '温度2';
+							legendData.push(legend2);
+							seriesData.push({
+								name: legend2,
+								type: 'line',
+								markPoint: {
+									data: [
+										{ type: 'max', name: '最大值' },
+										{ type: 'min', name: '最小值' }
+									]
+								},
+								data: temp2Data,
+								smooth: 0.5
+							});
+							
+							// 添加温度3的曲线
+							let legend3 = prefix + '温度3';
+							legendData.push(legend3);
+							seriesData.push({
+								name: legend3,
+								type: 'line',
+								markPoint: {
+									data: [
+										{ type: 'max', name: '最大值' },
+										{ type: 'min', name: '最小值' }
+									]
+								},
+								data: temp3Data,
+								smooth: 0.5
+							});
+						}
+					}
+				}
+
+				console.info(legendData);
+				
+				
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+				var myChart = echarts.init(document.getElementById('chart'));
+				var option = {
+					//backgroundColor: 'rgb(8, 15, 51)',
+					//title: {
+					//  text: '历史曲线图'
+					//},
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						data: legendData,
+						right: '10%',
+						top: '5%',
+						orient:'vertical',
+						textStyle: {
+							color: "#fff",
+						},
+					},
+					grid: {
+						left: '3%',
+						right: '4%',
+						top: '15%',
+						bottom: '3%',
+						containLabel: true
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						data: xAxisData
+					},
+					yAxis: {
+						type: 'value',
+						scale: true,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							show:false,
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						splitLine: {
+							show: true,
+							lineStyle: {
+								color: '#ffff',
+								//width: 2,
+							},
+						},
+					},
+					series: seriesData
+					/*[
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						},
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						}
+					]*/
+				};
+				
+				if (option && typeof option === "object") {
+					myChart.setOption(option, true);
+				}
+				
+				
+				
+			} catch (err) {
+				console.error('查询出错：', err);
+				layer.alert('查询出错：' + err.message);
+			}
+		});
+		
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

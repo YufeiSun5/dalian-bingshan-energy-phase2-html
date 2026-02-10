@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<!-- 页面字符编码设置 -->
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<!-- 响应式设计：禁用用户缩放，设置初始缩放比例和设备宽度 -->
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>污水处理液位监控系统</title>
+
+	<!-- 样式表引入 -->
+	<!-- 项目专用液位样式 - 只包含背景和液位指示器 -->
+	<link href="css/liquid-level-only.css" rel="stylesheet">
+
+	<!-- JavaScript库引入 -->
+	<!-- JavaScript与C++交互函数 - 用于调用后端接口 -->
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<!-- C++调用JavaScript函数 - 用于接收后端回调 -->
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+</head>
+<body>
+	<!-- ===========================================
+	     主内容区域 - 仅包含液位指示器
+	     =========================================== -->
+	<div class="main-content">
+		<!-- 液位监控页面 -->
+		<div id="liquid-level-page" class="page-container active">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-content">
+							<!-- 液位显示区域 -->
+							<div class="liquid-level-container">
+								<!-- 第1个柱子 (4节) - 原水槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="4">
+										<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA110<br>原水槽</div>
+								</div>
+								<!-- 第2个柱子 (4节) - 调节槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="4">
+										<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA120<br>调节槽</div>
+								</div>
+								<!-- 第3个柱子 (4节) - 沉淀出水槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="4">
+										<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA260<br>沉淀出水槽</div>
+								</div>
+								<!-- 第4个柱子 (4节) - 过滤原水槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="4">
+										<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA310<br>过滤原水槽</div>
+								</div>
+								<!-- 第5个柱子 (4节) - 活性炭原水槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="4">
+										<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA330<br>活性炭原水槽</div>
+								</div>
+								<!-- 第6个柱子 (3节) - 处理水槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="3">
+										<div class="section" data-section="2"><span class="section-label">AWL</span></div>
+										<div class="section" data-section="1"><span class="section-label">HWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA360<br>处理水槽</div>
+								</div>
+								<!-- 第7个柱子 (2节) - 污泥槽 -->
+								<div class="liquid-column">
+									<div class="sections-container" data-sections="2">
+										<div class="section" data-section="1"><span class="section-label">AWL</span></div>
+										<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+									</div>
+									<div class="column-label">LSA170<br>污泥槽</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	/* ===========================================
+	   简化的液位控制模块
+	   仅处理液位显示功能
+	   =========================================== */
+	const LiquidLevelModule = {
+		// 液位状态数组 - 保存每个柱子的当前液位等级
+		liquidLevels: [1, 1, 1, 1, 1, 1, 1], // 默认所有柱子都显示1节液位
+
+		/**
+		 * 初始化液位模块
+		 */
+		init: function() {
+			console.log('液位监控模块初始化完成');
+		},
+
+		/**
+		 * 设置单个液位柱的显示状态
+		 * @param {number} columnIndex - 柱子索引 (0-6)
+		 * @param {number} level - 液位等级 (0=红色警告, 1-4=绿色节数, 5=空液位)
+		 */
+		setLiquidLevel: function(columnIndex, level) {
+			if (columnIndex < 0 || columnIndex >= 7) {
+				console.error('柱子索引超出范围，应该是0-6');
+				return false;
+			}
+
+			// 获取对应的液位柱
+			const columns = document.querySelectorAll('.liquid-column');
+			if (!columns[columnIndex]) {
+				console.error(`找不到索引为 ${columnIndex} 的液位柱`);
+				return false;
+			}
+
+			const column = columns[columnIndex];
+			const sections = column.querySelectorAll('.section');
+
+			// 先清除所有节的活动状态和警告状态
+			sections.forEach(section => {
+				section.classList.remove('active', 'warning');
+			});
+
+			// 根据液位等级设置显示状态
+			if (level === 5) {
+				// 空液位 - 不显示任何颜色，保持竹节原色
+				this.liquidLevels[columnIndex] = 5;
+				console.log(`柱子 ${columnIndex} 设置为空液位`);
+				return true;
+			} else if (level === 0) {
+				// 红色警告 - 只显示最底下一节为红色
+				const bottomIndex = sections.length - 1; // 最底下的节索引
+				sections[bottomIndex].classList.add('active', 'warning');
+				this.liquidLevels[columnIndex] = 0;
+				console.log(`柱子 ${columnIndex} 设置为红色警告液位`);
+				return true;
+			} else if (level >= 1 && level <= 4) {
+				// 绿色液位 - 从底部开始显示指定节数的绿色
+				const sectionsToShow = Math.min(level, sections.length);
+				for (let i = 0; i < sectionsToShow; i++) {
+					const bottomIndex = sections.length - 1 - i; // 从底部开始计算索引
+					sections[bottomIndex].classList.add('active');
+				}
+				this.liquidLevels[columnIndex] = level;
+				console.log(`柱子 ${columnIndex} 设置为 ${level} 节液位`);
+				return true;
+			} else {
+				console.error('液位等级超出范围，应该是0-5');
+				return false;
+			}
+		},
+
+		/**
+		 * 批量设置所有液位柱
+		 * @param {Array} levels - 液位等级数组 [7个数值]
+		 */
+		setAllLiquidLevels: function(levels) {
+			if (!Array.isArray(levels) || levels.length !== 7) {
+				console.error('液位数组长度必须为7');
+				return false;
+			}
+
+			let allSuccess = true;
+			for (let i = 0; i < 7; i++) {
+				const success = this.setLiquidLevel(i, levels[i]);
+				if (!success) {
+					allSuccess = false;
+				}
+			}
+
+			return allSuccess;
+		},
+
+		/**
+		 * 获取指定液位柱的当前状态
+		 * @param {number} columnIndex - 柱子索引
+		 * @returns {number} 当前液位等级
+		 */
+		getLiquidLevel: function(columnIndex) {
+			if (columnIndex < 0 || columnIndex >= 7) {
+				console.error('柱子索引超出范围，应该是0-6');
+				return -1;
+			}
+			return this.liquidLevels[columnIndex];
+		}
+	};
+
+	/* ===========================================
+	   应用程序入口
+	   初始化液位监控模块
+	   =========================================== */
+	document.addEventListener('DOMContentLoaded', function() {
+		console.log('页面加载完成，启动液位监控模块');
+
+		// 初始化液位监控模块
+		LiquidLevelModule.init();
+
+		// ============ 暴露液位控制方法 ============
+		window.setLiquidLevel = function(columnIndex, level) {
+			return LiquidLevelModule.setLiquidLevel(columnIndex, level);
+		};
+
+		window.setAllLiquidLevels = function(levels) {
+			return LiquidLevelModule.setAllLiquidLevels(levels);
+		};
+
+		window.getLiquidLevel = function(columnIndex) {
+			return LiquidLevelModule.getLiquidLevel(columnIndex);
+		};
+
+		// 打印使用说明
+		console.log('%c================== 污水处理液位监控系统 ==================', 'color: #00ff00; font-size: 14px; font-weight: bold;');
+
+		console.log('%c【液位控制方法】', 'color: #00ff00; font-size: 12px; font-weight: bold;');
+		console.log('1. 设置单个液位: setLiquidLevel(柱子索引, 液位等级)');
+		console.log('   例: setLiquidLevel(0, 3) - 设置第1个柱子显示3节液位（从下往上）');
+		console.log('   柱子索引: 0-6 (从左到右第1-7个柱子)');
+		console.log('   液位等级: 0=红色警告, 1-4=从底部开始的绿色节数, 5=空液位(不显示颜色)');
+		console.log('   例: setLiquidLevel(0, 5) - 设置第1个柱子为空液位（保持竹节原色）');
+		console.log('');
+		console.log('2. 批量设置所有液位: setAllLiquidLevels([液位数组])');
+		console.log('   例: setAllLiquidLevels([1, 2, 3, 4, 2, 3, 5]) - 按顺序设置7个柱子（最后一个为空液位）');
+		console.log('');
+		console.log('3. 获取当前液位: getLiquidLevel(柱子索引)');
+		console.log('   例: getLiquidLevel(0) - 获取第1个柱子的当前液位等级');
+		console.log('');
+
+		console.log('%c【液位柱子说明】(从左到右)', 'color: #ffb74d; font-size: 12px;');
+		console.log('0: 原水槽 (4节)   | 1: 调节槽 (4节)      | 2: 沉淀出水槽 (4节)');
+		console.log('3: 过滤原水槽 (4节) | 4: 活性炭原水槽 (4节) | 5: 处理水槽 (3节) | 6: 污泥槽 (2节)');
+	});
+</script>
+
+</body>
+</html>

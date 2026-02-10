@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>污水处理数据录入</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script src="./chart-table-config.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        });
+    </script>
+
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-btn-normal { background-color: #1e88e5 !important; }
+        .layui-btn-warm { background-color: #ffb800 !important; }
+
+        /* 内容区域 */
+        .content-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            overflow: auto;
+        }
+
+        /* 表单容器 */
+        .form-container {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff7ca;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2a6dc8;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-item {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-item label {
+            color: #b9d3f4;
+            font-weight: bold;
+            width: 150px;
+            text-align: right;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .form-item input {
+            flex: 1;
+            background: rgba(40, 80, 167, 0.6);
+            border: 1px solid #2a6dc8;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .form-item input:focus {
+            border-color: #409eff;
+            outline: none;
+            background: rgba(40, 80, 167, 0.8);
+        }
+
+        .form-item input::placeholder {
+            color: rgba(185, 211, 244, 0.5);
+        }
+
+        /* 底部按钮区 */
+        .form-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #2a6dc8;
+        }
+
+        .form-actions .layui-btn {
+            min-width: 120px;
+            height: 38px;
+            line-height: 38px;
+        }
+
+        /* 提示信息 */
+        .info-tip {
+            background: rgba(30, 136, 229, 0.2);
+            border-left: 3px solid #1e88e5;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #b9d3f4;
+            font-size: 12px;
+        }
+
+        /* 修复 layui 弹窗样式 - 确保文字可见 */
+        .layui-layer-content {
+            color: #333 !important;
+        }
+        
+        .layui-layer-prompt input {
+            color: #333 !important;
+        }
+        
+        .layui-layer-msg {
+            color: #333 !important;
+        }
+        
+        /* 确保确认框文字可见 */
+        .layui-layer-dialog .layui-layer-content {
+            color: #333 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="date-group">
+                    <label>数据月份</label>
+                    <input type="text" id="date-input" readonly>
+                </div>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title">污水处理数据录入</span>
+            </div>
+            <div class="toolbar-right">
+                <button type="button" id="btn-to-report" class="layui-btn layui-btn-sm layui-btn-normal">
+                    <i class="layui-icon layui-icon-chart"></i> 查看报表
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="form-container">
+                <div class="info-tip">
+                    <i class="layui-icon layui-icon-tips"></i> 
+                    请填写完整的污水处理数据，所有字段均为必填项。提交前系统会自动检查数据完整性。
+                </div>
+
+                <!-- 药品用量 -->
+                <div class="form-section">
+                    <div class="form-section-title">药品用量</div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>PFS 单价(元/KG):</label>
+                            <input type="number" step="0.01" id="pfs_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>PFS 用量(KG):</label>
+                            <input type="number" step="0.01" id="pfs_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>NaOH 单价(元/KG):</label>
+                            <input type="number" step="0.01" id="naoh_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>NaOH 用量(KG):</label>
+                            <input type="number" step="0.01" id="naoh_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>阴PAM 单价(元/KG):</label>
+                            <input type="number" step="0.01" id="yin_pam_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>阴PAM 用量(KG):</label>
+                            <input type="number" step="0.01" id="yin_pam_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>阳PAM 单价(元/KG):</label>
+                            <input type="number" step="0.01" id="yang_pam_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>阳PAM 用量(KG):</label>
+                            <input type="number" step="0.01" id="yang_pam_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自来水和电 -->
+                <div class="form-section">
+                    <div class="form-section-title">自来水与电量</div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>自来水单价(元/吨):</label>
+                            <input type="number" step="0.01" id="water_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>自来水用量(吨):</label>
+                            <input type="number" step="0.01" id="water_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>电单价(元/千瓦·时):</label>
+                            <input type="number" step="0.01" id="power_price" placeholder="请输入单价">
+                        </div>
+                        <div class="form-item">
+                            <label>电用量(千瓦·时):</label>
+                            <input type="number" step="0.01" id="power_usage" placeholder="请输入用量">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 处理指标 -->
+                <div class="form-section">
+                    <div class="form-section-title">处理指标</div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>污水处理量(吨):</label>
+                            <input type="number" step="0.01" id="process_amount" placeholder="请输入处理量">
+                        </div>
+                        <div class="form-item">
+                            <label>压缩机成品产量(台):</label>
+                            <input type="number" step="0" id="product_amount" placeholder="请输入产量">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label>污泥产出量(吨):</label>
+                            <input type="number" step="0.01" id="sludge" placeholder="请输入污泥量">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部按钮 -->
+                <div class="form-actions">
+                    <button type="button" id="btn-reset" class="layui-btn layui-btn-primary">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                    <button type="button" id="btn-submit" class="layui-btn layui-btn-warm">
+                        <i class="layui-icon layui-icon-ok"></i> 提交数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'jquery'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        
+        // API配置
+        var API_BASE_URL = 'http://192.168.7.229:8004';
+        
+        // 当前选择的月份
+        var currentMonth = getCurrentMonth();
+        
+        // 是否已有数据
+        var hasExistingData = false;
+        var existingDataId = null; // 存储已有数据的ID
+        
+        // 初始化日期选择器
+        laydate.render({ 
+            elem: '#date-input', 
+            type: 'month',
+            value: currentMonth,
+            theme: '#1e88e5',
+            done: function(value, date){
+                currentMonth = value;
+                loadMonthData(value);
+            }
+        });
+        
+        // 获取当前月份
+        function getCurrentMonth() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            return year + '-' + month;
+        }
+        
+        // HTTP请求封装
+        async function request(url, options = {}) {
+            try {
+                const res = await fetch(url, { 
+                    ...options, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (e) {
+                console.error('[请求错误]', e);
+                throw e;
+            }
+        }
+        
+        // 执行SQL
+        async function sendSQL(sql) {
+            return await request(API_BASE_URL + '/api/sql/run-sql', {
+                method: 'POST',
+                body: JSON.stringify({ sql: sql })
+            });
+        }
+        
+        // 加载月份数据
+        function loadMonthData(month) {
+            console.log('[数据加载] 查询月份:', month);
+            
+            var idx = layer.load(2, { shade: 0.1 });
+            
+            // 构建查询SQL - 查询指定月份的数据
+            var sql = `
+                SELECT * FROM data_foul_water_month_report 
+                WHERE DATE_FORMAT(date, '%Y-%m') = '${month}'
+                LIMIT 1
+            `;
+            
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+                
+                if (result && result.data && result.data.length > 0) {
+                    hasExistingData = true;
+                    existingDataId = result.data[0].id;
+                    fillFormWithData(result.data[0]);
+                    layer.msg('已加载 ' + month + ' 的数据', { icon: 1 });
+                } else {
+                    hasExistingData = false;
+                    existingDataId = null;
+                    clearForm();
+                    layer.msg('该月份暂无数据，请填写新数据', { icon: 0 });
+                }
+            }).catch(function(error) {
+                layer.close(idx);
+                hasExistingData = false;
+                existingDataId = null;
+                clearForm();
+                console.error('[数据加载] 失败:', error);
+                layer.msg('数据加载失败，请检查网络连接', { icon: 2 });
+            });
+        }
+        
+        // 填充表单数据
+        function fillFormWithData(data) {
+            // 药品数据
+            $('#pfs_price').val(data.PFS_Price);
+            $('#pfs_usage').val(data.PFS_Count);
+            $('#naoh_price').val(data.NaOH_Price);
+            $('#naoh_usage').val(data.NaOH_Count);
+            $('#yin_pam_price').val(data.Yin_PAM_Price);
+            $('#yin_pam_usage').val(data.Yin_PAM_Count);
+            $('#yang_pam_price').val(data.Yang_PAM_Price);
+            $('#yang_pam_usage').val(data.Yang_PAM_Count);
+            
+            // 自来水和电
+            $('#water_price').val(data.water_price);
+            $('#water_usage').val(data.water_count);
+            $('#power_price').val(data.elec_price);
+            $('#power_usage').val(data.elec_count);
+            
+            // 处理指标
+            $('#process_amount').val(data.foul_water_count);
+            $('#product_amount').val(data.product_count);
+            $('#sludge').val(data.sludge_count);
+        }
+        
+        // 清空表单
+        function clearForm() {
+            $('input[type="number"]').val('');
+        }
+        
+        // 获取表单数据
+        function getFormData() {
+            return {
+                PFS_Price: $('#pfs_price').val(),
+                PFS_Count: $('#pfs_usage').val(),
+                NaOH_Price: $('#naoh_price').val(),
+                NaOH_Count: $('#naoh_usage').val(),
+                Yin_PAM_Price: $('#yin_pam_price').val(),
+                Yin_PAM_Count: $('#yin_pam_usage').val(),
+                Yang_PAM_Price: $('#yang_pam_price').val(),
+                Yang_PAM_Count: $('#yang_pam_usage').val(),
+                water_price: $('#water_price').val(),
+                water_count: $('#water_usage').val(),
+                elec_price: $('#power_price').val(),
+                elec_count: $('#power_usage').val(),
+                foul_water_count: $('#process_amount').val(),
+                product_count: $('#product_amount').val(),
+                sludge_count: $('#sludge').val()
+            };
+        }
+        
+        // 验证表单数据
+        function validateForm() {
+            var inputs = $('input[type="number"]');
+            var emptyFields = [];
+            
+            inputs.each(function() {
+                if (!$(this).val() || $(this).val().trim() === '') {
+                    emptyFields.push($(this).prev('label').text());
+                }
+            });
+            
+            if (emptyFields.length > 0) {
+                layer.msg('请填写完整数据，以下字段为空：<br>' + emptyFields.slice(0, 3).join('<br>') + 
+                         (emptyFields.length > 3 ? '<br>等' + emptyFields.length + '个字段' : ''), 
+                         { icon: 0, time: 3000 });
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 提交数据
+        function submitData(operatorName) {
+            var formData = getFormData();
+            
+            console.log('[数据提交]', formData);
+            
+            var idx = layer.load(2, { shade: 0.3 });
+            
+            var sql = '';
+            
+            if (hasExistingData && existingDataId) {
+                // 更新现有数据
+                sql = `
+                    UPDATE data_foul_water_month_report SET
+                        PFS_Price = ${formData.PFS_Price},
+                        PFS_Count = ${formData.PFS_Count},
+                        NaOH_Price = ${formData.NaOH_Price},
+                        NaOH_Count = ${formData.NaOH_Count},
+                        Yin_PAM_Price = ${formData.Yin_PAM_Price},
+                        Yin_PAM_Count = ${formData.Yin_PAM_Count},
+                        Yang_PAM_Price = ${formData.Yang_PAM_Price},
+                        Yang_PAM_Count = ${formData.Yang_PAM_Count},
+                        water_price = ${formData.water_price},
+                        water_count = ${formData.water_count},
+                        elec_price = ${formData.elec_price},
+                        elec_count = ${formData.elec_count},
+                        foul_water_count = ${formData.foul_water_count},
+                        product_count = ${formData.product_count},
+                        sludge_count = ${formData.sludge_count}
+                    WHERE id = ${existingDataId}
+                `;
+            } else {
+                // 插入新数据
+                var dateStr = currentMonth + '-01 00:00:00';
+                sql = `
+                    INSERT INTO data_foul_water_month_report 
+                    (date, PFS_Price, PFS_Count, NaOH_Price, NaOH_Count, 
+                     Yin_PAM_Price, Yin_PAM_Count, Yang_PAM_Price, Yang_PAM_Count,
+                     water_price, water_count, elec_price, elec_count,
+                     foul_water_count, product_count, sludge_count)
+                    VALUES 
+                    ('${dateStr}', ${formData.PFS_Price}, ${formData.PFS_Count}, 
+                     ${formData.NaOH_Price}, ${formData.NaOH_Count},
+                     ${formData.Yin_PAM_Price}, ${formData.Yin_PAM_Count},
+                     ${formData.Yang_PAM_Price}, ${formData.Yang_PAM_Count},
+                     ${formData.water_price}, ${formData.water_count},
+                     ${formData.elec_price}, ${formData.elec_count},
+                     ${formData.foul_water_count}, ${formData.product_count},
+                     ${formData.sludge_count})
+                `;
+            }
+            
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+                console.log('[提交成功]', result);
+                layer.msg('数据提交成功！操作人：' + operatorName, { icon: 1, time: 2000 }, function() {
+                    // 提交成功后重新加载数据
+                    loadMonthData(currentMonth);
+                });
+            }).catch(function(error) {
+                layer.close(idx);
+                console.error('[提交失败]', error);
+                layer.msg('数据提交失败，请检查网络连接或数据格式', { icon: 2 });
+            });
+        }
+        
+        // 重置按钮
+        $('#btn-reset').click(function() {
+            layer.confirm('确定要重置表单吗？', { icon: 3, title: '确认' }, function(index) {
+                clearForm();
+                layer.close(index);
+                layer.msg('表单已重置', { icon: 1 });
+            });
+        });
+        
+        // 提交按钮
+        $('#btn-submit').click(function() {
+            // 验证表单
+            if (!validateForm()) {
+                return;
+            }
+            
+            // 如果已有数据，需要确认覆盖并输入操作人
+            if (hasExistingData) {
+                // 先确认是否覆盖
+                layer.confirm('该月份已有数据，提交将覆盖原数据，是否继续？', { 
+                    icon: 3, 
+                    title: '数据覆盖警告',
+                    btn: ['继续', '取消']
+                }, function(confirmIndex) {
+                    layer.close(confirmIndex);
+                    // 确认后要求输入操作人姓名
+                    layer.prompt({
+                        title: '修改数据需要提供操作人姓名，请输入操作人姓名',
+                        formType: 0,
+                        btn: ['确认提交', '取消']
+                    }, function(value, promptIndex, elem) {
+                        if (!value || value.trim().length < 2) {
+                            layer.msg('操作人姓名至少需要2个字', { icon: 0 });
+                            return false;
+                        }
+                        layer.close(promptIndex);
+                        submitData(value.trim());
+                    });
+                });
+            } else {
+                // 没有数据，直接提交
+                layer.confirm('确认提交 ' + currentMonth + ' 的数据吗？', { 
+                    icon: 3, 
+                    title: '确认提交',
+                    btn: ['确认', '取消']
+                }, function(index) {
+                    layer.close(index);
+                    submitData('系统录入');
+                });
+            }
+        });
+        
+        // 查看报表按钮
+        $('#btn-to-report').click(function() {
+            window.location.href = '污水处理报表.html';
+        });
+        
+        // 页面加载时自动加载当前月份数据
+        loadMonthData(currentMonth);
+    });
+    </script>
+</body>
+</html>
+

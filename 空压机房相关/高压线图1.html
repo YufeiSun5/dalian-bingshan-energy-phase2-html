@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>低压线路监控</title>
+    <script src="../js/echarts.js"></script>
+    <script src="./高压线图1-api.js"></script>
+    <style>
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #eee; 
+        }
+        #main-chart { width: 100%; height: 100%; }
+        
+        /* 简单的浮动提示 */
+        .msg {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); color: white; padding: 8px 15px; border-radius: 4px;
+            font-family: sans-serif; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-chart"></div>
+
+    <script>
+        // =========================================
+        // 1. 图表状态管理器 (闭包环境，不污染全局)
+        // =========================================
+        const ChartManager = (function() {
+            const dom = document.getElementById('main-chart');
+            const chart = echarts.init(dom);
+
+            // 内部状态
+            const state = {
+                currentDataIndex: 0,     // 当前 tooltip 显示的数据点索引
+                autoPlayTimer: null,     // 自动播放定时器
+                isAutoPlaying: false,    // 是否正在自动播放
+                autoPlayInterval: 2000,  // 自动播放间隔（毫秒）
+                totalDataPoints: 0       // 总数据点数
+            };
+
+            // 图例位置预设（固定在顶部，只控制左中右）
+            const legendPresets = {
+                left: { top: 10, left: 10, orient: 'horizontal', textStyle: { color: '#fff' } },
+                center: { top: 10, left: 'center', orient: 'horizontal', textStyle: { color: '#fff' } },
+                right: { top: 10, right: 10, orient: 'horizontal', textStyle: { color: '#fff' } }
+            };
+
+            // 初始化基础配置 (只执行一次)
+            chart.setOption({
+                tooltip: { 
+                    trigger: 'axis',
+                    confine: true,  // 限制 tooltip 在图表区域内
+                    formatter: function(params) {
+                        // 自定义 tooltip 格式，支持单位显示
+                        let result = params[0].axisValue + '<br/>';
+                        const option = chart.getOption();
+                        const series = option.series || [];
+                        
+                        params.forEach(item => {
+                            if (item.value != null && item.value !== '') {
+                                // 从系列配置中获取单位
+                                const seriesData = series[item.seriesIndex];
+                                const seriesUnit = (seriesData && seriesData.unit) ? seriesData.unit : '';
+                                result += item.marker + ' ' + item.seriesName + ': ' + item.value + seriesUnit + '<br/>';
+                            }
+                        });
+                        return result;
+                    },
+                    axisPointer: { 
+                        type: 'line',  // 改为 line 类型，只显示竖线
+                        lineStyle: {
+                            type: 'dashed',
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: { top: 10, left: 'center', orient: 'horizontal' },
+                grid: { top: 50, bottom: 30, left: 50, right: 50 },  // 减小 bottom 值
+                xAxis: { type: 'category', boundaryGap: false, data: [] },
+                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
+                series: [],
+                animation: false  // 禁用所有动画
+            });
+
+            // 监听鼠标移动，记录当前 tooltip 位置
+            chart.on('mousemove', function(params) {
+                if (params.dataIndex !== undefined) {
+                    state.currentDataIndex = params.dataIndex;
+                }
+            });
+
+            // 监听窗口缩放
+            window.addEventListener('resize', () => chart.resize());
+
+            // 检查数据点是否有效（不为 null/undefined）
+            function isValidDataPoint(dataIndex) {
+                const option = chart.getOption();
+                const series = option.series || [];
+                
+                // 检查所有系列在该索引位置是否都有有效数据
+                for (let i = 0; i < series.length; i++) {
+                    const data = series[i].data;
+                    if (data && data[dataIndex] != null && data[dataIndex] !== '') {
+                        return true; // 只要有一个系列有数据就算有效
+                    }
+                }
+                return false;
+            }
+
+            // 查找下一个有效的数据点索引
+            function findNextValidDataIndex(startIndex) {
+                if (state.totalDataPoints === 0) return -1;
+                
+                let nextIndex = startIndex;
+                let attempts = 0;
+                
+                // 最多尝试遍历所有数据点
+                while (attempts < state.totalDataPoints) {
+                    nextIndex = (nextIndex + 1) % state.totalDataPoints;
+                    
+                    if (isValidDataPoint(nextIndex)) {
+                        return nextIndex;
+                    }
+                    
+                    attempts++;
+                }
+                
+                return -1; // 没有找到有效数据点
+            }
+
+            // 自动播放函数
+            function startAutoPlay() {
+                if (state.isAutoPlaying) return;
+                
+                state.isAutoPlaying = true;
+                state.autoPlayTimer = setInterval(() => {
+                    if (state.totalDataPoints === 0) return;
+                    
+                    // 查找下一个有效的数据点
+                    const nextValidIndex = findNextValidDataIndex(state.currentDataIndex);
+                    
+                    if (nextValidIndex === -1) {
+                        console.warn('[AutoPlay] 没有找到有效数据点');
+                        return;
+                    }
+                    
+                    state.currentDataIndex = nextValidIndex;
+                    
+                    // 触发 tooltip 显示
+                    chart.dispatchAction({
+                        type: 'showTip',
+                        seriesIndex: 0,
+                        dataIndex: state.currentDataIndex
+                    });
+                }, state.autoPlayInterval);
+                
+                console.log('%c[AutoPlay] 已启动', "color: #00b894; background: #eee; padding: 2px 5px;");
+            }
+
+            function stopAutoPlay() {
+                if (!state.isAutoPlaying) return;
+                
+                state.isAutoPlaying = false;
+                if (state.autoPlayTimer) {
+                    clearInterval(state.autoPlayTimer);
+                    state.autoPlayTimer = null;
+                }
+                
+                console.log('%c[AutoPlay] 已停止', "color: #e17055; background: #eee; padding: 2px 5px;");
+            }
+
+            function restoreTooltip() {
+                if (state.totalDataPoints > 0 && state.currentDataIndex < state.totalDataPoints) {
+                    chart.dispatchAction({
+                        type: 'showTip',
+                        seriesIndex: 0,
+                        dataIndex: state.currentDataIndex
+                    });
+                }
+            }
+
+            // =========================================
+            // 2. 核心：万能更新函数
+            // =========================================
+            function update(config = {}) {
+                const finalOption = {};
+
+                // --- A. 处理背景渐变 (backgroundGradient) ---
+                if (config.backgroundGradient) {
+                    const { colors, direction = 'vertical' } = config.backgroundGradient;
+                    let gradientStyle = '';
+                    
+                    if (direction === 'vertical') {
+                        gradientStyle = `linear-gradient(to bottom, ${colors.join(', ')})`;
+                    } else if (direction === 'horizontal') {
+                        gradientStyle = `linear-gradient(to right, ${colors.join(', ')})`;
+                    } else if (direction === 'diagonal') {
+                        gradientStyle = `linear-gradient(135deg, ${colors.join(', ')})`;
+                    }
+                    
+                    document.body.style.background = gradientStyle;
+                    // 同时设置 ECharts 的背景为透明，让 body 的渐变显示出来
+                    finalOption.backgroundColor = 'transparent';
+                }
+
+                // --- B. 处理图例位置 (legendPosition) ---
+                if (config.legendPosition && legendPresets[config.legendPosition]) {
+                    finalOption.legend = legendPresets[config.legendPosition];
+                }
+
+                // --- B2. 处理图例文字颜色 (legendTextColor) ---
+                if (config.legendTextColor) {
+                    if (!finalOption.legend) {
+                        finalOption.legend = {};
+                    }
+                    finalOption.legend.textStyle = { color: config.legendTextColor };
+                }
+
+                // --- C. 处理系列配置 (seriesConfig) ---
+                if (config.seriesConfig && Array.isArray(config.seriesConfig)) {
+                    finalOption.series = config.seriesConfig.map((cfg, idx) => {
+                        const seriesItem = {
+                            name: cfg.name || 'Line',
+                            type: 'line',
+                            smooth: cfg.smooth !== undefined ? cfg.smooth : true,
+                            unit: cfg.unit || '',  // 保存单位信息到系列对象
+                            data: []  // 初始化空数据
+                        };
+                        
+                        // 设置线条颜色
+                        if (cfg.color) {
+                            seriesItem.lineStyle = { color: cfg.color };
+                            seriesItem.itemStyle = { color: cfg.color };
+                        }
+                        
+                        // 设置面积填充
+                        if (cfg.areaStyle !== undefined) {
+                            if (cfg.areaStyle === false || cfg.areaStyle === null) {
+                                // 明确禁用面积填充
+                                seriesItem.areaStyle = undefined;
+                            } else if (typeof cfg.areaStyle === 'object') {
+                                // 自定义面积样式
+                                seriesItem.areaStyle = {
+                                    color: cfg.areaStyle.color || cfg.color,  // 默认使用线条颜色
+                                    opacity: cfg.areaStyle.opacity !== undefined ? cfg.areaStyle.opacity : 0.3
+                                };
+                            } else if (cfg.areaStyle === true) {
+                                // 启用面积填充，使用线条颜色
+                                seriesItem.areaStyle = {
+                                    color: cfg.color,
+                                    opacity: 0.3
+                                };
+                            }
+                        }
+                        // 默认不添加 areaStyle（即不显示面积填充）
+                        
+                        return seriesItem;
+                    });
+                }
+
+                // --- D. 处理完整数据 (data) ---
+                if (config.data) {
+                    const { labels, series } = config.data;
+                    
+                    // 更新总数据点数
+                    state.totalDataPoints = labels ? labels.length : 0;
+                    
+                    // 确保当前索引不越界
+                    if (state.currentDataIndex >= state.totalDataPoints) {
+                        state.currentDataIndex = Math.max(0, state.totalDataPoints - 1);
+                    }
+                    
+                    // 设置 X 轴数据
+                    finalOption.xAxis = { data: labels };
+                    
+                    // 设置系列数据，合并到已有的 series 配置中
+                    if (finalOption.series) {
+                        finalOption.series = finalOption.series.map((seriesItem, idx) => ({
+                            ...seriesItem,
+                            data: series[idx] || []
+                        }));
+                    } else {
+                        finalOption.series = series.map((seriesData, idx) => ({
+                            data: seriesData
+                        }));
+                    }
+                }
+
+                // --- E. 处理自动播放配置 (autoPlay) ---
+                if (config.autoPlay !== undefined) {
+                    if (config.autoPlay === true) {
+                        startAutoPlay();
+                    } else if (config.autoPlay === false) {
+                        stopAutoPlay();
+                    } else if (typeof config.autoPlay === 'object') {
+                        // 支持配置自动播放间隔
+                        if (config.autoPlay.interval) {
+                            state.autoPlayInterval = config.autoPlay.interval;
+                        }
+                        if (config.autoPlay.enabled !== false) {
+                            startAutoPlay();
+                        }
+                    }
+                }
+
+                // --- F. 处理其他任意 ECharts 属性 (透传) ---
+                const { data, backgroundGradient, legendPosition, seriesConfig, autoPlay, ...others } = config;
+                Object.assign(finalOption, others);
+
+                // --- G. 执行更新 (Merge Mode，禁用动画) ---
+                chart.setOption(finalOption, { notMerge: false, lazyUpdate: false, silent: false });
+                
+                // --- H. 恢复 tooltip 到之前的位置 ---
+                setTimeout(() => {
+                    restoreTooltip();
+                }, 100);
+                
+                // 打印日志
+                const logParts = [];
+                if(data) logParts.push(`数据更新 [${data.labels?.length || 0}个点位]`);
+                if(backgroundGradient) logParts.push(`背景渐变`);
+                if(legendPosition) logParts.push(`图例位置 [${legendPosition}]`);
+                if(seriesConfig) logParts.push(`系列配置 [${seriesConfig.length}条线]`);
+                if(autoPlay !== undefined) logParts.push(`自动播放 [${autoPlay === true || (typeof autoPlay === 'object' && autoPlay.enabled !== false) ? 'ON' : 'OFF'}]`);
+                if(Object.keys(others).length) logParts.push(`其他配置 [${Object.keys(others).join(',')}]`);
+                console.log(`%c[Update] ${logParts.join(' | ')}`, "color: #00b894; background: #eee; padding: 2px 5px;");
+            }
+
+            // =========================================
+            // 3. 标线管理函数
+            // =========================================
+            function setMarkLine(config) {
+                if (!config || !Array.isArray(config)) {
+                    console.error('setMarkLine 需要传入数组配置');
+                    return;
+                }
+
+                const option = chart.getOption();
+                const series = option.series || [];
+
+                // 为每个系列添加标线
+                const updatedSeries = series.map(seriesItem => {
+                    const markLineData = config.map(mark => ({
+                        yAxis: mark.value,
+                        name: mark.name || '',
+                        label: {
+                            show: true,
+                            position: 'end',
+                            formatter: mark.name || `${mark.value}`,
+                            color: mark.color || '#999'
+                        },
+                        lineStyle: {
+                            type: 'dashed',
+                            color: mark.color || '#999',
+                            width: mark.width || 2
+                        }
+                    }));
+
+                    return {
+                        ...seriesItem,
+                        markLine: {
+                            symbol: 'none',  // 不显示箭头
+                            data: markLineData
+                        }
+                    };
+                });
+
+                chart.setOption({
+                    series: updatedSeries
+                });
+
+                console.log(`%c[MarkLine] 已设置 ${config.length} 条标线`, "color: #6c5ce7; background: #eee; padding: 2px 5px;");
+            }
+
+            function clearMarkLine() {
+                const option = chart.getOption();
+                const series = option.series || [];
+
+                const updatedSeries = series.map(seriesItem => ({
+                    ...seriesItem,
+                    markLine: undefined
+                }));
+
+                chart.setOption({
+                    series: updatedSeries
+                });
+
+                console.log(`%c[MarkLine] 已清除所有标线`, "color: #e17055; background: #eee; padding: 2px 5px;");
+            }
+
+            // =========================================
+            // 4. 返回公共接口
+            // =========================================
+            return {
+                update: update,
+                startAutoPlay: startAutoPlay,
+                stopAutoPlay: stopAutoPlay,
+                setAutoPlayInterval: (interval) => {
+                    state.autoPlayInterval = interval;
+                    if (state.isAutoPlaying) {
+                        stopAutoPlay();
+                        startAutoPlay();
+                    }
+                },
+                setMarkLine: setMarkLine,
+                clearMarkLine: clearMarkLine
+            };
+        })();
+
+        // =========================================
+        // 5. 暴露给全局 Window
+        // =========================================
+        window.updateChart = ChartManager.update;
+        window.chartControl = {
+            startAutoPlay: ChartManager.startAutoPlay,
+            stopAutoPlay: ChartManager.stopAutoPlay,
+            setAutoPlayInterval: ChartManager.setAutoPlayInterval,
+            setMarkLine: ChartManager.setMarkLine,
+            clearMarkLine: ChartManager.clearMarkLine
+        };
+
+        // =========================================
+        // 6. 控制台完整示例输出
+        // =========================================
+        console.clear();
+        console.log("%c 🛠️ 万能更新函数就绪 ", "background:#333; color:#fff; padding:5px; border-radius:4px;");
+        console.log("函数名：window.updateChart(config)\n");
+        
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log("%c 示例 1: 单条线完整配置 + 自动播放", "color: #e74c3c; font-weight: bold; font-size: 14px;");
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log(`
+updateChart({
+    title: { text: '单线数据监控', left: 'center', textStyle: { color: '#fff', fontSize: 18 } },
+    backgroundGradient: { colors: ['#667eea', '#764ba2'], direction: 'vertical' },  // HTML背景渐变
+    legendPosition: 'center',  // 图例位置：'left' | 'center' | 'right'
+    seriesConfig: [
+        { 
+            name: '温度', 
+            smooth: true, 
+            color: '#ff6b6b',  // 线条颜色
+            areaStyle: true    // 启用面积填充，使用线条颜色
+        }
+    ],
+    data: {
+        labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
+        series: [
+            [25, 28, 32, 30, 35, 33, 37]
+        ]
+    },
+    xAxis: { 
+        axisLabel: { color: '#fff' },
+        axisLine: { lineStyle: { color: '#fff' } }
+    },
+    yAxis: { 
+        name: '℃',
+        nameTextStyle: { color: '#fff' },
+        axisLabel: { color: '#fff' },
+        axisLine: { lineStyle: { color: '#fff' } },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }
+    },
+    autoPlay: true  // 启动自动播放
+});
+
+// 更新完整数据（会记住之前 tooltip 的位置）
+updateChart({ 
+    data: {
+        labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+        series: [
+            [25, 28, 32, 30, 35, 33, 37, 34]
+        ]
+    }
+});
+
+// 停止自动播放
+// updateChart({ autoPlay: false });
+
+// 或使用控制函数
+// chartControl.stopAutoPlay();
+// chartControl.startAutoPlay();
+// chartControl.setAutoPlayInterval(3000);  // 设置间隔为 3 秒
+        `);
+
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log("%c 示例 2: 四条线完整配置 + 自定义播放间隔", "color: #3498db; font-weight: bold; font-size: 14px;");
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log(`
+updateChart({
+    title: { text: '多维度数据监控', left: 'center', textStyle: { color: '#fff', fontSize: 18 } },
+    backgroundGradient: { colors: ['#f093fb', '#f5576c'], direction: 'diagonal' },  // 对角线渐变
+    legendPosition: 'left',  // 图例位置：'left' | 'center' | 'right'
+    seriesConfig: [
+        { 
+            name: '温度', 
+            smooth: true, 
+            color: '#ff6b6b',
+            areaStyle: { opacity: 0.2 }  // 自定义透明度
+        },
+        { 
+            name: '湿度', 
+            smooth: true, 
+            color: '#48dbfb',
+            areaStyle: { color: '#0abde3', opacity: 0.3 }  // 自定义面积颜色
+        },
+        { 
+            name: '压力', 
+            smooth: true, 
+            color: '#1dd1a1'
+            // 不设置 areaStyle，默认无面积填充
+        },
+        { 
+            name: '流量', 
+            smooth: true, 
+            color: '#a29bfe',
+            areaStyle: true  // 使用线条颜色作为面积颜色
+        }
+    ],
+    data: {
+        labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
+        series: [
+            [25, 28, 32, 30, 35, 33, 36],
+            [60, 62, 58, 65, 63, 61, 59],
+            [101, 103, 105, 102, 108, 106, 110],
+            [45, 48, 52, 50, 55, 53, 58]
+        ]
+    },
+    xAxis: { 
+        axisLabel: { color: '#fff' },
+        axisLine: { lineStyle: { color: '#fff' } }
+    },
+    yAxis: { 
+        name: '数值',
+        nameTextStyle: { color: '#fff' },
+        axisLabel: { color: '#fff' },
+        axisLine: { lineStyle: { color: '#fff' } },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }
+    },
+    grid: { top: 60, bottom: 50, left: 60, right: 50 },
+    autoPlay: { enabled: true, interval: 1500 }  // 1.5秒间隔自动播放
+});
+
+// 更新完整数据（tooltip 会保持在之前的位置）
+updateChart({ 
+    data: {
+        labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
+        series: [
+            [25, 28, 32, 30, 35, 33, 36, 34, 38],
+            [60, 62, 58, 65, 63, 61, 59, 64, 62],
+            [101, 103, 105, 102, 108, 106, 110, 107, 112],
+            [45, 48, 52, 50, 55, 53, 58, 56, 60]
+        ]
+    }
+});
+
+// 切换图例位置（不影响自动播放）
+// updateChart({ legendPosition: 'right' });  // 'left' | 'center' | 'right'
+
+// 更换背景渐变
+// updateChart({ backgroundGradient: { colors: ['#4facfe', '#00f2fe'], direction: 'horizontal' } });
+        `);
+
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log("%c 示例 3: 设置标线（独立函数）", "color: #6c5ce7; font-weight: bold; font-size: 14px;");
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log(`
+// 设置单条标线
+chartControl.setMarkLine([
+    { value: 80, name: '警戒线', color: '#ff6b6b', width: 2 }
+]);
+
+// 设置多条标线
+chartControl.setMarkLine([
+    { value: 100, name: '上限', color: '#e74c3c', width: 2 },
+    { value: 50, name: '平均值', color: '#3498db', width: 1 },
+    { value: 20, name: '下限', color: '#2ecc71', width: 2 }
+]);
+
+// 清除所有标线
+chartControl.clearMarkLine();
+        `);
+
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "color: #666;");
+        console.log("%c 参数说明:", "color: #f39c12; font-weight: bold;");
+        console.log("• legendPosition: 'left' | 'center' | 'right'  // 图例固定在顶部，控制左中右位置");
+        console.log("• backgroundGradient: { colors: ['颜色1', '颜色2'], direction: 'vertical' | 'horizontal' | 'diagonal' }");
+        console.log("• seriesConfig: [");
+        console.log("    { ");
+        console.log("      name: '名称',");
+        console.log("      smooth: true,");
+        console.log("      color: '#ff6b6b',  // 线条颜色");
+        console.log("      areaStyle: true | false | { color: '#xxx', opacity: 0.3 }  // 面积填充，默认无");
+        console.log("    }");
+        console.log("  ]");
+        console.log("• data: { labels: ['标签1', '标签2', ...], series: [[数据1], [数据2], ...] }");
+        console.log("• autoPlay: true | false | { enabled: true, interval: 2000 }");
+        console.log("\n%c 控制函数:", "color: #f39c12; font-weight: bold;");
+        console.log("• chartControl.startAutoPlay() - 开始自动播放");
+        console.log("• chartControl.stopAutoPlay() - 停止自动播放");
+        console.log("• chartControl.setAutoPlayInterval(毫秒) - 设置播放间隔");
+        console.log("• chartControl.setMarkLine([配置]) - 设置标线");
+        console.log("• chartControl.clearMarkLine() - 清除所有标线");
+        console.log("\n%c 标线配置:", "color: #f39c12; font-weight: bold;");
+        console.log("• value: 数值 - Y轴上的值（必填）");
+        console.log("• name: '名称' - 标线显示的文字");
+        console.log("• color: '#xxx' - 标线和文字的颜色（默认 #999）");
+        console.log("• width: 数字 - 线条宽度（默认 2）");
+        console.log("\n%c 面积填充说明:", "color: #f39c12; font-weight: bold;");
+        console.log("• areaStyle: true - 启用面积填充，使用线条颜色");
+        console.log("• areaStyle: false 或不设置 - 不显示面积填充（默认）");
+        console.log("• areaStyle: { opacity: 0.2 } - 自定义透明度，使用线条颜色");
+        console.log("• areaStyle: { color: '#xxx', opacity: 0.3 } - 自定义面积颜色和透明度");
+        console.log("%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", "color: #666;");
+        
+    </script>
+</body>
+</html>

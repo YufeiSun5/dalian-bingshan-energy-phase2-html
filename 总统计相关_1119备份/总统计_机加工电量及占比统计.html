@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机加工电量及占比统计</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script src="../js/xlsx.full.min.js"></script>
+    <script src="../js/echarts.js"></script> <!-- <-- 【调整】使用本地ECharts -->
+<style>
+    /* --- 全局与基础样式 --- */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+        background-color: #0f266c;
+        color: #d0d2e0;
+        overflow: hidden;
+    }
+
+    /* --- 主要布局容器 --- */
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 15px;
+        box-sizing: border-box;
+        gap: 15px;
+    }
+
+    /* --- 卡片通用样式 --- */
+    .card-block {
+        background-color: #1d386f;
+        border: 1px solid #2a6dc8;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* --- 筛选栏 (核心改动) --- */
+    .filter-bar {
+        flex-shrink: 0;
+        flex-direction: row;            /* <-- 改动: 确保水平布局 */
+        justify-content: space-between; /* <-- 改动: 实现左、中、右分布 */
+        align-items: center;            /* <-- 改动: 实现垂直居中 */
+        padding: 0 15px;                /* <-- 改动: 调整内边距适应新布局 */
+    }
+
+    /* --- 顶部居中大标题样式 (核心改动) --- */
+    .top-bar-title {
+        /* 移除绝对定位，变为flex项目 */
+        font-size: 24px;
+        font-weight: bold;
+        color: #ffffff;
+        letter-spacing: 2px;
+    }
+
+    .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+        margin-top: 5px;
+    }
+
+    .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        padding: 10px 10px;
+        width: auto;
+    }
+    .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1);
+        border-color: transparent;
+        color: #fff;
+    }
+    .filter-bar .layui-input::placeholder {
+        color: #bbb;
+    }
+    .filter-bar .layui-btn {
+        margin-left: 10px;
+    }
+    .filter-bar .layui-bg-orange {
+        background-color: #fa8c16;
+        border-color: #fa8c16;
+    }
+    
+    /* --- 主要内容区域 --- */
+    .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;           /* <-- 【新增】允许内容区域滚动 */
+        gap: 15px;                  /* <-- 【新增】卡片之间间距 */
+    }
+    
+    .main-content .card-block {
+        flex-shrink: 0;             /* <-- 【调整】不压缩 */
+    }
+    
+    /* --- 表格卡片样式 --- */
+    .table-card {
+        min-height: 400px;          /* <-- 【新增】表格卡片最小高度 */
+    }
+    
+    /* --- 图表卡片样式 --- */
+    .chart-card {
+        min-height: 500px;          /* <-- 【新增】图表卡片最小高度 */
+    }
+    
+    /* --- 图表容器样式 --- */
+    .chart-container {
+        flex-grow: 1;
+        padding: 10px;
+        min-height: 450px;
+    }
+    
+    /* --- 图表工具栏样式 --- */
+    .chart-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        border-bottom: 1px solid #2a6dc8;
+        background-color: #1d386f;
+    }
+    
+    .chart-toolbar .layui-form-checkbox {
+        margin-right: 15px;
+    }
+
+    /* --- 卡片头部样式 (已修改) --- */
+    .card-header {
+        background-color: #29498e;
+        color: #fff;
+        padding: 10px 15px;
+        border-bottom: 1px solid #2a6dc8;
+        font-size: 16px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* <-- 改动: 让左右两部分自动分开 */
+        gap: 20px;
+    }
+
+    .header-summary {
+        font-size: 17px;
+        font-weight: normal;
+        color: #fff7ca;
+    }
+    .header-unit {
+        font-size: 14px;
+        font-weight: normal;
+        color: #b9d3f4;
+        flex-shrink: 0;
+    }
+
+    /* --- 表格区域特定样式 --- */
+    .table-container {
+        flex-grow: 1;
+        overflow: auto;
+        padding: 10px;
+        position: relative; 
+        scrollbar-width: thin;
+        scrollbar-color: #2a6dc8 #18589b;
+    }
+    
+    /* ... 以下的表格和弹窗样式与之前相同，无需改动 ... */
+    .table-container .layui-table { border: 1px solid #3c8ce7 !important; background-color: transparent; }
+    .table-container .layui-table th, .table-container .layui-table td { border: 1px solid #3c8ce7 !important; background-color: #1e4e89 !important; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; padding: 2px 3px; font-size: 11px; min-width: 42px; line-height: 1.4; transition: background-color 0.2s ease-in-out; }
+    .table-container .layui-table th[data-month], .table-container .layui-table td[data-month] { cursor: pointer; }
+    .table-container .layui-table th { font-size: 12px; background-color: #0c6ed3 !important; }
+    .sticky-col-1, .sticky-col-2 { position: sticky !important; z-index: 2; }
+    .sticky-col-1 { left: 0; min-width: 42px; }
+    .sticky-col-2 { left: 42px; min-width: 42px; }
+    thead .sticky-col-1, thead .sticky-col-2 { z-index: 3; }
+    .table-container .layui-table tbody .sticky-col-1 { background-color: #0c6ed3 !important; }
+    .table-container .layui-table .layui-bg-yellow td { background-color: #ffff00 !important; color: #000000 !important; }
+    .table-container .layui-table .layui-bg-green td { background-color: #18589b !important; color: #ffffff !important; }
+    .table-container .layui-table .layui-bg-yellow .sticky-col-1, .table-container .layui-table .layui-bg-green .sticky-col-1 { background-color: #0c6ed3 !important; color: #ffffff !important; }
+    .table-container .layui-table .layui-bg-yellow .sticky-col-2 { background-color: #ffff00 !important; }
+    .table-container .layui-table .layui-bg-green .sticky-col-2 { background-color: #18589b !important; }
+    .table-container .layui-table tr.electricity-row .sticky-col-2 { background-color: #0c6ed3 !important; }
+    .table-container .layui-table td.col-hover, .table-container .layui-table th.col-hover { background-color: rgb(112, 167, 255) !important; }
+    .layui-table tbody tr:hover { background-color: transparent !important; }
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-thumb { background-color: #2a6dc8; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-track { background-color: #18589b; }
+    .production-popup { background-color: #1d386f !important; border-radius: 5px !important; overflow: hidden !important; }
+    .production-popup .layui-layer-title { background-color: #29498e !important; color: #ffffff !important; border-bottom: 1px solid #2a6dc8 !important; }
+    .production-popup .layui-layer-content { padding: 20px !important; box-sizing: border-box; max-height: 65vh !important; overflow-y: auto !important; }
+    .production-popup .layui-form-item { margin-bottom: 12px !important; }
+    .production-popup .layui-form-label { width: 90px !important; padding: 7px 15px !important; color: #ffffff !important; height: 32px !important; box-sizing: border-box; float: left !important; text-align: right !important; }
+    .production-popup .layui-input { height: 32px !important; background-color: rgb(255, 255, 255) !important; border: 1px solid #2a6dc8 !important; color: #000000 !important; }
+    .production-popup .layui-input-block { margin-left: 90px !important; min-height: 32px !important; }
+    .production-popup .layui-form-item:last-child { margin-top: 15px !important; margin-bottom: 0 !important; }
+    .production-popup .layui-form-item:last-child .layui-input-block { margin-left: 0 !important; text-align: center; }
+    .production-popup .layui-btn { height: 32px !important; line-height: 32px !important; padding: 0 20px !important; background-color: #2a6dc8 !important; color: #ffffff !important; }
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="card-block filter-bar">
+        <div class="layui-form" lay-filter="filter-form-left">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">年份</label>
+                    <div class="layui-input-inline">
+                        <input type="text" id="year-selector" class="layui-input" placeholder="请选择年份">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-bar-title">机加工电量及占比统计</div>
+
+        <div class="layui-form" lay-filter="filter-form-right">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <button id="add-production-btn" class="layui-btn layui-btn-normal">
+                        <i class="layui-icon layui-icon-add-1"></i>
+                        <span>填写产量</span>
+                    </button>
+                    <button id="search-btn" class="layui-btn">
+                        <i class="layui-icon layui-icon-search"></i>
+                        <span>查询</span>
+                    </button>
+                    <button id="export-btn" class="layui-btn layui-bg-orange">
+                        <span>导出</span>
+                        <i class="layui-icon layui-icon-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- 表格卡片 -->
+        <div class="card-block table-card">
+            <div class="card-header">
+                <div class="header-summary">
+                    <span id="header-summary-text"></span>
+                </div>
+                <div class="header-unit">
+                    <span>电能单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="layui-table" id="data-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2" class="sticky-col-1" style="left: 0;">项目</th>
+                            <th colspan="2" data-month="1">1月份</th>
+                            <th colspan="2" data-month="2">2月份</th>
+                            <th colspan="2" data-month="3">3月份</th>
+                            <th colspan="2" data-month="4">4月份</th>
+                            <th colspan="2" data-month="5">5月份</th>
+                            <th colspan="2" data-month="6">6月份</th>
+                            <th colspan="2" data-month="7">7月份</th>
+                            <th colspan="2" data-month="8">8月份</th>
+                            <th colspan="2" data-month="9">9月份</th>
+                            <th colspan="2" data-month="10">10月份</th>
+                            <th colspan="2" data-month="11">11月份</th>
+                            <th colspan="2" data-month="12">12月份</th>
+                            <th>合计</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 图表卡片 -->
+        <div class="card-block chart-card">
+            <div class="card-header">
+                <div class="header-summary">
+                    <span>各单元月度单台用电趋势</span>
+                </div>
+                <div class="header-unit">
+                    <span>单台电能单位（千瓦时/台）</span>
+                </div>
+            </div>
+            <div class="chart-toolbar">
+                <div class="layui-form" lay-filter="chart-form">
+                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                        <label style="color: #d0d2e0; margin-right: 10px;">选择单元：</label>
+                        <div id="unit-checkboxes" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            <!-- 复选框将由JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container" id="trend-chart"></div>
+        </div>
+    </div>
+</div>
+
+<div id="production-form-container" style="display: none;">
+    <div class="layui-form" lay-filter="production-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">月份</label>
+            <div class="layui-input-block">
+                <input type="text" name="production_month" id="popup-month-selector" class="layui-input" placeholder="请选择月份" autocomplete="off">
+            </div>
+        </div>
+        </div>
+</div>
+
+
+<script src="../js/layui.js"></script>
+<script>
+    // 您原来的 JavaScript 代码放在这里，无需任何改动
+    layui.use(['laydate', 'form', 'layer'], function(){
+        const laydate = layui.laydate;
+        const form = layui.form;
+        const layer = layui.layer;
+        const $ = layui.jquery;
+        let globalData;
+
+        const itemConfig = [
+            { key: 'shizihuan',  name: '十字环', no: 1 },
+            { key: 'quzhou',     name: '曲轴',   no: 2 },
+            { key: 'b_zhicheng', name: 'B支撑',  no: 3 },
+            { key: 'b_ding',     name: 'B定',    no: 4 },
+            { key: 'b_dong',     name: 'B动',    no: 5 },
+            { key: 'c_ding',     name: 'C定',    no: 6 },
+            { key: 'c_dong',     name: 'C动',    no: 7 },
+            { key: 'c_zhicheng', name: 'C支撑',  no: 8 },
+            { key: 'xin_keti',   name: '新壳体', no: [9, 10] },
+        ];
+        
+        const groupKeys = itemConfig.map(item => item.key);
+
+        function generateDynamicContent() {
+            const tableBody = $('#data-table tbody');
+            const formContainer = $('#production-form-container .layui-form');
+            
+            tableBody.empty();
+            formContainer.find('.dynamic-form-item, .submit-button-container').remove();
+
+            tableBody.html(`
+                <tr>
+                    <td colspan="2" class="sticky-col-1" style="left: 0;">合计电量</td>
+                    ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="total_elec_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="total_elec_total" class="data-cell"></td>
+                    <td id="total_elec_total_pct" class="data-cell"></td>
+                </tr>
+                <tr class="layui-bg-yellow">
+                    <td colspan="2" class="sticky-col-1" style="left: 0;">辅助合计<br>电量及占比</td>
+                    ${Array.from({length: 12}, (_, i) => `<td id="aux_total_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="aux_total_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="aux_total_total" class="data-cell"></td>
+                    <td id="aux_total_total_pct" class="data-cell"></td>
+                </tr>
+                <tr class="layui-bg-green">
+                    <td colspan="2" class="sticky-col-1" style="left: 0;">生产合计<br>电量及占比</td>
+                    ${Array.from({length: 12}, (_, i) => `<td id="prod_total_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="prod_total_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="prod_total_total" class="data-cell"></td>
+                    <td id="prod_total_total_pct" class="data-cell"></td>
+                </tr>
+            `);
+
+            itemConfig.forEach(item => {
+                let tableRows = `
+                    <tr class="dynamic-row electricity-row">
+                        <td rowspan="3" class="sticky-col-1">${item.name}</td>
+                        <td class="sticky-col-2">电量</td>
+                        ${Array.from({length: 12}, (_, i) => `<td id="${item.key}_dianliang_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="${item.key}_dianliang_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td id="${item.key}_dianliang_total" class="data-cell"></td>
+                        <td id="${item.key}_dianliang_total_pct" class="data-cell"></td>
+                    </tr>
+                    <tr class="dynamic-row electricity-row">
+                        <td class="sticky-col-2">产量</td>
+                        ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="${item.key}_chanliang_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td colspan="2" id="${item.key}_chanliang_total" class="data-cell"></td>
+                    </tr>
+                    <tr class="dynamic-row electricity-row">
+                        <td class="sticky-col-2">单台</td>
+                        ${Array.from({length: 12}, (_, i) => `<td id="${item.key}_dantai_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="${item.key}_dantai_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td id="${item.key}_dantai_total_val" class="data-cell"></td><td id="${item.key}_dantai_total_pct" class="data-cell"></td>
+                    </tr>
+                `;
+                tableBody.append(tableRows);
+
+                let formItem = `
+                    <div class="layui-form-item dynamic-form-item">
+                        <label class="layui-form-label">${item.name}</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="${item.key}_prod" placeholder="请输入产量" class="layui-input" autocomplete="off">
+                        </div>
+                    </div>
+                `;
+                formContainer.append(formItem);
+            });
+
+            formContainer.append(`
+                <div class="layui-form-item submit-button-container">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="submit-production">立即提交</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) {
+                    layer.msg(`数据加载失败: ${res.statusText}`);
+                    return { data: [] };
+                }
+                return await res.json();
+            } catch (err) {
+                console.error('sendSQL Error:', err);
+                layer.msg('数据加载失败，请检查网络或联系管理员。');
+                return { data: [] };
+            }
+        }
+
+        async function fetchAndProcessData(year) {
+            const selectClauses = itemConfig.map(item => {
+                const nos = Array.isArray(item.no) ? item.no : [item.no];
+                const nosString = nos.join(',');
+                return `
+                    SUM(CASE WHEN sub.no IN (${nosString}) THEN sub.total_elec ELSE 0 END) AS ${item.key}_elec,
+                    SUM(CASE WHEN sub.no IN (${nosString}) THEN 100 ELSE 0 END) AS ${item.key}_prod
+                `;
+            }).join(',\n');
+
+            const departmentSql = `
+                SELECT
+                    sub.month,
+                    0 AS aux_elec,
+                    ${selectClauses}
+                FROM (
+                    SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                    FROM sum_elec_group_by_day
+                    WHERE YEAR(\`date\`) = ${year}
+                    GROUP BY no, MONTH(\`date\`)
+                ) AS sub
+                GROUP BY sub.month
+                ORDER BY sub.month;
+            `.trim();
+
+            const companyTotalSql = `
+                SELECT
+                    MONTH(\`date\`) AS month,
+                    SUM(sum_elec) AS company_total_elec
+                FROM sum_elec_group_by_day
+                WHERE YEAR(\`date\`) = ${year}
+                GROUP BY MONTH(\`date\`);
+            `.trim();
+
+            const [departmentApiResult, companyTotalApiResult] = await Promise.all([
+                sendSQL(departmentSql),
+                sendSQL(companyTotalSql)
+            ]);
+
+            const rawData = departmentApiResult.data || [];
+            const transformedData = { aux_total: {}, groups: {} };
+            groupKeys.forEach(key => {
+                transformedData.groups[key] = { electricity: {}, production: {} };
+            });
+
+            rawData.forEach(row => {
+                const month = row.month;
+                transformedData.aux_total[month] = row.aux_elec || 0;
+
+                groupKeys.forEach(key => {
+                    transformedData.groups[key].electricity[month] = row[`${key}_elec`];
+                    transformedData.groups[key].production[month] = row[`${key}_prod`];
+                });
+            });
+
+            const companyTotals = {};
+            const companyRawData = companyTotalApiResult.data || [];
+            companyRawData.forEach(row => {
+                companyTotals[row.month] = row.company_total_elec;
+            });
+
+            return { departmentData: transformedData, companyTotals: companyTotals };
+        }
+
+        async function reloadData() {
+            const loading = layer.load(1, { shade: [0.1, '#fff'] });
+            const year = $('#year-selector').val();
+            try {
+                globalData = await fetchAndProcessData(year);
+                updateDashboard(globalData);
+            } catch (e) {
+                console.error("Failed to load or process data", e);
+                layer.msg("数据处理失败");
+            } finally {
+                layer.close(loading);
+            }
+        }
+
+        function updateHeaderSummaryForMonth(month) {
+            if (!globalData || !globalData.departmentData || !globalData.companyTotals) {
+                return;
+            }
+
+            const mockData = globalData.departmentData;
+            const companyTotals = globalData.companyTotals;
+
+            let monthElec = mockData.aux_total[month] || 0;
+            groupKeys.forEach(key => {
+                monthElec += mockData.groups[key]?.electricity[month] || 0;
+            });
+
+            if (monthElec === 0) {
+                const summaryHtml = `机加工<span style="color: red;">${month}</span>月份无用电数据`;
+                $('#header-summary-text').html(summaryHtml);
+                return;
+            }
+
+            const companyTotalForMonth = companyTotals[month] || 0;
+            const percentageOfCompanyTotal = companyTotalForMonth > 0
+                ? (monthElec / companyTotalForMonth * 100).toFixed(2)
+                : '0.00';
+
+            const summaryHtml = `机加工<span style="color: red;">${month}</span>月份用电电量<span style="color: red;">${monthElec.toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>`;
+            $('#header-summary-text').html(summaryHtml);
+        }
+
+        function updateDashboard(data) {
+            $('.data-cell').html('');
+            $('#header-summary-text').text('');
+
+            const mockData = data.departmentData;
+            const companyTotals = data.companyTotals;
+
+            const totals = {
+                grand_total: 0,
+                aux_total: 0,
+                prod_total: 0
+            };
+            groupKeys.forEach(key => {
+                totals[`${key}_elec_total`] = 0;
+                totals[`${key}_prod_total`] = 0;
+            });
+
+            for (let m = 1; m <= 12; m++) {
+                let month_prod_total = 0;
+                groupKeys.forEach(key => {
+                    month_prod_total += mockData.groups[key]?.electricity[m] || 0;
+                });
+
+                const month_aux_total = mockData.aux_total[m] || 0;
+                const month_grand_total = month_prod_total + month_aux_total;
+
+                totals.prod_total += month_prod_total;
+                totals.aux_total += month_aux_total;
+                totals.grand_total += month_grand_total;
+
+                if (month_grand_total > 0) {
+                    $('#total_elec_m' + m).text(month_grand_total.toLocaleString());
+                    $('#aux_total_m' + m + '_val').text(month_aux_total.toLocaleString());
+                    $('#aux_total_m' + m + '_pct').text((month_aux_total / month_grand_total * 100).toFixed(2) + '%');
+                    $('#prod_total_m' + m + '_val').text(month_prod_total.toLocaleString());
+                    $('#prod_total_m' + m + '_pct').text((month_prod_total / month_grand_total * 100).toFixed(2) + '%');
+
+                    groupKeys.forEach(key => {
+                        const elec_val = mockData.groups[key]?.electricity[m] || 0;
+                        const prod_val = mockData.groups[key]?.production[m] || 0;
+                        const per_unit_val = prod_val > 0 ? (elec_val / prod_val) : 0;
+                        const elec_pct = month_prod_total > 0 ? (elec_val / month_prod_total * 100) : 0;
+                        const per_unit_pct = prod_val > 0 ? (elec_pct / prod_val).toFixed(4) + '%' : '0.0000%';
+
+                        $(`#${key}_dianliang_m${m}_val`).text(elec_val.toLocaleString());
+                        $(`#${key}_dianliang_m${m}_pct`).text(elec_pct.toFixed(2) + '%');
+                        $(`#${key}_chanliang_m${m}`).text(prod_val.toLocaleString());
+                        $(`#${key}_dantai_m${m}_val`).text(per_unit_val.toFixed(2));
+                        $(`#${key}_dantai_m${m}_pct`).text(per_unit_pct);
+                        
+                        totals[`${key}_elec_total`] += elec_val;
+                        totals[`${key}_prod_total`] += prod_val;
+                    });
+                }
+            }
+
+            if (totals.grand_total > 0) {
+                $('#total_elec_total').text(totals.grand_total.toLocaleString());
+                $('#total_elec_total_pct').text('100.00%');
+                $('#aux_total_total').text(totals.aux_total.toLocaleString());
+                $('#aux_total_total_pct').text((totals.aux_total / totals.grand_total * 100).toFixed(2) + '%');
+                $('#prod_total_total').text(totals.prod_total.toLocaleString());
+                $('#prod_total_total_pct').text((totals.prod_total / totals.grand_total * 100).toFixed(2) + '%');
+
+                groupKeys.forEach(key => {
+                    const total_elec = totals[`${key}_elec_total`];
+                    const total_prod = totals[`${key}_prod_total`];
+                    const total_per_unit = total_prod > 0 ? (total_elec / total_prod) : 0;
+                    const total_elec_pct = totals.prod_total > 0 ? (total_elec / totals.prod_total * 100) : 0;
+                    const total_per_unit_pct = total_prod > 0 ? (total_elec_pct / total_prod).toFixed(4) + '%' : '0.0000%';
+
+                    $(`#${key}_dianliang_total`).text(total_elec.toLocaleString());
+                    $(`#${key}_dianliang_total_pct`).text(total_elec_pct.toFixed(2) + '%');
+                    $(`#${key}_chanliang_total`).text(total_prod.toLocaleString());
+                    $(`#${key}_dantai_total_val`).text(total_per_unit.toFixed(2));
+                    $(`#${key}_dantai_total_pct`).text(total_per_unit_pct);
+                });
+                
+                const allMonthsWithData = Object.keys(mockData.groups[groupKeys[0]]?.electricity || {});
+                const latestMonth = allMonthsWithData.length > 0 ? Math.max(...allMonthsWithData.map(Number)) : 0;
+                
+                if (latestMonth > 0) {
+                    updateHeaderSummaryForMonth(latestMonth);
+                } else {
+                    $('#header-summary-text').html('暂无月度数据');
+                }
+            }
+            
+            // 初始化图表（仅首次）
+            if (!myChart) {
+                setTimeout(() => {
+                    if (initChart()) {
+                        generateUnitCheckboxes();
+                        updateChart();
+                    }
+                }, 200);
+            } else {
+                updateChart();
+            }
+        }
+
+        laydate.render({
+            elem: '#year-selector',
+            type: 'year',
+            value: new Date()
+        });
+        
+        laydate.render({
+            elem: '#popup-month-selector',
+            type: 'month'
+        });
+
+        $('#search-btn').on('click', reloadData);
+        
+        $('#add-production-btn').on('click', function() {
+            layer.open({
+                type: 1,
+                title: '填写产量数据',
+                area: ['500px', 'auto'],
+                skin: 'production-popup',
+                content: $('#production-form-container'),
+                success: function(layero, index) {},
+                end: function() {
+                    $('body').append($('#production-form-container').hide());
+                }
+            });
+        });
+
+        form.on('submit(submit-production)', function(data){
+            const mainPageYear = $('#year-selector').val();
+            const formData = data.field;
+            
+            const monthValue = formData.production_month || "";
+            const monthPart = monthValue.split('-')[1] || "";
+
+            const submissionData = {
+                year: mainPageYear,
+                month: monthPart,
+                production: {}
+            };
+            
+            itemConfig.forEach(item => {
+                submissionData.production[item.key] = formData[`${item.key}_prod`] || 0;
+            });
+
+            layer.alert(
+                '<pre>' + JSON.stringify(submissionData, null, 2) + '</pre>', 
+                { title: '提交的数据' }
+            );
+            
+            return false;
+        });
+
+
+        $('#export-btn').on('click', function() {
+            try {
+                const year = $('#year-selector').val() || new Date().getFullYear();
+                const filename = `机加工电量及占比统计_${year}.xlsx`;
+                
+                const table = document.getElementById('data-table');
+                const ws = XLSX.utils.table_to_sheet(table, {raw: true});
+
+                // ---【核心修改】---
+                // 手动为28列设置宽度，wch代表字符宽度
+                ws['!cols'] = [
+                    { wch: 10 }, { wch: 12 }, // 项目 (2列)
+                    { wch: 10 }, { wch: 10 }, // 1月
+                    { wch: 10 }, { wch: 10 }, // 2月
+                    { wch: 10 }, { wch: 10 }, // 3月
+                    { wch: 10 }, { wch: 10 }, // 4月
+                    { wch: 10 }, { wch: 10 }, // 5月
+                    { wch: 10 }, { wch: 10 }, // 6月
+                    { wch: 10 }, { wch: 10 }, // 7月
+                    { wch: 10 }, { wch: 10 }, // 8月
+                    { wch: 10 }, { wch: 10 }, // 9月
+                    { wch: 10 }, { wch: 10 }, // 10月
+                    { wch: 10 }, { wch: 10 }, // 11月
+                    { wch: 10 }, { wch: 10 }, // 12月
+                    { wch: 15 },             // 合计
+                    { wch: 12 }              // 占比
+                ];
+                // ---【修改结束】---
+
+                // 您原有的百分比格式化代码保持不变
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cell_address = XLSX.utils.encode_cell({c: C, r: R});
+                        const cell = ws[cell_address];
+                        if (!cell || typeof cell.v !== 'string' || !cell.v.endsWith('%')) {
+                            continue;
+                        }
+                        const numericValue = parseFloat(cell.v.replace(/[,%]/g, '')) / 100.0;
+                        if (isNaN(numericValue)) {
+                            continue;
+                        }
+                        cell.t = 'n';
+                        cell.v = numericValue;
+                        cell.z = '0.00%';
+                    }
+                }
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                XLSX.writeFile(wb, filename);
+
+            } catch (e) {
+                console.error(e);
+                layer.msg('导出失败，请检查控制台错误。');
+            }
+        });        
+
+
+        // ========= 图表相关 =========
+        let myChart = null;
+        
+        // 初始化图表
+        function initChart() {
+            const dom = document.getElementById('trend-chart');
+            if (!dom) return false;
+            
+            myChart = echarts.init(dom);
+            myChart.setOption({
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#1d386f',
+                    borderColor: '#2a6dc8',
+                    textStyle: { color: '#fff' }
+                },
+                legend: {
+                    textStyle: { color: '#d0d2e0' },
+                    top: 10
+                },
+                grid: { left: 60, right: 40, bottom: 40, top: 60 },
+                xAxis: {
+                    type: 'category',
+                    data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    axisLine: { lineStyle: { color: '#2a6dc8' } },
+                    axisLabel: { color: '#d0d2e0' }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '单台电量(kWh/台)',
+                    nameTextStyle: { color: '#d0d2e0' },
+                    axisLine: { lineStyle: { color: '#2a6dc8' } },
+                    axisLabel: { color: '#d0d2e0' },
+                    splitLine: { lineStyle: { color: '#2a6dc8', opacity: 0.3 } }
+                },
+                series: []
+            });
+            
+            window.addEventListener('resize', () => myChart && myChart.resize());
+            return true;
+        }
+        
+        // 生成复选框
+        function generateUnitCheckboxes() {
+            const html = itemConfig.map((item, i) => 
+                `<div><input type="checkbox" name="unit" value="${item.key}" title="${item.name}" 
+                 lay-skin="primary" lay-filter="unit-filter" ${i < 3 ? 'checked' : ''}></div>`
+            ).join('');
+            
+            $('#unit-checkboxes').html(html);
+            form.render('checkbox');
+            
+            // 复选框触发图例点击
+            form.on('checkbox(unit-filter)', function(data) {
+                const item = itemConfig.find(i => i.key === data.value);
+                if (item && myChart) {
+                    myChart.dispatchAction({ type: 'legendToggleSelect', name: item.name });
+                }
+            });
+        }
+        
+        // 更新图表
+        function updateChart() {
+            if (!myChart) return;
+            
+            const series = [];
+            const legends = [];
+            const selected = {};
+            
+            itemConfig.forEach((item, index) => {
+                // 读取12个月单台用电数据
+                const data = [];
+                for (let m = 1; m <= 12; m++) {
+                    const val = $(`#${item.key}_dantai_m${m}_val`).text().replace(/,/g, '');
+                    data.push(val ? Number(val) : 0);
+                }
+                
+                // 添加系列
+                series.push({
+                    name: item.name,
+                    type: 'line',
+                    data: data,
+                    smooth: true,
+                    markPoint: {
+                        data: [{ type: 'max', name: '最高' }, { type: 'min', name: '最低' }]
+                    }
+                });
+                
+                legends.push(item.name);
+                selected[item.name] = index < 3; // 默认显示前3个
+            });
+            
+            myChart.setOption({
+                legend: { data: legends, selected: selected },
+                series: series
+            });
+        }
+
+        const table = $('#data-table');
+        
+        table.on('click', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                updateHeaderSummaryForMonth(month);
+            }
+        });
+
+        table.on('mouseover', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                table.find('.col-hover').removeClass('col-hover');
+                table.find(`[data-month="${month}"]`).addClass('col-hover');
+            }
+        });
+
+        table.on('mouseleave', function() {
+            table.find('.col-hover').removeClass('col-hover');
+        });
+
+        generateDynamicContent();
+        reloadData();
+    });
+</script>
+
+</body>
+</html>

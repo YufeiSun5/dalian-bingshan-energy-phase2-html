@@ -1,0 +1,321 @@
+/**
+ * 报表模块独立样式
+ * 与报表模板样式保持一致
+ */
+
+/* 报表容器 - 对应模板的 content-box */
+.report-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #0f266c;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* 报表主体 - 对应模板的 report */
+.report-main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 查询表单区域 - 对应模板的 report-head */
+.report-query-form {
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.report-query-form .layui-form-item {
+    margin-bottom: 0;
+}
+
+.report-query-form .layui-inline {
+    margin-bottom: 0;
+}
+
+.report-query-form .layui-form-label {
+    color: #fff !important;
+    padding: 9px 15px 9px 0 !important;
+    background-color: transparent !important;
+}
+
+.report-query-form .layui-input-inline {
+    margin-bottom: 0;
+}
+
+.report-query-form .layui-form-mid {
+    color: #fff !important;
+}
+
+.report-form-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.report-form-item {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.report-form-label {
+    color: #fff;
+    font-size: 14px;
+    padding: 9px 15px 9px 0;
+    white-space: nowrap;
+}
+
+.report-form-input,
+.report-form-select {
+    background-color: rgba(40, 80, 167, 1);
+    border: 1px solid rgba(40, 80, 167, 0);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 2px;
+    font-size: 14px;
+    min-width: 150px;
+    height: 38px;
+    line-height: 1.3;
+}
+
+.report-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.report-form-input:hover,
+.report-form-select:hover {
+    border-color: rgba(40, 80, 167, 0) !important;
+}
+
+.report-form-input:focus,
+.report-form-select:focus {
+    outline: none;
+    border-color: #409eff !important;
+    box-shadow: 0 0 0 3px rgba(40, 80, 167, 0.08);
+}
+
+/* 按钮样式 - 对应LayUI按钮 */
+.report-btn {
+    display: inline-block;
+    padding: 0 18px;
+    height: 38px;
+    line-height: 38px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s;
+    margin-left: 10px;
+}
+
+.report-btn-primary {
+    background-color: #009688;
+    color: #fff;
+}
+
+.report-btn-primary:hover {
+    background-color: #00b3a0;
+}
+
+.report-btn-warning {
+    background-color: #FFB800;
+    color: #fff;
+}
+
+.report-btn-warning:hover {
+    background-color: #ffca28;
+}
+
+/* 报表内容区域 - 对应模板的 report-content */
+.report-container .report-content {
+    flex: 1;
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.report-container .report-title {
+    text-align: center;
+    color: #fff;
+    font-size: 20px;
+    font-weight: normal;
+    margin: 8px 0 10px 0;
+}
+
+.report-container .report-unit {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #b9d3f4;
+    font-size: 14px;
+}
+
+/* 表格容器 */
+.report-container .report-table-wrapper {
+    flex: 1;
+    overflow: auto;
+}
+
+/* 表格样式 - 完全对应LayUI表格 */
+.report-container .report-table {
+    width: 100%;
+    margin: 0;
+    background-color: rgba(29, 56, 111, 1);
+    color: #b9d3f4;
+    border-collapse: collapse;
+    font-family: "Microsoft YaHei";
+}
+
+.report-container .report-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.report-container .report-table th {
+    background-color: rgba(12, 110, 211, 1) !important;
+    color: #fff !important;
+    padding: 9px 15px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid rgba(29, 56, 111, 1);
+    white-space: nowrap;
+}
+
+.report-container .report-table td {
+    padding: 9px 15px;
+    text-align: center;
+    border: 1px solid rgba(29, 56, 111, 1);
+    background-color: rgba(29, 56, 111, 1);
+    white-space: nowrap;
+}
+
+/* 斑马纹 */
+.report-container .report-table tbody tr:nth-child(even) td {
+    background-color: rgba(36, 68, 125, 1) !important;
+}
+
+/* 悬停效果 */
+.report-container .report-table tbody tr:hover td {
+    background-color: rgba(48, 127, 190, 0.91) !important;
+}
+
+/* 空数据提示 */
+.report-container .report-empty {
+    text-align: center;
+    color: #b9d3f4;
+    padding: 40px;
+    font-size: 14px;
+}
+
+/* 加载动画 */
+.report-container .report-loading {
+    text-align: center;
+    color: #409eff;
+    padding: 40px;
+    font-size: 14px;
+}
+
+.report-container .report-loading::after {
+    content: '...';
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* 滚动条样式 */
+.report-container .report-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.report-container .report-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(29, 56, 111, 0.5);
+}
+
+.report-container .report-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(42, 109, 200, 0.6);
+    border-radius: 4px;
+}
+
+.report-container .report-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(42, 109, 200, 0.8);
+}
+.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125) !important;
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}

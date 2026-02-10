@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<!-- 文档类型声明，指定为HTML5标准。 -->
+<html lang="zh-CN"> <!-- 根元素，lang属性指定页面主要语言为简体中文，有助于浏览器和搜索引擎优化。 -->
+<head>
+    <!-- head部分包含文档的元数据，是浏览器和搜索引擎读取的信息，不直接在页面显示。 -->
+    <meta charset="UTF-8"> <!-- 指定文档的字符编码为UTF-8，以正确显示包括中文在内的多语言字符。 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 视口元标签，确保页面在移动设备上以设备宽度进行渲染，并设置初始缩放为1.0，是响应式设计的关键。 -->
+    <title>动力实施课电量占比及统计</title> <!-- 文档标题，将显示在浏览器标签页上。 -->
+    
+    <!-- === 外部资源依赖 === -->
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script src="../js/xlsx.full.min.js"></script>
+<style>
+    /* CSS样式定义区域，用于控制页面的视觉表现。 */
+    
+    /* --- 全局与基础样式 --- */
+    html, body {
+        height: 100%; /* 确保html和body元素占满整个视口高度。 */
+        margin: 0; /* 移除浏览器默认的外边距。 */
+        padding: 0; /* 移除浏览器默认的内边距。 */
+        font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif; /* <-- 【调整】统一字体，去掉STHeiTi */
+        background-color: #0f266c; /* 设置全局背景色，适用于深色主题的数据看板。 */
+        color: #d0d2e0; /* 设置全局默认文字颜色。 */
+        overflow: hidden; /* 隐藏根元素的滚动条，防止页面整体滚动，由内部容器管理滚动。 */
+        font-size: 13px;  /* <-- 【新增】全局字体大小13px */
+    }
+
+    /* --- 主要布局容器 --- */
+    .dashboard-container {
+        display: flex; /* 启用Flexbox布局模型。 */
+        flex-direction: column; /* 设置主轴为垂直方向，使子元素从上到下排列。 */
+        height: 100%; /* 高度继承父元素（body）的100%。 */
+        padding: 12px; /* <-- 【调整】从15px改为12px */
+        box-sizing: border-box; /* 内边距和边框将包含在元素的总宽度和高度内，简化布局计算。 */
+        gap: 12px; /* <-- 【调整】从15px改为12px */
+    }
+
+    /* --- 卡片通用样式 --- */
+    .card-block {
+        background-color: #1d386f; /* 卡片背景色，与全局背景形成对比。 */
+        border: 1px solid #2a6dc8; /* 卡片边框。 */
+        border-radius: 5px; /* 圆角边框，使界面更柔和。 */
+        display: flex; /* 卡片自身也作为flex容器。 */
+        flex-direction: column; /* 卡片内部元素垂直排列。 */
+    }
+    
+    /* --- 筛选栏 --- */
+    .filter-bar {
+        flex-shrink: 0; /* 防止该容器在空间不足时被压缩，保持其原始高度。 */
+        flex-direction: row; /* 覆盖.card-block的设置，使其内部元素水平排列。 */
+        justify-content: space-between; /* 沿主轴（水平）对齐：首个元素在起点，末尾元素在终点，其余元素平均分布。 */
+        align-items: center; /* 沿交叉轴（垂直）对齐：所有子项居中。 */
+    }
+
+    /* --- 顶部居中大标题样式 --- */
+    .top-bar-title {
+        font-size: 24px; /* 标题字体大小。 */
+        font-weight: bold; /* 字体加粗。 */
+        color: #ffffff; /* 标题颜色。 */
+        letter-spacing: 2px; /* 字符间距，增加可读性。 */
+    }
+    
+    /* --- 筛选栏内Layui组件的样式覆盖 --- */
+    .filter-bar .layui-form-item {
+        display: flex; /* 确保表单项内部也使用flex布局。 */
+        justify-content: center; /* 水平居中对齐 */
+        align-items: center; /* 垂直居中对齐 */
+        margin-bottom: 0; /* 移除Layui表单项的默认下边距，以适应单行筛选栏。 */
+        margin-top:5px;
+    }
+
+    .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        width: auto; /* 标签宽度自适应内容。 */
+    }
+    .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1); /* 输入框背景色。 */
+        border-color: transparent; /* 移除边框。 */
+        color: #fff; /* 输入文字颜色。 */
+    }
+    .filter-bar .layui-input::placeholder {
+        color: #bbb; /* 占位符文字颜色。 */
+    }
+    .filter-bar .layui-btn {
+        margin-left: 10px; /* 按钮之间的左边距。 */
+    }
+    .filter-bar .layui-bg-orange {
+        background-color: #fa8c16; /* 自定义橙色按钮的背景色。 */
+        border-color: #fa8c16;
+    }
+
+    /* --- 主要内容区域 --- */
+    .main-content {
+        flex-grow: 1; /* 占据所有剩余的垂直空间。 */
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* 关键属性：与flex-grow:1配合，确保在内容溢出时，容器可以正确计算高度并允许其子元素滚动。 */
+    }
+    
+    .main-content .card-block {
+        height: 100%; /* 主内容区的卡片高度占满其父容器。 */
+    }
+
+    /* --- 卡片头部样式 --- */
+    .card-header {
+        background-color: #29498e;
+		color: #fff;
+        padding: 8px 12px;        /* <-- 【调整】从10px 15px改为8px 12px */
+        border-bottom: 1px solid #2a6dc8;
+        font-size: 15px;          /* <-- 【调整】从16px改为15px */
+        flex-shrink: 0; /* 高度固定，不被压缩。 */
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* 左右两端对齐。 */
+        gap: 15px;                /* <-- 【调整】从20px改为15px */
+    }
+
+    .header-summary {
+        font-size: 15px;          /* <-- 【调整】从17px改为15px */
+        font-weight: normal;
+        color: #fff7ca; /* 高亮摘要文本颜色。 */
+    }
+    .header-unit {
+		font-size: 13px;          /* <-- 【调整】从14px改为13px */
+        font-weight: normal;
+        color: #b9d3f4;
+        flex-shrink: 0; /* 防止单位文本换行。 */
+    }
+
+    /* --- 表格区域特定样式 --- */
+    .table-container {
+        flex-grow: 1; /* 占据卡片内所有剩余的垂直空间。 */
+        overflow: auto; /* 当内容超出时，显示滚动条。 */
+        padding: 10px;
+        position: relative; /* 为可能的绝对定位子元素提供定位上下文。 */
+        /* 自定义滚动条样式（Firefox）。 */
+        scrollbar-width: thin;
+        scrollbar-color: #2a6dc8 #18589b;
+    }
+    
+    /* --- 表格及弹窗的详细样式，通过!important提升优先级以覆盖Layui默认样式 --- */
+    .table-container .layui-table { 
+        border: 1px solid #3c8ce7 !important; 
+        background-color: transparent; 
+        table-layout: fixed; /* <-- 【调整】固定表格布局 */
+        width: 100%;
+        min-height: 300px;    /* <-- 【新增】最低表格高度 */
+    }
+    .table-container .layui-table th, .table-container .layui-table td { 
+        border: 1px solid #3c8ce7 !important; 
+        background-color: #1e4e89 !important; 
+        color: #ffffff; 
+        font-weight: bold; 
+        text-align: center; 
+        vertical-align: middle; 
+        padding: 5px 3px;     /* <-- 【调整】从2px 3px改为5px 3px，增加高度 */
+        font-size: 12px;      /* <-- 【调整】从11px改为12px */
+        min-width: 48px;      /* <-- 【调整】数据列最小宽度 */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        word-break: break-all;
+        transition: background-color 0.2s ease-in-out; 
+    }
+    .table-container .layui-table th[data-month], .table-container .layui-table td[data-month] { cursor: pointer; } /* 为带月份的列添加鼠标指针，提示可点击。 */
+    .table-container .layui-table th { 
+        font-size: 12px;      /* <-- 【调整】保持12px */
+        background-color: #0c6ed3 !important; 
+    }
+    .table-container .layui-table .left-header { 
+        background-color: #0c6ed3 !important; 
+        width: 60px !important;     /* <-- 【调整】项目列宽度从80px改为60px */
+        min-width: 60px !important;
+        font-size: 14px;            /* <-- 【新增】项目列字体14px */
+        font-weight: 500;           /* <-- 【新增】项目列加粗 */
+    }
+    
+    /* 月份列的电量和占比列 */
+    .table-container .layui-table td[id$='_val'] {
+        width: 75px !important;     /* <-- 【新增】月份电量列宽度 */
+        min-width: 75px !important;
+    }
+    .table-container .layui-table td[id$='_pct'] {
+        width: 55px !important;     /* <-- 【调整】占比列从45px改为55px */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】占比列字体13px */
+        font-weight: bold;
+    }
+    
+    /* 合计列 */
+    .table-container .layui-table td[id$='_total']:not([id$='_total_pct']),
+    .table-container .layui-table td[id='total_sum'] {
+        width: 55px !important;     /* <-- 【新增】合计列宽度 */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】合计列字体13px */
+        font-weight: bold;
+    }
+    
+    /* 占比总计列 */
+    .table-container .layui-table td[id$='_total_pct'],
+    .table-container .layui-table td[id='total_ratio'] {
+        width: 55px !important;     /* <-- 【新增】占比总计列宽度 */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】占比总计列字体13px */
+        font-weight: bold;
+    }
+    .table-container .layui-table th.col-hover, .table-container .layui-table td.col-hover { background-color: rgb(112, 167, 255) !important; } /* 列悬浮高亮样式。 */
+    .layui-table tbody tr:hover { background-color: transparent !important; } /* 禁用行的悬浮效果，以列高亮为主。 */
+    /* 自定义滚动条样式（WebKit/Blink内核浏览器，如Chrome, Safari）。 */
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-thumb { background-color: #2a6dc8; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-track { background-color: #18589b; }
+</style>
+</head>
+<body>
+
+<!-- 页面主体内容容器 -->
+<div class="dashboard-container">
+    <!-- 顶部筛选/操作栏 -->
+    <div class="card-block filter-bar">
+        <!-- 左侧筛选区 -->
+        <div class="layui-form" lay-filter="filter-form-left">
+						<div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">年份</label>
+							<div class="layui-input-inline">
+                        <!-- 年份选择输入框，将由Layui的laydate模块渲染成日期选择器。 -->
+                        <input type="text" id="year-selector" class="layui-input" placeholder="请选择年份">
+								</div>
+							</div>
+							</div>
+						</div>
+
+        <!-- 中部标题 -->
+        <div class="top-bar-title">动力实施课电量占比及统计</div>
+
+        <!-- 右侧操作按钮区 -->
+        <div class="layui-form" lay-filter="filter-form-right">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <!-- 查询按钮 -->
+                    <button id="search-btn" class="layui-btn">
+                        <i class="layui-icon layui-icon-search"></i>
+                        <span>查询</span>
+                    </button>
+                    <!-- 导出按钮 -->
+                    <button id="export-btn" class="layui-btn layui-bg-orange">
+                        <span>导出</span>
+                        <i class="layui-icon layui-icon-print"></i>
+                    </button>
+                </div>
+            </div>
+					</div>
+				</div>
+				
+    <!-- 主要数据展示区 -->
+    <div class="main-content">
+        <div class="card-block">
+            <!-- 卡片头部，包含动态摘要和单位信息 -->
+            <div class="card-header">
+                <div class="header-summary">
+                    <!-- 此span将由JavaScript动态填充月度汇总信息。 -->
+                    <span id="header-summary-text"></span>
+								</div>
+                <div class="header-unit">
+                    <span>电能单位（千瓦时）</span>
+							</div>
+						</div>
+            <!-- 表格容器 -->
+            <div class="table-container">
+                <!-- 数据表格，其内容将由JavaScript动态生成。 -->
+                <table class="layui-table" id="data-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">项目</th>
+                            <!-- 表头月份，colspan="2"表示每个月占两列（值和占比）。data-month属性用于JS事件处理。 -->
+                            <th colspan="2" data-month="1">1月份</th>
+                            <th colspan="2" data-month="2">2月份</th>
+                            <th colspan="2" data-month="3">3月份</th>
+                            <th colspan="2" data-month="4">4月份</th>
+                            <th colspan="2" data-month="5">5月份</th>
+                            <th colspan="2" data-month="6">6月份</th>
+                            <th colspan="2" data-month="7">7月份</th>
+                            <th colspan="2" data-month="8">8月份</th>
+                            <th colspan="2" data-month="9">9月份</th>
+                            <th colspan="2" data-month="10">10月份</th>
+                            <th colspan="2" data-month="11">11月份</th>
+                            <th colspan="2" data-month="12">12月份</th>
+                            <th>合计</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <!-- 表格主体，初始为空，由JS填充。 -->
+                    <tbody>
+                    </tbody>
+                </table>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+<!-- 引入Layui的JavaScript文件，必须在body闭合标签前，以确保DOM加载完毕。 -->
+<script src="../js/layui.js"></script>
+<script>
+    // 使用layui.use来加载所需模块，并执行回调函数。
+    layui.use(['laydate', 'form', 'layer'], function(){
+        // --- 1. 模块与变量初始化 ---
+        const laydate = layui.laydate; // 日期时间选择模块
+        const form = layui.form;       // 表单模块，用于表单渲染和事件监听
+        const layer = layui.layer;     // 弹层模块
+        const $ = layui.jquery;        // jQuery库，Layui内置
+        let globalData; // 全局变量，用于缓存从API获取并处理后的数据，避免重复请求。
+
+        // --- 2. 核心配置 ---
+        // 【关键配置】定义了所有需要统计的业务单元。
+        // 这是数据驱动UI的核心，增删改此处的对象，将自动反映在UI和数据处理逻辑中。
+        const itemConfig = [
+            { key: 'kongya', name: '空压机', no: 1 },
+            { key: 'wushui', name: '污水处理区', no: 12 },
+            { key: 'biandian', name: '变电所', no: 16 },
+            { key: 'rebeng', name: 'B座热泵', no: 17 },
+            { key: 'bangong', name: 'B座办公', no: 20 }
+        ];
+        
+        // 从配置中提取所有key，方便后续遍历和数据索引。
+        const groupKeys = itemConfig.map(item => item.key);
+        
+        // 生产用电编号和辅助用电编号
+        const productionNos = [1, 12, 16]; // 生产用电
+        const auxiliaryNos = [17, 20];     // 辅助用电
+        
+        // --- 3. 函数定义 ---
+
+        /**
+         * @function generateDynamicContent
+         * @description 根据 itemConfig 动态生成表格主体 (tbody) 的DOM结构。
+         * 实现了配置与视图的解耦，提高了代码的可维护性。
+         */
+        function generateDynamicContent() {
+            const tableBody = $('#data-table tbody'); // 缓存表格主体jQuery对象
+            
+            // 清空旧内容，为重绘做准备
+            tableBody.empty();
+
+            // 生成合计行
+            let totalRow = `
+                <tr>
+                    <td colspan="2" class="left-header">合计</td>
+                    ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="total_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="total_sum" class="data-cell"></td>
+                    <td id="total_ratio" class="data-cell">100%</td>
+                </tr>
+            `;
+            tableBody.append(totalRow);
+
+            // 统计生产用电和辅助用电的数量，用于rowspan
+            const productionCount = itemConfig.filter(item => productionNos.includes(item.no)).length;
+            const auxiliaryCount = itemConfig.filter(item => auxiliaryNos.includes(item.no)).length;
+
+            // 遍历配置项，为每个业务单元生成表格行
+            itemConfig.forEach((item, index) => {
+                // 判断该项是生产用电还是辅助用电
+                const isProduction = productionNos.includes(item.no);
+                const category = isProduction ? '生产用电' : '辅助用电';
+                
+                // 判断是否是该类别的第一项（需要显示类别单元格）
+                const isFirstProduction = isProduction && itemConfig.slice(0, index).filter(i => productionNos.includes(i.no)).length === 0;
+                const isFirstAuxiliary = !isProduction && itemConfig.slice(0, index).filter(i => auxiliaryNos.includes(i.no)).length === 0;
+                
+                let row = `<tr class="dynamic-row">`;
+                
+                // 只在该类别的第一行显示类别单元格（并设置rowspan）
+                if (isFirstProduction) {
+                    row += `<td class="left-header" rowspan="${productionCount}">${category}</td>`;
+                } else if (isFirstAuxiliary) {
+                    row += `<td class="left-header" rowspan="${auxiliaryCount}">${category}</td>`;
+                }
+                
+                row += `
+                        <td class="left-header">${item.name}</td>
+                        ${Array.from({length: 12}, (_, i) => `
+                            <td id="${item.key}_m${i+1}_val" class="data-cell" data-month="${i+1}"></td>
+                            <td id="${item.key}_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>
+                        `).join('')}
+                        <td id="${item.key}_total" class="data-cell"></td>
+                        <td id="${item.key}_total_pct" class="data-cell"></td>
+                    </tr>
+                `;
+                tableBody.append(row);
+            });
+        }
+
+        /**
+         * @async
+         * @function sendSQL
+         * @param {string} strsql - 要执行的SQL查询语句。
+         * @returns {Promise<object>} - 返回一个Promise，resolve时为API的响应数据，通常是 { data: [...] } 格式。
+         * @description 封装了fetch API，用于向后端发送SQL查询请求。包含错误处理和加载状态。
+         */
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) { // 检查HTTP状态码是否在200-299范围
+                    layer.msg(`数据加载失败: ${res.statusText}`);
+                    return { data: [] }; // 返回空数据结构以防后续代码崩溃
+                }
+                return await res.json(); // 解析响应体为JSON
+            } catch (err) { // 捕获网络错误或JSON解析错误
+                console.error('sendSQL Error:', err); // 在控制台记录详细错误信息，便于调试
+                layer.msg('数据加载失败，请检查网络或联系管理员。');
+                return { data: [] };
+            }
+        }
+
+        /**
+         * @async
+         * @function fetchAndProcessData
+         * @param {string} year - 需要查询的年份。
+         * @returns {Promise<object>} - 返回包含处理后部门数据和公司总计数据的对象。
+         * @description 负责构建SQL查询，并行获取数据，并将返回的扁平数据结构转换为更适合前端渲染的嵌套对象结构。
+         */
+        async function fetchAndProcessData(year) {
+            const startdate = `${year}-01-01`;
+            const enddate = `${year}-12-31`;
+            
+            // 获取当前日期用于判断是否需要查询今日实时数据
+				let now = new Date();
+				let compareDate = new Date(now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate());
+				
+            // 构建SQL查询
+            let sql = "with basedata as ( \n"
+                + " 		select DATE_FORMAT(date, '%Y-%m-%d')  as jDay,CONCAT('elec', '_', NO) as elec_name,sum_elec  \n"
+                + " 		from sum_elec_group_by_day 	\n"
+                + " 		where date <= '"+enddate+"' 	\n"
+                + " 		AND date >= '"+startdate+"'		\n"	
+                + " 		and no in (12,16,17,20,1)	\n";
+            
+            // 如果当前日期在查询范围内，添加今日实时数据
+				if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+					sql += " union all \n"
+					+" 	SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay \n" 	
+					+"	,CONCAT('elec', '_', NO) as elec_name	\n"
+					+" 	,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec \n" 			
+					+" 	FROM data_all 	\n" 	
+					+" 	WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  \n" 
+					+" 	AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')		\n" 
+					+" 	and kwh != 0 and kwh != 99999999		\n" 
+					+" 	and no in (12,16,17,20,1)	\n" 
+                    +" 	GROUP BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00') \n";
+				}
+            
+				sql += ""
+				+" )	\n"
+				+" select case when elec_name in ('elec_1','elec_12','elec_16') then '生产用电' when elec_name in ('elec_17','elec_20') then '辅助用电' end  as  place \n"
+				+" ,case elec_name when 'elec_1' then '空压机' when 'elec_12' then '污水处理区' when 'elec_16' then '变电所' when 'elec_17' then 'B座热泵' when 'elec_20' then 'B座办公'    end as  elec_name \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 1 THEN t.sum_elec ELSE null END) AS month1_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 2 THEN t.sum_elec ELSE null END) AS month2_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 3 THEN t.sum_elec ELSE null END) AS month3_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 4 THEN t.sum_elec ELSE null END) AS month4_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 5 THEN t.sum_elec ELSE null END) AS month5_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 6 THEN t.sum_elec ELSE null END) AS month6_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 7 THEN t.sum_elec ELSE null END) AS month7_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 8 THEN t.sum_elec ELSE null END) AS month8_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 9 THEN t.sum_elec ELSE null END) AS month9_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 10 THEN t.sum_elec ELSE null END) AS month10_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 11 THEN t.sum_elec ELSE null END) AS month11_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 12 THEN t.sum_elec ELSE null END) AS month12_elec \n"
+				+" ,sum(t.sum_elec) as sum_elec \n"
+				+" from basedata t \n"
+				+" group by elec_name \n"
+				+" union all  \n"
+				+" select '合计' as place \n"
+				+" ,'合计' as elec_name \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 1 THEN t.sum_elec ELSE null END) AS month1_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 2 THEN t.sum_elec ELSE null END) AS month2_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 3 THEN t.sum_elec ELSE null END) AS month3_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 4 THEN t.sum_elec ELSE null END) AS month4_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 5 THEN t.sum_elec ELSE null END) AS month5_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 6 THEN t.sum_elec ELSE null END) AS month6_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 7 THEN t.sum_elec ELSE null END) AS month7_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 8 THEN t.sum_elec ELSE null END) AS month8_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 9 THEN t.sum_elec ELSE null END) AS month9_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 10 THEN t.sum_elec ELSE null END) AS month10_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 11 THEN t.sum_elec ELSE null END) AS month11_elec \n"
+				+" ,SUM(CASE WHEN MONTH(t.jDay) = 12 THEN t.sum_elec ELSE null END) AS month12_elec \n"
+				+" ,sum(t.sum_elec) as sum_elec \n"
+				+" from basedata t	 \n";
+				
+            // 获取公司总用电量
+            const companySql = " select sum(sum_elec) as sum_elec from sum_elec_group_by_day where date <= '"+enddate+"'  AND date >= '"+startdate+"' ";
+
+            // 并行执行查询
+            const [departmentResult, companyResult] = await Promise.all([
+                sendSQL(sql),
+                sendSQL(companySql)
+            ]);
+
+            return {
+                departmentData: departmentResult.data || [],
+                companyTotal: companyResult.data && companyResult.data.length > 0 ? companyResult.data[0].sum_elec : 0
+            };
+        }
+
+        /**
+         * @async
+         * @function reloadData
+         * @description 用户触发数据刷新的入口函数。负责协调UI加载状态、数据获取、数据渲染的整个流程。
+         */
+        async function reloadData() {
+            const loading = layer.load(1, { shade: [0.1, '#fff'] }); // 显示加载动画
+            const year = $('#year-selector').val();
+            try {
+                globalData = await fetchAndProcessData(year); // 获取并处理数据
+                updateDashboard(globalData); // 使用新数据更新UI
+            } catch (e) {
+                console.error("Failed to load or process data", e);
+                layer.msg("数据处理失败");
+            } finally {
+                layer.close(loading); // 确保加载动画总是被关闭
+            }
+        }
+
+        /**
+         * @function updateHeaderSummaryForMonth
+         * @param {number|string} month - 要显示摘要的月份。
+         * @description 根据全局数据，计算并更新卡片头部的单月汇总信息。
+         */
+        function updateHeaderSummaryForMonth(month) {
+            if (!globalData || !globalData.departmentData) {
+                return;
+            }
+
+            const data = globalData.departmentData;
+            const companyTotal = globalData.companyTotal;
+
+            // 找到合计行数据
+            const totalRow = data.find(row => row.elec_name === '合计');
+            if (!totalRow) {
+                return;
+            }
+
+            const monthElec = totalRow[`month${month}_elec`] || 0;
+            
+            if (monthElec === 0) {
+                $('#header-summary-text').html(`动力实施课<span style="color: red;">${month}</span>月份无用电数据`);
+                return;
+            }
+
+            // 计算占公司总电量的百分比
+            const percentageOfCompanyTotal = companyTotal > 0
+                ? (monthElec / companyTotal * 100).toFixed(2)
+                : '0.00';
+
+            // 使用模板字符串和toLocaleString()格式化输出 // <-- 【调整】使用 Math.round() 去掉小数点
+            const summaryHtml = `动力实施课<span style="color: red;">${month}</span>月用电电量<span style="color: red;">${Math.round(monthElec).toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>。`;
+            $('#header-summary-text').html(summaryHtml);
+        }
+
+        /**
+         * @function updateDashboard
+         * @param {object} data - 包含departmentData和companyTotal的已处理数据对象。
+         * @description 核心渲染函数。遍历数据，执行计算，并使用jQuery将结果填充到表格的各个单元格中。
+         */
+        function updateDashboard(data) {
+            $('.data-cell').not('#total_ratio').html(''); // 清空所有数据单元格，但保留合计占比
+            $('#header-summary-text').text('');
+
+            const apiData = data.departmentData;
+            
+            if (!apiData || apiData.length === 0) {
+                $('#header-summary-text').html('暂无数据');
+                return;
+            }
+
+            // 找到合计行
+            const totalRow = apiData.find(row => row.elec_name === '合计');
+            if (!totalRow) {
+                return;
+            }
+
+            // 填充合计行
+            let latestMonth = 0;
+            for (let m = 1; m <= 12; m++) {
+                const monthTotal = totalRow[`month${m}_elec`];
+                if (monthTotal != null && monthTotal > 0) {
+                    // <-- 【调整】使用 Math.round() 去掉小数点
+                    $('#total_m' + m).text(Math.round(monthTotal).toLocaleString());
+                    latestMonth = m;
+                }
+            }
+            // <-- 【调整】使用 Math.round() 去掉小数点
+            $('#total_sum').text(Math.round(totalRow.sum_elec || 0).toLocaleString());
+
+            // 填充各单元数据
+            itemConfig.forEach(item => {
+                const row = apiData.find(r => r.elec_name === item.name);
+                if (!row) {
+                    return;
+                }
+
+                for (let m = 1; m <= 12; m++) {
+                    const monthVal = row[`month${m}_elec`] || 0;
+                    const monthTotal = totalRow[`month${m}_elec`] || 0;
+                    const monthPct = monthTotal > 0 ? (monthVal / monthTotal * 100).toFixed(2) : '0.00';
+
+                    if (monthVal > 0) {
+                        // <-- 【调整】使用 Math.round() 去掉小数点
+                        $(`#${item.key}_m${m}_val`).text(Math.round(monthVal).toLocaleString());
+                        $(`#${item.key}_m${m}_pct`).text(monthPct + '%');
+                    }
+                }
+
+                // 填充总计列
+                const itemTotal = row.sum_elec || 0;
+                const totalSum = totalRow.sum_elec || 0;
+                const totalPct = totalSum > 0 ? (itemTotal / totalSum * 100).toFixed(2) : '0.00';
+                
+                // <-- 【调整】使用 Math.round() 去掉小数点
+                $(`#${item.key}_total`).text(Math.round(itemTotal).toLocaleString());
+                $(`#${item.key}_total_pct`).text(totalPct + '%');
+            });
+
+            // 自动更新头部摘要为最新有数据的月份
+            if (latestMonth > 0) {
+                updateHeaderSummaryForMonth(latestMonth);
+            } else {
+                $('#header-summary-text').html('暂无月度数据');
+            }
+        }
+
+        /**
+         * @function setupTooltip
+         * @description 设置单元格 title 提示（鼠标悬浮显示完整内容）
+         */
+        function setupTooltip() {
+            const table = document.getElementById('data-table');
+            if (!table) return;
+            table.addEventListener('mouseover', e => {
+                const cell = e.target;
+                if (cell.tagName === 'TD' || cell.tagName === 'TH') {
+                    const text = cell.textContent.trim();
+                    // 添加 title 属性用于浮窗显示
+                    if (text) {
+                        cell.title = text;
+                    }
+                }
+            });
+        }
+
+        // --- 4. 事件监听与程序初始化 ---
+
+        // 初始化Layui组件
+        laydate.render({ elem: '#year-selector', type: 'year', value: new Date() });
+
+        // 绑定"查询"按钮点击事件
+        $('#search-btn').on('click', reloadData);
+        
+        // 绑定"导出"按钮点击事件
+        $('#export-btn').on('click', function() {
+            try {
+                const year = $('#year-selector').val() || new Date().getFullYear();
+                const filename = `动力实施课电量占比及统计_${year}.xlsx`;
+                
+                const table = document.getElementById('data-table');
+                const ws = XLSX.utils.table_to_sheet(table, {raw: true});
+
+                // 手动为28列设置宽度，wch代表字符宽度
+                ws['!cols'] = [
+                    { wch: 12 }, { wch: 12 }, // 项目 (2列)
+                    { wch: 10 }, { wch: 10 }, // 1月
+                    { wch: 10 }, { wch: 10 }, // 2月
+                    { wch: 10 }, { wch: 10 }, // 3月
+                    { wch: 10 }, { wch: 10 }, // 4月
+                    { wch: 10 }, { wch: 10 }, // 5月
+                    { wch: 10 }, { wch: 10 }, // 6月
+                    { wch: 10 }, { wch: 10 }, // 7月
+                    { wch: 10 }, { wch: 10 }, // 8月
+                    { wch: 10 }, { wch: 10 }, // 9月
+                    { wch: 10 }, { wch: 10 }, // 10月
+                    { wch: 10 }, { wch: 10 }, // 11月
+                    { wch: 10 }, { wch: 10 }, // 12月
+                    { wch: 15 },             // 合计
+                    { wch: 12 }              // 占比
+                ];
+
+                // 百分比格式化
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cell_address = XLSX.utils.encode_cell({c: C, r: R});
+                        const cell = ws[cell_address];
+                        if (!cell || typeof cell.v !== 'string' || !cell.v.endsWith('%')) {
+                            continue;
+                        }
+                        const numericValue = parseFloat(cell.v.replace(/[,%]/g, '')) / 100.0;
+                        if (isNaN(numericValue)) {
+                            continue;
+                        }
+                        cell.t = 'n';
+                        cell.v = numericValue;
+                        cell.z = '0.00%';
+                    }
+                }
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                XLSX.writeFile(wb, filename);
+                layer.msg('导出成功');
+
+            } catch (e) {
+                console.error(e);
+                layer.msg('导出失败，请检查控制台错误。');
+            }
+        });
+
+        // 使用事件委托为表格绑定交互事件，提高性能
+        const table = $('#data-table');
+        
+        // 点击月份列，更新头部摘要
+        table.on('click', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                updateHeaderSummaryForMonth(month);
+            }
+        });
+
+        // 鼠标悬浮于月份列，高亮整列
+        table.on('mouseover', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                table.find('.col-hover').removeClass('col-hover');
+                table.find(`[data-month="${month}"]`).addClass('col-hover');
+            }
+        });
+
+         // 鼠标移出表格，取消所有高亮
+        table.on('mouseleave', function() {
+            table.find('.col-hover').removeClass('col-hover');
+        });
+
+        // 鼠标悬停显示完整内容（使用Layui的tips）
+        let currentTipsIndex = null;
+        
+        table.on('mouseenter', 'td, th', function() {
+            const $this = $(this);
+            const text = $this.text().trim();
+            
+            // 检查是否有文本溢出（内容宽度大于显示宽度）
+            if (this.scrollWidth > this.clientWidth && text) {
+                currentTipsIndex = layer.tips(text, this, {
+                    tips: [1, '#3c8ce7'],
+                    time: 0, // 不自动关闭
+                    area: 'auto'
+                });
+            }
+        });
+
+        // 鼠标移出关闭提示
+        table.on('mouseleave', 'td, th', function() {
+            if (currentTipsIndex) {
+                layer.close(currentTipsIndex);
+                currentTipsIndex = null;
+            }
+        });
+
+        // --- 5. 初始化执行 ---
+        generateDynamicContent(); // 首次加载时，构建UI骨架
+        setupTooltip();           // <-- 【新增】设置单元格 title 提示
+        
+        // <-- 【新增】页面加载完成后自动触发一次查询
+        setTimeout(function() {
+            reloadData();         // 800ms后自动查询
+        }, 800);
+    });
+	</script>
+</body>
+</html>

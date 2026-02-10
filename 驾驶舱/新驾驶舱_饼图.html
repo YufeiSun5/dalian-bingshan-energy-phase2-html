@@ -1,0 +1,129 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	
+	
+	<meta charset="utf-8" /> 
+	<title> New Document </title>
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<!--<link>-->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+</head>
+<body style="height:100%;margin:0;background-size:cover;background-color:rgba(255,255,255,0.5);overflow:hidden;">
+<div id="main" style="height: 100%"></div>
+<script type="text/javascript">
+// 基于准备好的dom，初始化echarts实例
+var myChart = echarts.init(document.getElementById('main'));
+
+
+
+
+    var datas = [
+        /*{ name: "壳体1号主变", value: 658.87 },
+        { name: "转子1号主变", value: 698.32 },
+        { name: "转子2号主变", value: 715.99 },
+        { name: "转子3号主变", value: 747.01 },
+        { name: "转子4号主变", value: 498.13 }*/
+
+    ];
+
+    option = {
+        backgroundColor: "#081A52",
+        tooltip: {
+            trigger: 'item',
+            formatter: function (param) {
+                if (param.seriesName && param.seriesName == "number") {
+                    return param.marker + param.data.name + "<br/>" + param.data.value + "KWh (" + param.percent + "%)"
+                }
+            }
+        },
+        //grid: {
+        //    left: '30%',
+        //    right: '4%',
+        //    bottom: '2%',
+        //    top: '16%',
+        //    containLabel: true
+        //},
+        legend: {
+            orient: 'vertical',
+            y: 'center',
+            right: 10,
+            itemWidth: 10,
+            textStyle: {
+                color: "#fff",
+                fontSize: 13
+            },
+            formatter: function (param) {
+                var str = '';
+                datas.forEach(function (item, index) {
+                    if (item.name == param) {
+                        str = item.name + " " + item.value + "KWh"
+                        return
+                    }
+                })
+                return str
+            }
+        },
+        //color: ['#FFAA45', '#8F45FF', '#00AF6D', '#FF45E3', '#FF4545', '#fff'],
+        series: [
+            {
+                name: "number",
+                type: 'pie',
+                right: 100,
+                top:20,
+                radius: ['100%', '50%'],
+                center: ['40%', '50%'],
+                label: {
+                    show: true,
+                    formatter: "{d}%",
+                    position: 'inside',
+                    color: "#fff",
+                    fontSize: 13
+                },
+                labelLine: {
+                    show: false
+                },
+                data: datas
+            }
+            //{
+            //    type: 'pie',
+            //    radius: '15%',
+            //    center: ['40%', '50%'],
+            //    itemStyle: {
+            //        color: function (param) {
+            //            if (param.dataIndex == 0) {
+            //                return '#1E4672'
+            //            } else {
+            //                return '#12305E'
+            //            }
+            //    },
+            //        left: '2%',
+            //        right: '4%',
+            //        bottom: '2%',
+            //        top: '16%'
+                    
+            //    },
+            //    label: {
+            //        show: false
+            //    },
+            //    labelLine: {
+            //        show: false
+            //    },
+            //    data: datas
+            //}
+        ]
+    }
+
+
+if (option && typeof option === "object") {
+    myChart.setOption(option, true);
+}
+       </script>
+   </body>
+</html>

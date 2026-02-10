@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气量配置验证工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #5470c6;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #5470c6;
+            margin-top: 30px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #5470c6;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #d63031;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 气量统计配置验证工具</h1>
+        
+        <div id="validation-status"></div>
+        
+        <h2>📊 分类配置详情</h2>
+        <div id="categories-info"></div>
+        
+        <h2>🔢 SQL生成预览</h2>
+        <div id="sql-preview"></div>
+        
+        <h2>📋 配置信息</h2>
+        <div id="config-info"></div>
+    </div>
+
+    <script src="../js/utils/energy-config-v2.js"></script>
+    <script>
+        // 获取配置
+        const Config = window.EnergyConfig;
+        const pageConfig = Config.pages.regionalGasStats;
+        
+        // 验证配置
+        const validation = pageConfig.validate();
+        
+        // 显示验证状态
+        const statusDiv = document.getElementById('validation-status');
+        if (validation.valid) {
+            statusDiv.innerHTML = `
+                <div class="status success">
+                    ✅ <strong>配置验证通过！</strong><br>
+                    所有必需的分类都已正确配置。
+                </div>
+            `;
+        } else {
+            statusDiv.innerHTML = `
+                <div class="status error">
+                    ❌ <strong>配置验证失败！</strong><br>
+                    错误信息：<ul>${validation.errors.map(err => `<li>${err}</li>`).join('')}</ul>
+                </div>
+            `;
+        }
+        
+        // 显示分类配置
+        const categoriesDiv = document.getElementById('categories-info');
+        let categoriesHTML = '<table><thead><tr><th>序号</th><th>分类名称</th><th>key</th><th>计算公式</th><th>包含NO</th><th>减去NO</th></tr></thead><tbody>';
+        
+        pageConfig.categories.forEach((cat, index) => {
+            const includeNos = cat.includeNos.join(', ') || '无';
+            const excludeNos = cat.excludeNos.join(', ') || '无';
+            
+            let formula = '';
+            if (cat.includeNos.length > 0 && cat.excludeNos.length > 0) {
+                formula = `SUM(${cat.includeNos.join('+')}) - SUM(${cat.excludeNos.join('+')})`;
+            } else if (cat.includeNos.length > 0) {
+                formula = cat.includeNos.length === 1 ? `NO.${cat.includeNos[0]}` : `SUM(${cat.includeNos.join('+')})`;
+            } else {
+                formula = '空（前端计算或暂无数据）';
+            }
+            
+            categoriesHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${cat.title}</strong></td>
+                    <td><code>${cat.key}</code></td>
+                    <td><span class="formula">${formula}</span></td>
+                    <td>${includeNos}</td>
+                    <td>${excludeNos}</td>
+                </tr>
+            `;
+        });
+        
+        categoriesHTML += '</tbody></table>';
+        categoriesDiv.innerHTML = categoriesHTML;
+        
+        // 显示SQL生成预览
+        const sqlDiv = document.getElementById('sql-preview');
+        const caseClauses = pageConfig.generateSQLCaseClauses();
+        
+        const sqlPreview = `
+            <div class="info-box">
+                <strong>📝 注意：</strong>这是实际使用的SQL CASE WHEN子句，会自动插入到查询中。
+            </div>
+            <pre style="background-color: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 13px;">
+SELECT sub.month,
+       ${caseClauses.join(',\n       ')}
+FROM (
+    SELECT no, MONTH(\`date\`) AS month, SUM(sum_FLOW_total) AS total_gas
+    FROM sum_gas_flow_total_by_day
+    WHERE YEAR(\`date\`) = [年份]
+    GROUP BY no, MONTH(\`date\`)
+) AS sub
+GROUP BY sub.month
+ORDER BY sub.month
+            </pre>
+        `;
+        sqlDiv.innerHTML = sqlPreview;
+        
+        // 显示配置信息
+        const configDiv = document.getElementById('config-info');
+        const allNos = pageConfig.getAllNOs();
+        
+        configDiv.innerHTML = `
+            <div class="info-box">
+                <p><strong>配置标题：</strong>${pageConfig.title}</p>
+                <p><strong>配置说明：</strong>${pageConfig.description}</p>
+                <p><strong>数据类型：</strong><code>${pageConfig.dataType}</code></p>
+                <p><strong>分类数量：</strong>${pageConfig.categories.length} 个</p>
+                <p><strong>涉及气表NO：</strong>${allNos.join(', ')} (共 ${allNos.length} 个)</p>
+                <p><strong>配置版本：</strong>${Config.version}</p>
+            </div>
+        `;
+        
+        // 控制台输出
+        console.log('='.repeat(60));
+        console.log('气量统计配置验证报告');
+        console.log('='.repeat(60));
+        console.log('验证状态:', validation.valid ? '✅ 通过' : '❌ 失败');
+        if (!validation.valid) {
+            console.log('错误信息:', validation.errors);
+        }
+        console.log('');
+        console.log('分类详情:');
+        pageConfig.categories.forEach(cat => {
+            const includeStr = cat.includeNos.length > 0 ? `+${cat.includeNos.join('+')}` : '';
+            const excludeStr = cat.excludeNos.length > 0 ? ` -${cat.excludeNos.join('-')}` : '';
+            console.log(`  ${cat.title} (${cat.key}): ${includeStr}${excludeStr}`);
+        });
+        console.log('');
+        console.log('涉及气表NO:', allNos);
+        console.log('='.repeat(60));
+    </script>
+</body>
+</html>
+

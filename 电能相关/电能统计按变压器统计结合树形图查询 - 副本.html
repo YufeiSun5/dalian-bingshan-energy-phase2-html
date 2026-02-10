@@ -1,0 +1,1458 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能统计按变压器统计</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript" src="../js/decimal.js"></script>
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	.layui-col-md10 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">分类能耗：</label>
+							<div class="layui-input-inline">
+								<select name="interest" lay-filter="aihao">
+									<option value=""></option>
+									<option value="0">写作</option>
+									<option value="1" selected>阅读</option>
+									<option value="2">游戏</option>
+									<option value="3">音乐</option>
+									<option value="4">旅行</option>
+								</select>
+							</div>-->
+							<div class="layui-inline" style = "margin-right : 20px;">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid">-</div>
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<div class="layui-inline">
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="day" title="日">
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="month" title="月" checked> 
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="year" title="年" > 
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+
+						
+						
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md2">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;overflow: auto;" >
+								<div id="ID-tree-demo-showLine" style = "padding:10px; height:calc(100% - 75px);"></div>
+							</div>
+						</div>
+						<div class="layui-col-md10">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">电能统计——按变压器统计</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">kW·h</span>
+								</div>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var dateValue = "month";
+		var excel = layui.excel; //导出逻辑
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		currentDay.setHours(7, 0, 0, 0);
+		var table = layui.table;
+		var $ = layui.$;
+
+		// 初始化日期日期
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});
+		
+		
+		// 树形图初始化
+		var data = [{title:'一号变电所',field:'123456',checked:true,
+					id:'sum_elec1',
+					children:[
+						{title:'1#变压器主开关',id:'elec_51',no:51},
+						{title:'IT新机房',id:'elec_110002',no:110002},
+						{title:'宿舍二三楼照明',id:'elec_110003',no:110003},
+						{title:'办公照明',id:'elec_110004',no:110004},
+						{title:'研发消防系统',id:'elec_110005',no:110005},
+						{title:'组装GCS',id:'elec_110006',no:110006,children:[{title:'410A实验室',id:'elec_510002',no:510002}]},
+						{title:'电机9号',id:'elec_110007',no:110007},
+						{title:'M456',id:'elec_110008',no:110008,children:[{title:'C性能实验室',id:'elec_510001',no:510001}]},
+						{title:'M123',id:'elec_110009',no:110009},
+						{title:'备用',id:'elec_110010',no:110010},
+						{title:'备用',id:'elec_110011',no:110011},
+						{title:'组装31#',id:'elec_110012',no:110012},
+						{title:'组装照明',id:'elec_110013',no:110013},
+						
+						
+						{title:'2#变压器主开关',id:'elec_52',no:52},
+						{title:'备用',id:'elec_120002',no:120002},
+						{title:'备用',id:'elec_120003',no:120003},
+						{title:'备用',id:'elec_120004',no:120004},
+						{title:'神钢4#',id:'elec_120005',no:120005},
+						{title:'组装32#',id:'elec_120006',no:120006},
+						{title:'备用',id:'elec_120007',no:120007},
+						{title:'空压机照明辅助',id:'elec_120008',no:120008},
+						{title:'备用',id:'elec_120009',no:120009},
+						{title:'神钢1#',id:'elec_120010',no:120010},
+						{title:'神钢3#',id:'elec_120011',no:120011},
+						{title:'备用',id:'elec_120012',no:120012},
+						{title:'组装空调',id:'elec_120013',no:120013},
+						{title:'R290风机',id:'elec_120014',no:120014},
+						{title:'变电所内用电',id:'elec_120015',no:120015},
+						{title:'CO2性能试验',id:'elec_120016',no:120016,children:[{title:'线切割',id:'elec_510003',no:510003},{title:'空压机水泵',id:'elec_510004',no:510004}]},
+						{title:'电机13#柜',id:'elec_120017',no:120017},
+						{title:'备用',id:'elec_120018',no:120018},
+						
+					]},
+					{title:'二号变电所',checked:true,
+					id:'sum_elec2',
+					children:[
+						{title:'1#变压器主开关',id:'elec_12',no:12},
+						{title:'机加GCS西',id:'elec_13',no:13,children:[{title:'三坐标、检具室',id:'elec_520001',no:520001},{title:'磷化2#加热管',id:'elec_520002',no:520002}
+						,{title:'组装29',id:'elec_520003',no:520003},{title:'机加03-2',id:'elec_520004',no:520004},{title:'机加03-2-1',id:'elec_520005',no:520005}
+						,{title:'磷化1#加热管',id:'elec_520007',no:520007},{title:'食堂',id:'elec_520008',no:520008}]},
+						{title:'机加GCS西并',id:'elec_14',no:14},
+						{title:'备用',id:'elec_210004',no:210004},
+						{title:'备用',id:'elec_210005',no:210005},
+						
+						{title:'2#变压器主开关',id:'elec_16',no:16},
+						{title:'机加GCS东',id:'elec_15',no:15},
+						{title:'备用',id:'elec_220003',no:220003},
+						{title:'新电机绕线',id:'elec_220004',no:220004},
+						{title:'定转子设备',id:'elec_220005',no:220005},
+						{title:'定转子照明',id:'elec_220006',no:220006},
+						{title:'机加工34#',id:'elec_220007',no:220007},
+						
+						{title:'3#变压器主开关',id:'elec_17',no:17},
+						{title:'旧退火炉及冷水机组',id:'elec_18',no:18,children:[{title:'检测中心',id:'elec_520009',no:520009}]},
+						{title:'冰山帕特',id:'elec_230003',no:230003},
+						{title:'80KW实验室',id:'elec_230004',no:230004},
+						{title:'80KW实验室_1',id:'elec_230005',no:230005},
+						{title:'寿力2#',id:'elec_230006',no:230006},
+						{title:'寿力4#',id:'elec_230007',no:230007},
+						{title:'神钢2#',id:'elec_230008',no:230008},
+						{title:'新碱清洗',id:'elec_230009',no:230009},
+						{title:'新磷化',id:'elec_230010',no:230010},
+						{title:'备用',id:'elec_230011',no:230011},
+						
+						{title:'4#变压器主开关',id:'elec_20',no:20},
+						{title:'新退火炉',id:'elec_19',no:19},
+						{title:'新壳体GCS柜',id:'elec_240003',no:240003,children:[{title:'压铸24',id:'elec_520010',no:520010},{title:'压铸25',id:'elec_520011',no:520011}
+						,{title:'新电机15',id:'elec_520012',no:520012},{title:'变电所空调',id:'elec_520013',no:520013},{title:'变电所照明',id:'elec_520014',no:520014}]},
+						{title:'食堂电锅',id:'elec_240004',no:240004},
+						{title:'电机8',id:'elec_240005',no:240005},
+						{title:'电机10',id:'elec_240006',no:240006},
+						{title:'电机7',id:'elec_240007',no:240007},
+						{title:'电机11',id:'elec_240008',no:240008},
+						
+					]},
+					{title:'三号变电所',checked:true,
+					id:'sum_elec3',
+					children:[
+						{title:'1#变压器主开关',id:'elec_1',no:1},
+						{title:'变电所用电',id:'elec_2',no:2},
+						{title:'污水处理',id:'elec_3',no:3},
+						{title:'预留',id:'elec_6',no:6},
+						{title:'耐久实验室3#动力柜',id:'elec_4',no:4},
+						{title:'研发中心GCS柜',id:'elec_5',no:5,children:[{title:'AP1-0二楼配电室总电柜',id:'elec_530001',no:530001},{title:'AP3-0四楼配电室总电柜',id:'elec_530002',no:530002}]},
+						{title:'研发大马力性能实验室',id:'elec_7',no:7},
+						{title:'耐久试验室2#柜',id:'elec_8',no:8},
+						{title:'耐久1#5#柜',id:'elec_9',no:9},
+						{title:'研发堵转实验室左侧',id:'elec_10',no:10},
+						{title:'研发预留',id:'elec_11',no:11},
+						{title:'备用',id:'elec_310012',no:310012},
+						{title:'备用',id:'elec_310013',no:310013},
+						
+						
+						{title:'2#变压器主开关',id:'elec_26',no:26},
+						{title:'备用',id:'elec_320002',no:320002},
+						{title:'备用',id:'elec_320003',no:320003},
+						{title:'IT新机房',id:'elec_320004',no:320004},
+						{title:'新成品',id:'elec_320005',no:320005},
+						{title:'备用',id:'elec_320006',no:320006},
+						{title:'备用',id:'elec_320007',no:320007},
+						{title:'热水炉',id:'elec_320008',no:320008},
+						{title:'研发290性能实验室',id:'elec_320009',no:320009},
+						{title:'焓差试验室',id:'elec_320010',no:320010},
+						{title:'备用',id:'elec_320011',no:320011},
+						{title:'备用',id:'elec_320012',no:320012},
+						{title:'25马力组装凸焊机',id:'elec_320013',no:320013},
+						{title:'25马力组装线设备1',id:'elec_320014',no:320014},
+						{title:'25马力组装线设备2',id:'elec_320015',no:320015},
+						{title:'备用',id:'elec_320016',no:320016},
+						{title:'寿力3高压柜',id:'elec_320017',no:320017},
+						{title:'耐久4#、8#、9#动力柜',id:'elec_320018',no:320018},
+						{title:'耐久6#动力柜',id:'elec_320019',no:320019},
+						{title:'耐久7#动力柜',id:'elec_320020',no:320020},
+						{title:'备用',id:'elec_320021',no:320021},
+						{title:'B座大办冷水机组-左',id:'elec_320022',no:320022},
+						{title:'备用',id:'elec_320023',no:320023},
+						{title:'B座大办冷水机组-右',id:'elec_320024',no:320024},
+						
+					]}/*,{title:'车间下属电表',checked:true,
+					id:'sum_elec5',
+					children:[
+						{title:'C性能实验室',id:'elec_510001',no:510001},
+						{title:'410A实验室',id:'elec_510002',no:510002},
+						{title:'线切割',id:'elec_510003',no:510003},
+						{title:'空压机水泵',id:'elec_510004',no:510004},
+						{title:'三坐标、检具室',id:'elec_520001',no:520001},
+						{title:'磷化2#加热管',id:'elec_520002',no:520002},
+						{title:'组装29',id:'elec_520003',no:520003},
+						{title:'机加03-2',id:'elec_520004',no:520004},
+						{title:'机加03-2-1',id:'elec_520005',no:520005},
+						{title:'清洗加热管',id:'elec_520006',no:520006},
+						{title:'磷化1#加热管',id:'elec_520007',no:520007},
+						{title:'食堂',id:'elec_520008',no:520008},
+						{title:'检测中心',id:'elec_520009',no:520009},
+						{title:'压铸24',id:'elec_520010',no:520010},
+						{title:'压铸25',id:'elec_520011',no:520011},
+						{title:'新电机15',id:'elec_520012',no:520012},
+						{title:'变电所空调',id:'elec_520013',no:520013},
+						{title:'变电所照明',id:'elec_520014',no:520014},
+						{title:'AP1-0二楼配电室总电柜',id:'elec_530001',no:530001},
+						{title:'AP3-0四楼配电室总电柜',id:'elec_530002',no:530002},
+						
+					]}*/
+					];
+					
+					
+					
+					
+		// 渲染
+		tree.render({
+			id:'tree',
+			elem: '#ID-tree-demo-showLine',
+			data: data,
+			showCheckbox: true,
+			height: $("#table_form").height()-1,
+			showLine: false  // 是否开启连接线
+		});
+		
+
+		
+		table.render({
+			elem: '#test',
+			cols: [[ // 表头配置项
+			
+				{field: 'day',title: '日期',width: 130,rowspan:2 ,align:"center"}, // 日期
+				{ title: '总用电量（KWh）', align:"center" }, // 总用电量（KWh）
+				{ title: '一号变电所（KWh）',colspan: 32,align:"center"}, // 一号变电所（KWh）
+				{ title: '二号变电所（KWh）',colspan: 31,align:"center"}, // 二号变电所（KWh）
+				{ title: '三号变电所（KWh）',colspan: 38,align:"center"}, // 三号变电所（KWh）
+				
+			], [ // 第二层表头配置项（多层表头）
+				{field: 'sum_elec', title: '合计', width: 140,align:"center"}, // 总合计
+				
+				{field: 'sum_elec1', title: '合计', width: 100,align:"center"}, // 一号变电所合计
+				{field: 'elec_51', title: '1#变压器主开关', width: 110,align:"center"}, // 1#变压器主开关
+				{field: 'elec_110002', title: 'IT新机房', width: 100,align:"center"}, //IT新机房
+				{field: 'elec_110003', title: '宿舍二三楼照明', width: 140,align:"center"}, // 宿舍二三楼照明
+				{field: 'elec_110004', title: '办公照明', width: 90,align:"center"}, // 办公照明
+				{field: 'elec_110005', title: '研发消防系统', width: 120,align:"center"}, // 研发消防系统
+				{field: 'elec_110006', title: '组装GCS', width: 90,align:"center"}, // 组装GCS
+				{field: 'elec_110007', title: '电机9号', width: 90,align:"center"}, // 电机9号
+				{field: 'elec_110008', title: 'M456', width: 80,align:"center"}, // M456
+				{field: 'elec_110009', title: 'M123', width: 80,align:"center"}, // M123
+				{field: 'elec_110010', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_110011', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_110012', title: '组装31#', width: 90,align:"center"}, // 组装31#
+				{field: 'elec_110013', title: '组装照明', width: 90,align:"center"}, // 组装照明
+				
+				
+				{field: 'elec_52', title: '2#变压器主开关', width: 120,align:"center"}, // 2#变压器主开关
+				{field: 'elec_120002', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120003', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120004', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120005', title: '神钢4#', width: 80,align:"center"}, // 神钢4#
+				{field: 'elec_120006', title: '组装32#', width: 100,align:"center"}, // 组装32#
+				{field: 'elec_120007', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120008', title: '空压机照明辅助', width: 140,align:"center"}, // 空压机照明辅助
+				{field: 'elec_120009', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120010', title: '神钢1#', width: 80,align:"center"}, // 神钢1#
+				{field: 'elec_120011', title: '神钢3#', width: 80,align:"center"}, // 神钢3#
+				{field: 'elec_120012', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_120013', title: '组装空调', width: 90,align:"center"}, // 组装空调
+				{field: 'elec_120014', title: 'R290风机', width: 100,align:"center"}, // R290风机
+				{field: 'elec_120015', title: '变电所内用电', width: 120,align:"center"}, // 变电所内用电
+				{field: 'elec_120016', title: 'CO2性能试验', width: 120,align:"center"}, // CO2性能试验
+				{field: 'elec_120017', title: '电机13#柜', width: 100,align:"center"}, // 电机13#柜
+				{field: 'elec_120018', title: '备用', width: 90,align:"center"}, // 备用
+				
+				
+				{field: 'sum_elec2', title: '合计', width: 80,align:"center"}, // 二号变电所合计
+				{field: 'elec_12', title: '1#变压器主开关', width: 110,align:"center"}, // 1#变压器主开关
+				
+				{field: 'elec_13', title: '机加GCS西', width: 110,align:"center"}, // 机加GCS西
+				{field: 'elec_14', title: '机加GCS西并', width: 110,align:"center"}, // 机加GCS西并
+				{field: 'elec_210004', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_210005', title: '备用', width: 80,align:"center"}, // 备用
+				
+				{field: 'elec_16', title: '2#变压器主开关', width: 110,align:"center"}, // 2#变压器主开关
+				{field: 'elec_15', title: '机加GCS东', width: 110,align:"center"}, // 机加GCS东
+				{field: 'elec_220003', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_220004', title: '新电机绕线', width: 140,align:"center"}, // 新电机绕线
+				{field: 'elec_220005', title: '定转子设备', width: 120,align:"center"}, // 定转子设备
+				{field: 'elec_220006', title: '定转子照明', width: 120,align:"center"}, // 定转子照明
+				{field: 'elec_220007', title: '机加工34#', width: 120,align:"center"}, // 机加工34#
+				
+				{field: 'elec_17', title: '3#变压器主开关', width: 110,align:"center"}, // 3#变压器主开关
+				{field: 'elec_18', title: '旧退火炉及冷水机组', width: 160,align:"center"}, // 旧退火炉及冷水机组
+				{field: 'elec_230003', title: '冰山帕特', width: 80,align:"center"}, // 冰山帕特
+				{field: 'elec_230004', title: '80KW实验室', width: 120,align:"center"}, // 80KW实验室
+				{field: 'elec_230005', title: '80KW实验室_1', width: 140,align:"center"}, // 80KW实验室_1
+				{field: 'elec_230006', title: '寿力2#', width: 80,align:"center"}, // 寿力2#
+				{field: 'elec_230007', title: '寿力4#', width: 80,align:"center"}, // 寿力4#
+				{field: 'elec_230008', title: '神钢2#', width: 80,align:"center"}, // 神钢2#
+				{field: 'elec_230009', title: '新碱清洗', width: 90,align:"center"}, // 新碱清洗
+				{field: 'elec_230010', title: '新磷化', width: 80,align:"center"}, // 新磷化
+				{field: 'elec_230011', title: '备用', width: 80,align:"center"}, // 备用
+				
+				{field: 'elec_20', title: '4#变压器主开关', width: 110,align:"center"}, // 4#变压器主开关
+				{field: 'elec_19', title: '新退火炉', width: 90,align:"center"}, // 新退火炉
+				{field: 'elec_240003', title: '新壳体GCS柜', width: 130,align:"center"}, // 新壳体GCS柜
+				{field: 'elec_240004', title: '食堂电锅', width: 90,align:"center"}, // 食堂电锅
+				{field: 'elec_240005', title: '电机8', width: 80,align:"center"}, // 电机8
+				{field: 'elec_240006', title: '电机10', width: 80,align:"center"}, // 电机10
+				{field: 'elec_240007', title: '电机7', width: 80,align:"center"}, // 电机7
+				{field: 'elec_240008', title: '电机11', width: 80,align:"center"}, // 电机11
+				
+				
+				{field: 'sum_elec3', title: '合计', width: 80,align:"center"}, // 三号变电所合计
+				{field: 'elec_1', title: '1#变压器主开关', width: 110,align:"center"}, // 1#变压器主开关
+				{field: 'elec_2', title: '变电所用电', width: 110,align:"center"}, // 变电所用电
+				{field: 'elec_3', title: '污水处理', width: 90,align:"center"}, // 污水处理
+				{field: 'elec_4', title: '预留', width: 80,align:"center"}, // 预留
+				{field: 'elec_5', title: '耐久实验室3#动力柜', width: 160,align:"center"}, // 耐久实验室3#动力柜
+				{field: 'elec_6', title: '研发中心GCS柜', width: 130,align:"center"}, // 研发中心GCS柜
+				{field: 'elec_7', title: '研发大马力性能实验室', width: 170,align:"center"}, // 研发大马力性能实验室
+				{field: 'elec_8', title: '耐久试验室2#柜', width: 140,align:"center"}, // 耐久试验室2#柜
+				{field: 'elec_9', title: '耐久1#5#柜', width: 110,align:"center"}, // 耐久1#5#柜
+				{field: 'elec_10', title: '研发堵转实验室左侧', width: 160,align:"center"}, // 研发堵转实验室左侧
+				{field: 'elec_11', title: '研发预留', width: 90,align:"center"}, // 研发预留
+				{field: 'elec_310012', title: '备用', width: 100,align:"center"}, // 备用
+				{field: 'elec_310013', title: '备用', width: 80,align:"center"}, // 备用
+				
+				{field: 'elec_26', title: '2#变压器主开关', width: 110,align:"center"}, // 2#变压器主开关
+				{field: 'elec_320002', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320003', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320004', title: 'IT新机房（双电）', width: 150,align:"center"}, // IT新机房（双电）
+				{field: 'elec_320005', title: '新成品', width: 80,align:"center"}, // 新成品
+				{field: 'elec_320006', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320007', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320008', title: '热水炉', width: 80,align:"center"}, // 热水炉
+				{field: 'elec_320009', title: '研发290性能实验室', width: 160,align:"center"}, // 研发290性能实验室
+				{field: 'elec_320010', title: '焓差试验室', width: 100,align:"center"}, // 焓差试验室
+				{field: 'elec_320011', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320012', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320013', title: '25马力组装凸焊机', width: 150,align:"center"}, // 25马力组装凸焊机
+				{field: 'elec_320014', title: '25马力组装线设备1', width:170,align:"center"}, // 25马力组装线设备1
+				{field: 'elec_320015', title: '25马力组装线设备2', width: 170,align:"center"}, // 25马力组装线设备2
+				{field: 'elec_320016', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320017', title: '寿力3高压柜', width: 120,align:"center"}, // 寿力3高压柜
+				{field: 'elec_320018', title: '耐久4#、8#、9#动力柜', width: 210,align:"center"}, // 耐久4#、8#、9#动力柜
+				{field: 'elec_320019', title: '耐久6#动力柜', width: 120,align:"center"}, // 耐久6#动力柜
+				{field: 'elec_320020', title: '耐久7#动力柜', width: 120,align:"center"}, // 耐久7#动力柜
+				{field: 'elec_320021', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320022', title: 'B座大办冷水机组-左', width: 180,align:"center"}, // B座大办冷水机组-左
+				{field: 'elec_320023', title: '备用', width: 80,align:"center"}, // 备用
+				{field: 'elec_320024', title: 'B座大办冷水机组-右', width: 180,align:"center"}, // B座大办冷水机组-右
+		
+			]],
+			data: [],
+			height: $("#table_form").height()-1,
+			//skin: 'line', // 表格风格
+			even: true,
+			//page: true, // 是否显示分页
+			//limits: [5, 10, 15],
+			//limit: 5 // 每页默认显示的数量
+		});
+		$('#search').on('click', async function() {
+			try {
+				//获取树形图选择结果
+				var checkedData = tree.getChecked('tree');
+				//console.info(checkedData);
+				var showData = [];
+				var noArr = [];
+				for(let i=0;i<checkedData.length;i++){
+					showData.push(checkedData[i].id);
+					if(checkedData[i].children != undefined){
+						let children = checkedData[i].children;
+						for(let j=0;j<children.length;j++){
+							showData.push(children[j].id);
+							if(children[j].no != undefined){
+								noArr.push(children[j].no);
+							}
+						}
+					}
+				}
+				console.info(noArr.join(','));
+				console.info(showData);
+				var startdate = $("#ID-laydate-start-date-1")[0].value;
+				var enddate = $("#ID-laydate-end-date-1")[0].value;
+				var sql = " select ";
+				if(dateValue == "month"){
+					sql+="	DATE_FORMAT(r.jDay, '%m-%d') as day, ";
+				}else if(dateValue == "day"){
+					sql+="	DATE_FORMAT(r.jDay, '%m-%d %H:00:00') as day, ";
+				}else if(dateValue == "year"){
+					sql+="	DATE_FORMAT(r.jDay, '%Y-%m') as day, ";
+				}
+					 
+					
+					sql+=" sum(case when elec_name in ('elec_51','elec_52','elec_12','elec_16','elec_17','elec_20','elec_1','elec_26') then sum_elec else 0 end) as sum_elec, \n" // 总合计
+					
+						+"	 sum(case when elec_name in ('elec_51','elec_52') then sum_elec else 0 end) AS sum_elec1,\n"// 一号变电所合计
+						+"   sum(case when elec_name = 'elec_51' then sum_elec else 0 end) as elec_51,   \n" // 1#变压器主开关
+						+"   sum(case when elec_name = 'elec_110002' then sum_elec else 0 end) as elec_110002,   \n"    // IT新机房	
+						+"   sum(case when elec_name = 'elec_110003' then sum_elec else 0 end) as elec_110003,   \n"    // 宿舍二三楼照明
+						+"   sum(case when elec_name = 'elec_110004' then sum_elec else 0 end) as elec_110004,   \n"    // 办公照明     
+						+"   sum(case when elec_name = 'elec_110005' then sum_elec else 0 end) as elec_110005,   \n"    // 研发消防系统  
+						+"   sum(case when elec_name = 'elec_110006' then sum_elec else 0 end) as elec_110006,   \n"    // 组装GCS     
+						+"   sum(case when elec_name = 'elec_110007' then sum_elec else 0 end) as elec_110007,   \n"    // 电机9号      
+						+"   sum(case when elec_name = 'elec_110008' then sum_elec else 0 end) as elec_110008,   \n"    // M456        
+						+"   sum(case when elec_name = 'elec_110009' then sum_elec else 0 end) as elec_110009,   \n"    // M123        
+						+"   sum(case when elec_name = 'elec_110010' then sum_elec else 0 end) as elec_110010,   \n"    // 备用        
+						+"   sum(case when elec_name = 'elec_110011' then sum_elec else 0 end) as elec_110011,   \n"    // 备用        
+						+"   sum(case when elec_name = 'elec_110012' then sum_elec else 0 end) as elec_110012,   \n"    // 组装31#     
+						+"   sum(case when elec_name = 'elec_110013' then sum_elec else 0 end) as elec_110013,   \n"    // 组装照明     
+						
+						
+						
+						+" 	 sum(case when elec_name = 'elec_52' then sum_elec else 0 end) as elec_52,   " // 2#变压器主开关
+						+"   sum(case when elec_name = 'elec_120002' then sum_elec else 0 end) as elec_120002,   \n" 	// 备用
+						+"   sum(case when elec_name = 'elec_120003' then sum_elec else 0 end) as elec_120003,   \n"  // 备用 
+						+"   sum(case when elec_name = 'elec_120004' then sum_elec else 0 end) as elec_120004,   \n"  // 备用 
+						+"   sum(case when elec_name = 'elec_120005' then sum_elec else 0 end) as elec_120005,   \n"  // 神钢4#
+						+"   sum(case when elec_name = 'elec_120006' then sum_elec else 0 end) as elec_120006,   \n"  // 组装32#
+						+"   sum(case when elec_name = 'elec_120007' then sum_elec else 0 end) as elec_120007,   \n"  // 备用
+						+"   sum(case when elec_name = 'elec_120008' then sum_elec else 0 end) as elec_120008,   \n"  // 空压机照明辅助
+						+"   sum(case when elec_name = 'elec_120009' then sum_elec else 0 end) as elec_120009,   \n"  // 备用
+						+"   sum(case when elec_name = 'elec_120010' then sum_elec else 0 end) as elec_120010,   \n"  // 神钢1#
+						+"   sum(case when elec_name = 'elec_120011' then sum_elec else 0 end) as elec_120011,   \n"  // 神钢3#
+						+"   sum(case when elec_name = 'elec_120012' then sum_elec else 0 end) as elec_120012,   \n"  // 备用
+						+"   sum(case when elec_name = 'elec_120013' then sum_elec else 0 end) as elec_120013,   \n"  // 组装空调 
+						+"   sum(case when elec_name = 'elec_120014' then sum_elec else 0 end) as elec_120014,   \n" 	// R290风机
+						+"   sum(case when elec_name = 'elec_120015' then sum_elec else 0 end) as elec_120015,   \n" 	// 变电所内用电
+						+"   sum(case when elec_name = 'elec_120016' then sum_elec else 0 end) as elec_120016,   \n" 	// CO2性能试验
+						+"   sum(case when elec_name = 'elec_120017' then sum_elec else 0 end) as elec_120017,   \n" 	// 电机13#柜
+						+"   sum(case when elec_name = 'elec_120018' then sum_elec else 0 end) as elec_120018,   \n" 	// 备用
+						
+						
+						+" sum(case when elec_name in ('elec_12','elec_16','elec_17','elec_20') then sum_elec else 0 end) as sum_elec2, \n" // 二号变电所合计
+						+" sum(case when elec_name = 'elec_12' then sum_elec else 0 end) as elec_12,   \n" // 1#变压器主开关
+						+" sum(case when elec_name = 'elec_13' then sum_elec else 0 end) as elec_13,   \n" // 机加GCS西
+						+" sum(case when elec_name = 'elec_14' then sum_elec else 0 end) as elec_14,   \n" // 机加GCS西并
+						+" sum(case when elec_name = 'elec_210004' then sum_elec else 0 end) as elec_210004,   \n" // 备用
+						+" sum(case when elec_name = 'elec_210005' then sum_elec else 0 end) as elec_210005,   \n" // 备用
+						+" sum(case when elec_name = 'elec_16' then sum_elec else 0 end) as elec_16,   \n" // 2#变压器主开关
+						+" sum(case when elec_name = 'elec_15' then sum_elec else 0 end) as elec_15,   \n" // 机加GCS东
+						+" sum(case when elec_name = 'elec_220003' then sum_elec else 0 end) as elec_220003,   \n" // 备用
+						+" sum(case when elec_name = 'elec_220004' then sum_elec else 0 end) as elec_220004,   \n" // 新电机绕线
+						+" sum(case when elec_name = 'elec_220005' then sum_elec else 0 end) as elec_220005,   \n" // 定转子设备
+						+" sum(case when elec_name = 'elec_220006' then sum_elec else 0 end) as elec_220006,   \n" // 定转子照明
+						+" sum(case when elec_name = 'elec_220007' then sum_elec else 0 end) as elec_220007,   \n" // 机加工34#
+						
+						+" sum(case when elec_name = 'elec_17' then sum_elec else 0 end) as elec_17,   \n" // 3#变压器主开关
+						+" sum(case when elec_name = 'elec_18' then sum_elec else 0 end) as elec_18,   \n" // 旧退火炉及冷水机组
+						+" sum(case when elec_name = 'elec_230003' then sum_elec else 0 end) as elec_230003,   \n" // 冰山帕特
+						+" sum(case when elec_name = 'elec_230004' then sum_elec else 0 end) as elec_230004,   \n" // 80KW实验室
+						+" sum(case when elec_name = 'elec_230005' then sum_elec else 0 end) as elec_230005,   \n" // 80KW实验室_1
+						+" sum(case when elec_name = 'elec_230006' then sum_elec else 0 end) as elec_230006,   \n" // 寿力2#
+						+" sum(case when elec_name = 'elec_230007' then sum_elec else 0 end) as elec_230007,   \n" // 寿力4#
+						+" sum(case when elec_name = 'elec_230008' then sum_elec else 0 end) as elec_230008,   \n" // 神钢2#
+						+" sum(case when elec_name = 'elec_230009' then sum_elec else 0 end) as elec_230009,   \n" // 新碱清洗
+						+" sum(case when elec_name = 'elec_230010' then sum_elec else 0 end) as elec_230010,   \n" // 新磷化
+						+" sum(case when elec_name = 'elec_230011' then sum_elec else 0 end) as elec_230011,   \n" // 备用
+						
+						+" sum(case when elec_name = 'elec_20' then sum_elec else 0 end) as elec_20,   \n" // 4#变压器主开关
+						+" sum(case when elec_name = 'elec_19' then sum_elec else 0 end) as elec_19,   \n" // 新退火炉
+						+" sum(case when elec_name = 'elec_240003' then sum_elec else 0 end) as elec_240003,   \n" // 新壳体GCS柜
+						+" sum(case when elec_name = 'elec_240004' then sum_elec else 0 end) as elec_240004,   \n" // 食堂电锅
+						+" sum(case when elec_name = 'elec_240005' then sum_elec else 0 end) as elec_240005,   \n" // 电机8
+						+" sum(case when elec_name = 'elec_240006' then sum_elec else 0 end) as elec_240006,   \n" // 电机10
+						+" sum(case when elec_name = 'elec_240007' then sum_elec else 0 end) as elec_240007,   \n" // 电机7
+						+" sum(case when elec_name = 'elec_240008' then sum_elec else 0 end) as elec_240008,   \n" // 电机11
+
+						
+						
+						+"	 sum(case when elec_name in ('elec_1','elec_26') then sum_elec else 0 end) as sum_elec3,\n"  // 三号变电所合计
+						+" 	 sum(case when elec_name = 'elec_1' then sum_elec else 0 end) as elec_1,   \n" // 1#变压器主开关
+						+" 	 sum(case when elec_name = 'elec_2' then sum_elec else 0 end) as elec_2,   \n" // 变电所用电
+						+" 	 sum(case when elec_name = 'elec_3' then sum_elec else 0 end) as elec_3,   \n" // 污水处理
+						+" 	 sum(case when elec_name = 'elec_4' then sum_elec else 0 end) as elec_4,   \n" // 预留
+						+" 	 sum(case when elec_name = 'elec_5' then sum_elec else 0 end) as elec_5,   \n" // 耐久实验室3#动力柜
+						+" 	 sum(case when elec_name = 'elec_6' then sum_elec else 0 end) as elec_6,   \n" // 研发中心GCS柜
+						+" 	 sum(case when elec_name = 'elec_7' then sum_elec else 0 end) as elec_7,   \n" // 研发大马力性能实验室
+						+" 	 sum(case when elec_name = 'elec_8' then sum_elec else 0 end) as elec_8,   \n" // 耐久试验室2#柜
+						+" 	 sum(case when elec_name = 'elec_9' then sum_elec else 0 end) as elec_9,   \n" // 耐久1#5#柜
+						+" 	 sum(case when elec_name = 'elec_10' then sum_elec else 0 end) as elec_10,   \n" // 研发堵转实验室左侧
+						+" 	 sum(case when elec_name = 'elec_11' then sum_elec else 0 end) as elec_11,   \n" // 研发预留
+						+" 	 sum(case when elec_name = 'elec_310012' then sum_elec else 0 end) as elec_310012,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_310013' then sum_elec else 0 end) as elec_310013,   \n" // 备用
+						
+						
+						
+						
+						
+						+" 	 sum(case when elec_name = 'elec_26' then sum_elec else 0 end) as elec_26,   \n" // 2#变压器主开关
+						+" 	 sum(case when elec_name = 'elec_320002' then sum_elec else 0 end) as elec_320002,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320003' then sum_elec else 0 end) as elec_320003,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320004' then sum_elec else 0 end) as elec_320004,   \n" // IT新机房
+						+" 	 sum(case when elec_name = 'elec_320005' then sum_elec else 0 end) as elec_320005,   \n" // 新成品
+						+" 	 sum(case when elec_name = 'elec_320006' then sum_elec else 0 end) as elec_320006,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320007' then sum_elec else 0 end) as elec_320007,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320008' then sum_elec else 0 end) as elec_320008,   \n" // 热水炉
+						+" 	 sum(case when elec_name = 'elec_320009' then sum_elec else 0 end) as elec_320009,   \n" // 研发290性能实验室
+						+" 	 sum(case when elec_name = 'elec_320010' then sum_elec else 0 end) as elec_320010,   \n" // 焓差试验室
+						+" 	 sum(case when elec_name = 'elec_320011' then sum_elec else 0 end) as elec_320011,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320012' then sum_elec else 0 end) as elec_320012,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320013' then sum_elec else 0 end) as elec_320013,   \n" // 25马力组装凸焊机
+						+" 	 sum(case when elec_name = 'elec_320014' then sum_elec else 0 end) as elec_320014,   \n" // 25马力组装线设备1
+						+" 	 sum(case when elec_name = 'elec_320015' then sum_elec else 0 end) as elec_320015,   \n" // 25马力组装线设备2
+						+" 	 sum(case when elec_name = 'elec_320016' then sum_elec else 0 end) as elec_320016,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320017' then sum_elec else 0 end) as elec_320017,   \n" // 寿力3高压柜
+						+" 	 sum(case when elec_name = 'elec_320018' then sum_elec else 0 end) as elec_320018,   \n" // 耐久4#、8#、9#动力柜
+						+" 	 sum(case when elec_name = 'elec_320019' then sum_elec else 0 end) as elec_320019,   \n" // 耐久6#动力柜
+						+" 	 sum(case when elec_name = 'elec_320020' then sum_elec else 0 end) as elec_320020,   \n" // 耐久7#动力柜
+						+" 	 sum(case when elec_name = 'elec_320021' then sum_elec else 0 end) as elec_320021,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320022' then sum_elec else 0 end) as elec_320022,   \n" // B座大办冷水机组-左
+						+" 	 sum(case when elec_name = 'elec_320023' then sum_elec else 0 end) as elec_320023,   \n" // 备用
+						+" 	 sum(case when elec_name = 'elec_320024' then sum_elec else 0 end) as elec_320024   \n" // B座大办冷水机组-右
+						
+						
+
+						+" from (  \n" ;
+						
+				if(dateValue == "month" || dateValue == "year"){
+					sql += " 	select DATE_FORMAT(date, '%Y-%m-%d') as jDay \n" 
+						+" 	,CONCAT('elec', '_', NO) as elec_name \n" 
+						+" 	,sum_elec \n" 
+						+" 	from sum_elec_group_by_day \n" ;
+				}else{
+					sql += " 	select date as jDay \n" 
+						+" 	,CONCAT('elec', '_', NO) as elec_name \n" 
+						+" 	,sum_elec \n" 
+						+" 	from sum_elec_group_by_hour \n" ;
+				}		
+					//sql+=" 	where no in (51,52,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10,11)	" 
+					sql+=" 	where no in ("+noArr.join(',')+")	\n" 
+						+" 	and date <= '"+enddate+"'  \n" 
+						+" 	AND date >= '"+startdate+"'	\n"; 
+				let compareDate = new Date();
+				compareDate.setHours(7, 0, 0, 0);
+				//如果当天在查询区间范围内
+				if(new Date(startdate) <= compareDate &&  compareDate <= new Date(enddate) ){
+					sql += "union all\n" ;
+					if(dateValue == "month" || dateValue == "year"){
+						sql += " 	SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay \n" ;
+					}else{
+						sql += " 	SELECT DATE_FORMAT(date, '%Y-%m-%d %H:00:00') as jDay \n" ;
+					}			
+					sql+=" 	,CONCAT('elec', '_', NO) as elec_name	\n" 		
+						//+" 	#,MIN(KWH) as min		" 
+						//+" 	#,MAX(KWH) as max		" 
+						+" 	,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec	\n" 
+						+" 	FROM data_all FORCE INDEX (date_no_KWH) 	\n" 
+						+" 	WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  \n" 
+						+" 	AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')	\n" 
+						+" 	and kwh != 0 and kwh != 99999999		\n" 
+						+" 	and no in ("+noArr.join(',')+")	\n";
+						//+" 	and no in (51,52,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10,11)	";
+					if(dateValue == "month" || dateValue == "year"){
+						sql += " 	GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') \n" ;
+					}else{
+						sql += " 	GROUP BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')  	 \n" ;
+					}	
+
+				}
+						
+					sql+=" 	) r \n" 
+						+" where r.jDay >= '"+startdate+"' and r.jDay <= '"+enddate+"' \n" ;
+				if(dateValue == "month"||dateValue == "day"){
+					sql += " group by r.jDay order BY r.jDay \n" ;
+				}else if(dateValue == "year"){
+					sql += " group by DATE_FORMAT(r.jDay, '%m')  order BY DATE_FORMAT(r.jDay, '%m') \n" ;		
+				}
+				console.info(sql);
+				const data = await sendSQL(sql);
+				console.info(data);
+				
+				//计算最下面的合计行
+				let totalData = {};
+				totalData.day = "合计";
+				for(let i = 0;i < data.data.length;i++){
+					for (const key in data.data[i]) {
+						if(key != "day"){
+							if(totalData[key] == undefined){
+								//totalData[key] = data.data[i][key];
+								totalData[key] = new Decimal(data.data[i][key]).toString();
+							}else{
+								totalData[key] = new Decimal(totalData[key]).plus(data.data[i][key]).toString();
+								//totalData[key] += data.data[i][key];
+							}
+						}
+					}
+				}
+				data.data.push(totalData);
+				
+				let cols = 
+					
+					[[ // 表头配置项
+			
+						{field: 'day',title: '日期',width: 130,rowspan:2 ,align:"center"}, // 日期
+						{ title: '总用电量（KWh）', align:"center" }, // 总用电量（KWh）
+						{ title: '一号变电所（KWh）',colspan: 32,align:"center"}, // 一号变电所（KWh）
+						{ title: '二号变电所（KWh）',colspan: 31,align:"center"}, // 二号变电所（KWh）
+						{ title: '三号变电所（KWh）',colspan: 38,align:"center"}, // 三号变电所（KWh）
+						
+					], [ // 第二层表头配置项（多层表头）
+						{field: 'sum_elec', title: '合计', width: 140,align:"center"}, // 总合计
+						
+						{field: 'sum_elec1', title: '合计', width: 100,align:"center",hide:true}, // 一号变电所合计
+						{field: 'elec_51', title: '1#变压器主开关', width: 110,align:"center",hide:true}, // 1#变压器主开关
+						{field: 'elec_110002', title: 'IT新机房', width: 100,align:"center",hide:true}, //IT新机房
+						{field: 'elec_110003', title: '宿舍二三楼照明', width: 140,align:"center",hide:true}, // 宿舍二三楼照明
+						{field: 'elec_110004', title: '办公照明', width: 90,align:"center",hide:true}, // 办公照明
+						{field: 'elec_110005', title: '研发消防系统', width: 120,align:"center",hide:true}, // 研发消防系统
+						{field: 'elec_110006', title: '组装GCS', width: 90,align:"center",hide:true}, // 组装GCS
+						{field: 'elec_110007', title: '电机9号', width: 90,align:"center",hide:true}, // 电机9号
+						{field: 'elec_110008', title: 'M456', width: 80,align:"center",hide:true}, // M456
+						{field: 'elec_110009', title: 'M123', width: 80,align:"center",hide:true}, // M123
+						{field: 'elec_110010', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_110011', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_110012', title: '组装31#', width: 90,align:"center",hide:true}, // 组装31#
+						{field: 'elec_110013', title: '组装照明', width: 90,align:"center",hide:true}, // 组装照明
+						
+						
+						{field: 'elec_52', title: '2#变压器主开关', width: 120,align:"center",hide:true}, // 2#变压器主开关
+						{field: 'elec_120002', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120003', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120004', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120005', title: '神钢4#', width: 80,align:"center",hide:true}, // 神钢4#
+						{field: 'elec_120006', title: '组装32#', width: 100,align:"center",hide:true}, // 组装32#
+						{field: 'elec_120007', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120008', title: '空压机照明辅助', width: 140,align:"center",hide:true}, // 空压机照明辅助
+						{field: 'elec_120009', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120010', title: '神钢1#', width: 80,align:"center",hide:true}, // 神钢1#
+						{field: 'elec_120011', title: '神钢3#', width: 80,align:"center",hide:true}, // 神钢3#
+						{field: 'elec_120012', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_120013', title: '组装空调', width: 90,align:"center",hide:true}, // 组装空调
+						{field: 'elec_120014', title: 'R290风机', width: 100,align:"center",hide:true}, // R290风机
+						{field: 'elec_120015', title: '变电所内用电', width: 120,align:"center",hide:true}, // 变电所内用电
+						{field: 'elec_120016', title: 'CO2性能试验', width: 120,align:"center",hide:true}, // CO2性能试验
+						{field: 'elec_120017', title: '电机13#柜', width: 100,align:"center",hide:true}, // 电机13#柜
+						{field: 'elec_120018', title: '备用', width: 90,align:"center",hide:true}, // 备用
+						
+						
+						{field: 'sum_elec2', title: '合计', width: 80,align:"center",hide:true}, // 二号变电所合计
+						{field: 'elec_12', title: '1#变压器主开关', width: 110,align:"center",hide:true}, // 1#变压器主开关
+						
+						{field: 'elec_13', title: '机加GCS西', width: 110,align:"center",hide:true,hide:true}, // 机加GCS西
+						{field: 'elec_14', title: '机加GCS西并', width: 110,align:"center",hide:true}, // 机加GCS西并
+						{field: 'elec_210004', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_210005', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						
+						{field: 'elec_16', title: '2#变压器主开关', width: 110,align:"center",hide:true}, // 2#变压器主开关
+						{field: 'elec_15', title: '机加GCS东', width: 110,align:"center",hide:true}, // 机加GCS东
+						{field: 'elec_220003', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_220004', title: '新电机绕线', width: 140,align:"center",hide:true}, // 新电机绕线
+						{field: 'elec_220005', title: '定转子设备', width: 120,align:"center",hide:true}, // 定转子设备
+						{field: 'elec_220006', title: '定转子照明', width: 120,align:"center",hide:true}, // 定转子照明
+						{field: 'elec_220007', title: '机加工34#', width: 120,align:"center",hide:true}, // 机加工34#
+						
+						{field: 'elec_17', title: '3#变压器主开关', width: 110,align:"center",hide:true}, // 3#变压器主开关
+						{field: 'elec_18', title: '旧退火炉及冷水机组', width: 160,align:"center",hide:true}, // 旧退火炉及冷水机组
+						{field: 'elec_230003', title: '冰山帕特', width: 80,align:"center",hide:true}, // 冰山帕特
+						{field: 'elec_230004', title: '80KW实验室', width: 120,align:"center",hide:true}, // 80KW实验室
+						{field: 'elec_230005', title: '80KW实验室_1', width: 140,align:"center",hide:true}, // 80KW实验室_1
+						{field: 'elec_230006', title: '寿力2#', width: 80,align:"center",hide:true}, // 寿力2#
+						{field: 'elec_230007', title: '寿力4#', width: 80,align:"center",hide:true}, // 寿力4#
+						{field: 'elec_230008', title: '神钢2#', width: 80,align:"center",hide:true}, // 神钢2#
+						{field: 'elec_230009', title: '新碱清洗', width: 90,align:"center",hide:true}, // 新碱清洗
+						{field: 'elec_230010', title: '新磷化', width: 80,align:"center",hide:true}, // 新磷化
+						{field: 'elec_230011', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						
+						{field: 'elec_20', title: '4#变压器主开关', width: 110,align:"center",hide:true}, // 4#变压器主开关
+						{field: 'elec_19', title: '新退火炉', width: 90,align:"center",hide:true}, // 新退火炉
+						{field: 'elec_240003', title: '新壳体GCS柜', width: 130,align:"center",hide:true}, // 新壳体GCS柜
+						{field: 'elec_240004', title: '食堂电锅', width: 90,align:"center",hide:true}, // 食堂电锅
+						{field: 'elec_240005', title: '电机8', width: 80,align:"center",hide:true}, // 电机8
+						{field: 'elec_240006', title: '电机10', width: 80,align:"center",hide:true}, // 电机10
+						{field: 'elec_240007', title: '电机7', width: 80,align:"center",hide:true}, // 电机7
+						{field: 'elec_240008', title: '电机11', width: 80,align:"center",hide:true}, // 电机11
+						
+						
+						{field: 'sum_elec3', title: '合计', width: 80,align:"center",hide:true}, // 三号变电所合计
+						{field: 'elec_1', title: '1#变压器主开关', width: 110,align:"center",hide:true}, // 1#变压器主开关
+						{field: 'elec_2', title: '变电所用电', width: 110,align:"center",hide:true}, // 变电所用电
+						{field: 'elec_3', title: '污水处理', width: 90,align:"center",hide:true}, // 污水处理
+						{field: 'elec_4', title: '预留', width: 80,align:"center",hide:true}, // 预留
+						{field: 'elec_5', title: '耐久实验室3#动力柜', width: 160,align:"center",hide:true}, // 耐久实验室3#动力柜
+						{field: 'elec_6', title: '研发中心GCS柜', width: 130,align:"center",hide:true}, // 研发中心GCS柜
+						{field: 'elec_7', title: '研发大马力性能实验室', width: 170,align:"center",hide:true}, // 研发大马力性能实验室
+						{field: 'elec_8', title: '耐久试验室2#柜', width: 140,align:"center",hide:true}, // 耐久试验室2#柜
+						{field: 'elec_9', title: '耐久1#5#柜', width: 110,align:"center",hide:true}, // 耐久1#5#柜
+						{field: 'elec_10', title: '研发堵转实验室左侧', width: 160,align:"center",hide:true}, // 研发堵转实验室左侧
+						{field: 'elec_11', title: '研发预留', width: 90,align:"center",hide:true}, // 研发预留
+						{field: 'elec_310012', title: '备用', width: 100,align:"center",hide:true}, // 备用
+						{field: 'elec_310013', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						
+						{field: 'elec_26', title: '2#变压器主开关', width: 110,align:"center",hide:true}, // 2#变压器主开关
+						{field: 'elec_320002', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320003', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320004', title: 'IT新机房（双电）', width: 150,align:"center",hide:true}, // IT新机房（双电）
+						{field: 'elec_320005', title: '新成品', width: 80,align:"center",hide:true}, // 新成品
+						{field: 'elec_320006', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320007', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320008', title: '热水炉', width: 80,align:"center",hide:true}, // 热水炉
+						{field: 'elec_320009', title: '研发290性能实验室', width: 160,align:"center",hide:true}, // 研发290性能实验室
+						{field: 'elec_320010', title: '焓差试验室', width: 100,align:"center",hide:true}, // 焓差试验室
+						{field: 'elec_320011', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320012', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320013', title: '25马力组装凸焊机', width: 150,align:"center",hide:true}, // 25马力组装凸焊机
+						{field: 'elec_320014', title: '25马力组装线设备1', width:170,align:"center",hide:true}, // 25马力组装线设备1
+						{field: 'elec_320015', title: '25马力组装线设备2', width: 170,align:"center",hide:true}, // 25马力组装线设备2
+						{field: 'elec_320016', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320017', title: '寿力3高压柜', width: 120,align:"center",hide:true}, // 寿力3高压柜
+						{field: 'elec_320018', title: '耐久4#、8#、9#动力柜', width: 210,align:"center",hide:true}, // 耐久4#、8#、9#动力柜
+						{field: 'elec_320019', title: '耐久6#动力柜', width: 120,align:"center",hide:true}, // 耐久6#动力柜
+						{field: 'elec_320020', title: '耐久7#动力柜', width: 120,align:"center",hide:true}, // 耐久7#动力柜
+						{field: 'elec_320021', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320022', title: 'B座大办冷水机组-左', width: 180,align:"center",hide:true}, // B座大办冷水机组-左
+						{field: 'elec_320023', title: '备用', width: 80,align:"center",hide:true}, // 备用
+						{field: 'elec_320024', title: 'B座大办冷水机组-右', width: 180,align:"center",hide:true}, // B座大办冷水机组-右
+				
+					]];
+					
+				for(let i=0;i<cols[1].length;i++){
+					if(showData.indexOf(cols[1][i].field)>=0){
+						cols[1][i].hide = false;
+					}
+				}
+				table.render({
+					elem: '#test',
+					cols: cols,
+					data: data.data,
+					//skin: 'line', // 表格风格
+					even: true,
+					height: $("#table_form").height()-1,
+					//page: true, // 是否显示分页
+					//limits: [5, 10, 15],
+					//limit: 5 // 每页默认显示的数量
+				});
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		form.on('radio(radio-filter)', function(data){
+			var elem = data.elem; // 获得 radio 原始 DOM 对象
+			var checked = elem.checked; // 获得 radio 选中状态
+			var value = elem.value; // 获得 radio 值
+			dateValue = value;
+			var othis = data.othis; // 获得 radio 元素被替换后的 jQuery 对象
+			$('#search').click();
+			//layer.msg(['value: '+ value, 'checked: '+ checked].join('<br>'));
+			
+		});
+		$('#export').on('click', async function() {
+			try {
+				let date = new Date();
+				//获取树形表格中的值。
+				var checkedData = tree.getChecked('tree');
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				
+				
+				var cols = table.getOptions('test').cols;
+				console.info("cols"+cols);
+				//动态添加表头
+				//先预设全部表头
+				var dataArr = [
+				{
+					day:"日期"
+					,sum_elec:"总用电量（KWh）"
+					,sum_elec1:"一号变电所（KWh）"
+					,elec_51:""
+					,elec_110002:""
+					,elec_110003:""
+					,elec_110004:""
+					,elec_110005:""
+					,elec_110006:""
+					,elec_110007:""
+					,elec_110008:""
+					,elec_110009:""
+					,elec_110010:""
+					,elec_110011:""
+					,elec_110012:""
+					,elec_110013:""
+					,elec_110014:""
+					,elec_110015:""
+					,elec_110016:""
+					,elec_110017:""
+					,elec_110018:""
+					,elec_52:""
+					,elec_120002:""
+					,elec_120003:""
+					,elec_120004:""
+					,elec_120005:""
+					,elec_120006:""
+					,elec_120007:""
+					,elec_120008:""
+					,elec_120009:""
+					,elec_120010:""
+					,elec_120011:""
+					,elec_120012:""
+					,elec_120013:""
+					
+					,sum_elec2:"二号变电所（KWh）"
+					
+					,elec_12:""
+					,elec_13:""
+					,elec_14:""
+					,elec_210004:""
+					,elec_210005:""
+					,elec_16:""
+					,elec_15:""
+					,elec_220003:""
+					,elec_220004:""
+					,elec_220005:""
+					,elec_220006:""
+					,elec_220007:""
+					,elec_17:""
+					,elec_18:""
+					,elec_230003:""
+					,elec_230004:""
+					,elec_230005:""
+					,elec_230006:""
+					,elec_230007:""
+					,elec_230008:""
+					,elec_230009:""
+					,elec_230010:""
+					,elec_230011:""
+					,elec_20:""
+					,elec_19:""
+					,elec_240003:""
+					,elec_240004:""
+					,elec_240005:""
+					,elec_240006:""
+					,elec_240007:""
+					,elec_240008:""
+					
+					,sum_elec3:"三号变电所（KWh）"
+					,elec_1:""
+					,elec_2:""
+					,elec_3:""
+					,elec_4:""
+					,elec_5:""
+					,elec_6:""
+					,elec_7:""
+					,elec_8:""
+					,elec_9:""
+					,elec_10:""
+					,elec_11:""
+					,elec_310012:""
+					,elec_310013:""
+					,elec_26:""
+					,elec_320002:""
+					,elec_320003:""
+					,elec_320004:""
+					,elec_320005:""
+					,elec_320006:""
+					,elec_320007:""
+					,elec_320008:""
+					,elec_320009:""
+					,elec_320010:""
+					,elec_320011:""
+					,elec_320012:""
+					,elec_320013:""
+					,elec_320014:""
+					,elec_320015:""
+					,elec_320016:""
+					,elec_320017:""
+					,elec_320018:""
+					,elec_320019:""
+					,elec_320020:""
+					,elec_320021:""
+					,elec_320022:""
+					,elec_320023:""
+					,elec_320024:""
+				},
+				{
+					day:"日期"
+					,sum_elec:"合计"
+					,sum_elec1:"合计"
+					,elec_51:"1#变压器主开关"
+					,elec_110002:"备用"
+					,elec_110003:"备用"
+					,elec_110004:"备用"
+					,elec_110005:"神钢4#"
+					,elec_110006:"组装32#"
+					,elec_110007:"备用"
+					,elec_110008:"空压机照明辅助"
+					,elec_110009:"备用"
+					,elec_110010:"神钢1#"
+					,elec_110011:"神钢3#"
+					,elec_110012:"备用"
+					,elec_110013:"组装空调"
+					,elec_110014:"R290风机"
+					,elec_110015:"变电所内用电"
+					,elec_110016:"CO2性能试验"
+					,elec_110017:"电机13#柜"
+					,elec_110018:"备用"
+					,elec_52:"2#变压器主开关"
+					,elec_120002:"IT新机房"
+					,elec_120003:"宿舍二三楼照明"
+					,elec_120004:"办公照明"
+					,elec_120005:"研发消防系统"
+					,elec_120006:"组装GCS"
+					,elec_120007:"电机9号"
+					,elec_120008:"M456"
+					,elec_120009:"M123"
+					,elec_120010:"备用"
+					,elec_120011:"备用"
+					,elec_120012:"组装31#"
+					,elec_120013:"组装照明"
+					
+					,sum_elec2:"合计"
+					
+					,elec_12:"1#变压器主开关"
+					,elec_13:"机加GCS西"
+					,elec_14:"机加GCS西并"
+					,elec_210004:"备用"
+					,elec_210005:"备用"
+					,elec_16:"2#变压器主开关"
+					,elec_15:"机加GCS东"
+					,elec_220003:"备用"
+					,elec_220004:"新电机绕线"
+					,elec_220005:"定转子设备"
+					,elec_220006:"定转子照明"
+					,elec_220007:"机加工34#"
+					,elec_17:"3#变压器主开关"
+					,elec_18:"旧退火炉及冷水机组"
+					,elec_230003:"冰山帕特"
+					,elec_230004:"80KW实验室"
+					,elec_230005:"80KW实验室_1"
+					,elec_230006:"寿力2#"
+					,elec_230007:"寿力4#"
+					,elec_230008:"神钢2#"
+					,elec_230009:"新碱清洗"
+					,elec_230010:"新磷化"
+					,elec_230011:"备用"
+					,elec_20:"4#变压器主开关"
+					,elec_19:"新退火炉"
+					,elec_240003:"新壳体GCS柜"
+					,elec_240004:"食堂电锅"
+					,elec_240005:"电机8"
+					,elec_240006:"电机10"
+					,elec_240007:"电机7"
+					,elec_240008:"电机11"
+					
+					,sum_elec3:"合计"
+					,elec_1:"1#变压器主开关"
+					,elec_2:"变电所用电"
+					,elec_3:"污水处理"
+					,elec_4:"预留"
+					,elec_5:"耐久实验室3#动力柜"
+					,elec_6:"研发中心GCS柜"
+					,elec_7:"研发大马力性能实验室"
+					,elec_8:"耐久试验室2#柜"
+					,elec_9:"耐久1#5#柜"
+					,elec_10:"研发堵转实验室左侧"
+					,elec_11:"研发预留"
+					,elec_310012:"备用"
+					,elec_310013:"备用"
+					,elec_26:"2#变压器主开关"
+					,elec_320002:"备用"
+					,elec_320003:"备用"
+					,elec_320004:"IT新机房"
+					,elec_320005:"新成品"
+					,elec_320006:"备用"
+					,elec_320007:"备用"
+					,elec_320008:"热水炉"
+					,elec_320009:"研发290性能实验室"
+					,elec_320010:"焓差试验室"
+					,elec_320011:"备用"
+					,elec_320012:"备用"
+					,elec_320013:"25马力组装凸焊机"
+					,elec_320014:"25马力组装线设备1"
+					,elec_320015:"25马力组装线设备2"
+					,elec_320016:"备用"
+					,elec_320017:"寿力3高压柜"
+					,elec_320018:"耐久4#、8#、9#动力柜"
+					,elec_320019:"耐久6#动力柜"
+					,elec_320020:"耐久7#动力柜"
+					,elec_320021:"备用"
+					,elec_320022:"B座大办冷水机组-左"
+					,elec_320023:"备用" 
+					,elec_320024:"B座大办冷水机组-右"
+					
+				}
+				
+				];
+				for (const key in dataArr[1]) {
+					if (dataArr[1].hasOwnProperty(key)) { // 确保只处理对象自身的属性
+						console.log(key, dataArr[1][key]);
+					}
+				}
+				var data = table.getData('test');                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+				console.log("data",data);
+				/*//根据表格中表头的隐藏配置来删除列
+				for(let i=0;i<cols[0].length;i++){
+					
+				}*/
+				for(let i=0;i<cols[1].length;i++){
+					for (const key in dataArr[1]) {
+						if(cols[1][i].field == key &&cols[1][i].hide == true){
+							delete dataArr[0][key];
+							delete dataArr[1][key];
+							for(let j=0;j<data.length;j++){
+								delete data[j][key];
+							}
+							//Object.deleteProperty(dataArr[0], key);
+							//Object.deleteProperty(dataArr[1], key);
+						}
+					}
+				}
+				
+				
+				
+				//将表中实际数据添加进输出表中
+				for(let i=0;i<data.length;i++){
+					dataArr.push(data[i]);
+				}
+				//console.info(dataArr);
+				
+				//构建合并格配置
+				//先通过树形图数据确认都要合并多少
+				let mergeArr = [];
+				for(let i=0;i<checkedData.length;i++){
+					if(checkedData[i].children != undefined){
+						mergeArr.push(checkedData[i].children.length);
+					}
+				}
+				console.info("mergeArr"+mergeArr);
+				//拼接合并配置项
+				let mergeObj = [
+					['A1', 'A2'],
+					/*['C1', 'K1'],
+					['L1', 'P1'],
+					['Q1', 'Y1'],
+					['Z1', 'AK1']*/
+				];
+				let num = 2;
+				for(let i=0;i<mergeArr.length;i++){
+					let tempArr = [convertNumberToLetter(num)+1,convertNumberToLetter(num+mergeArr[i])+1];
+					num += mergeArr[i] + 1 ;
+					mergeObj.push(tempArr);
+				}
+				
+				
+				var mergeConf = excel.makeMergeConfig(mergeObj);
+				
+				//拼接列宽配置项
+				//先遍历表头，将所有的width按顺序获取到
+				let colLengthArr = []
+				for(let i=0;i<cols.length;i++){
+					for(let j=0;j<cols[i].length;j++){
+						if(cols[i][j].width != undefined){
+							if(cols[i][j].hide == undefined ||cols[i][j].hide == false){
+								colLengthArr.push(cols[i][j].width);
+							}
+						}
+					}
+				}
+				//console.log("colLengthArr",colLengthArr);
+				let colLengthObj = {};
+				for(let i=0;i<colLengthArr.length;i++){
+					colLengthObj[convertNumberToLetter(i)] = colLengthArr[i] * 0.75;
+				}
+				//console.log("colLengthObj",colLengthObj);
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig(/*{
+					'A': 80,
+					'B': 95,
+					'C': 70,
+					'D': 70,
+					//'E':80,
+					'F':80,
+					//'G':100,
+					//'H':115,
+					//'I':80,
+					//'J':130,
+					//'K':100,
+					'L':80,
+					'M':80,
+					'N':80,
+					'O':80,
+					//'P':115,
+					'R':60,
+					'S':90,
+					'U':100,
+					'V':90,
+					'Z':60,
+					//'AA':220,
+					'AD':80,
+					'AE':90,
+					'AF':120,
+					'AG':130,
+					'AH':100,
+					'AI':120,
+					'AJ':100,
+					
+				}*/colLengthObj, 60)
+				/*// 3. 第1行行高40，第二行行高30，默认20
+				var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20)*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '电能统计按变压器统计_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							'!merges': mergeConf
+							,'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				})
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		
+		function convertNumberToLetter(num) {
+			if (num <= 25) {
+				return String.fromCharCode(65 + num); // 将数字转换为大写字母
+			} else {
+				var quotient = Math.floor(num / 26) - 1;
+				var remainder = num % 26;
+				return convertNumberToLetter(quotient) + String.fromCharCode(65 + remainder); // 递归计算每一位的字母
+			}
+		}
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

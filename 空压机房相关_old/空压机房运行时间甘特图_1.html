@@ -1,0 +1,2723 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>空压机房运行时间甘特图</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/'
+		}).extend({
+			excel: 'layui_exts/excel'
+			,xmSelect: "xm-select" 
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">日期类型：</label>
+							<div class="layui-input-inline">
+								<select id = "interest" name="interest" lay-filter="interest">
+									<option value="day" selected>单日</option>
+									<option value="diy" >自定义</option>
+								</select>
+							</div>-->
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid" >-</div>
+									<div class="layui-input-inline" ">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">查询范围：</label>
+								<div class="layui-inline" id = "selectedCompressor" style = "width:300px;" >
+
+								</div>
+								<!--<div class="layui-input-inline">
+									<select id = "sreachNo">
+										<option value="all">全部</option>
+										<optgroup label="一号变电所">
+											<option value="all_1">全部</option>
+											<option value="51">1#主变压器</option>
+											<option value="52">2#主变压器</option>
+										</optgroup>
+										<optgroup label="二号变电所">
+											<option value="all_2">全部</option>
+											<option value="12">1#主变压器</option>
+											<option value="13">1#变机加GCS西</option>
+											<option value="14">1#变机加GCS西并</option>
+											<option value="15">2#变机加GCS东</option>
+											<option value="16">2#主变压器</option>
+											<option value="17">3#主变压器</option>
+											<option value="18">冷水机组及退火炉</option>
+											<option value="19">4#变新退火炉</option>
+											<option value="20">4#主变压器</option>
+										</optgroup>
+										<optgroup label="三号变电所">
+											<option value="all_3">全部</option>
+											<option value="1">1#主变压器</option>
+											<option value="2">变电所用电</option>
+											<option value="3">污水处理</option>
+											<option value="4">新成品GCS柜</option>
+											<option value="5">研发中心GCS柜</option>
+											<option value="6">耐久试验室3#动力柜</option>
+											<option value="7">研发大马力性能试验室</option>
+											<option value="8">耐久试验室2#柜</option>
+											<option value="9">耐久1#5#柜</option>
+											<option value="10">研发堵转实验室左侧</option>
+											<option value="11">研发预留</option>
+											<option value="26">2#主变压器</option>
+											<option value="21">电机实验室</option>
+											<option value="22">研发AP-1-6</option>
+											<option value="23">研发AP-1-7</option>
+										</optgroup>
+									</select>
+								</div>-->
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>-->
+								<!--<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>-->
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">空压机房运行时间甘特图</h2>
+								
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<div id = "chart" style = "height:100%;padding:0 10 0 10" >
+								
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel','xmSelect'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var dateValue = "day";
+		
+		
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 加载日期
+		laydate.render({
+			type:"datetime",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		laydate.render({
+			type:"datetime",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"datetime",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});
+		
+		//加载空压机数据
+		var demo1 = xmSelect.render({
+			el: '#selectedCompressor', 
+			data: [
+				{name: '空压机1号', value: 1,selected:false},
+				{name: '空压机2号', value: 2,selected:false},
+				{name: '空压机3号', value: 3,selected:false},
+				//{name: '北京', value: 4,selected:false},
+			],
+			on: function(data){
+				debugger;
+				//arr:  当前多选已选中的数据
+				var arr = data.arr;
+				//change, 此次选择变化的数据,数组
+				var change = data.change;
+				//isAdd, 此次操作是新增还是删除
+				var isAdd = data.isAdd;
+				//alert('已有: '+arr.length+' 变化: '+change.length+', 状态: ' + isAdd)
+				//可以return一个数组, 代表想选中的数据
+				//return []
+			},
+		})
+		
+		
+		
+
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果
+				var startdate ;
+				var enddate;
+				startdate = $("#ID-laydate-start-date-1")[0].value;
+				enddate = $("#ID-laydate-end-date-1")[0].value;
+				
+				let datediff = ((new Date(enddate) - new Date(startdate))/1000)+86400 ;
+				
+				var sql = ""
+				+ " select t.*, info_config.no, \n" 
+				+ " CASE \n" 
+				+ "   WHEN LEFT(t.Tagname, 1) = 'T' THEN CONCAT(SUBSTRING_INDEX(info_config.place, '#', 1),'#',info_config.name, '', SUBSTRING_INDEX(t.Tagname, '_', -1)) \n" 
+				+ "   WHEN LEFT(t.Tagname, 1) = 'E' THEN CONCAT(SUBSTRING_INDEX(info_config.place, '#', 1),'#', info_config.name, '', SUBSTRING_INDEX(t.Tagname, '_', -1)) \n"   
+				+ "   ELSE 'Unknown' \n"   
+				+ " END as custom_name \n" 
+				+ " from ( \n" 
+				+ "   select Tagname, sum(time_DT) as time_DT from alarm_sec \n" 
+				+ "   where alarmTime >= '" + startdate + "' \n" 
+				+ "   and alarmTime <= DATE_ADD('" + enddate + "', INTERVAL 24 hour) \n" 
+				+ "   group by Tagname \n" 
+				+ " ) t \n" 
+				+ " left join info_config \n" 
+				+ " on LEFT(t.Tagname, 4) = info_config.symbol \n" ;
+				
+				if($("#sreachNo").val() == "all"){
+				}else if($("#sreachNo").val() == "all_1"){
+					sql += " where info_config.no in (27,28) ";
+				}else if($("#sreachNo").val() == "all_2"){
+					sql += " where info_config.no in (12,16,17,20) ";
+				}else if($("#sreachNo").val() == "all_3"){
+					sql += " where info_config.no in (1,26) ";
+				}else{
+					sql += " where info_config.no = "+$("#sreachNo").val()+" ";
+				}
+				
+				console.info(sql);
+				/*const data = await sendSQL(sql);
+				console.info(data);
+				
+				var myChart = echarts.init(document.getElementById('chart'));
+				var sumdata = [];
+				let xAxisData = [];
+				let data_fault = [];
+				let data_normal = [];
+				for(let i=0;i<data.data.length;i++){
+					sumdata.push(datediff);
+					data_fault.push(data.data[i].time_DT);
+					data_normal.push(datediff - data.data[i].time_DT);
+					xAxisData.push(data.data[i].custom_name);
+				}
+				
+				
+
+				function secondsToYMDHMS(seconds) {
+    
+					var day = Math.floor((seconds % (365 * 24 * 60 * 60)) / (24 * 60 * 60));
+					var temp = (seconds % (365 * 24 * 60 * 60)) % (24 * 60 * 60);
+					var hour = Math.floor(temp / (60 * 60));
+					var temp2 = temp % (60 * 60);
+					var minute = Math.floor(temp2 / 60);
+					var second = temp2 % 60;
+					if(day > 0){
+						return day + "天" + hour + "时" + minute + "分" + second + "秒";
+					}else if (day <= 0 &&hour > 0){
+						return hour + "时" + minute + "分" + second + "秒";
+					}else if (day <=0 && hour <=0 && minute > 0 ){
+						return  minute + "分" + second + "秒";
+					}else{
+						return  second + "秒";
+					}
+    
+				}*/
+				var myChart = echarts.init(document.getElementById('chart'));
+				option = {
+					tooltip: {
+						formatter: function(params) {
+							return params.marker + params.value[3] + ': ' + params.value[4] + '<br/>开始时间:' + params.value[1] + '<br/>结束时间:' + params.value[2] + '<br/>状态时长:' + params.value[5] + ' min';
+						}
+					
+					},
+					title: {
+						text: "设备状态时长统计",
+						textStyle: {
+							color: "#fff",
+						},
+						left: "left",
+						top: 5
+					},
+					dataZoom: [
+						{
+							type: "slider",
+							filterMode: "weakFilter",
+							showDataShadow: false,
+							height: 10,
+							borderColor: "transparent",
+							backgroundColor: "#00EBFF",
+							handleIcon: "M10.7,11.9H9.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4h1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7v-1.2h6.6z M13.3,22H6.7v-1.2h6.6z M13.3,19.6H6.7v-1.2h6.6z",
+							handleSize: 20,
+							handleStyle: {
+								shadowBlur: 6,
+								shadowOffsetX: 1,
+								shadowOffsetY: 2,
+								shadowColor: "#aaa"
+							},
+							labelFormatter: ""
+						},
+						{
+							type: "inside",
+							filterMode: "weakFilter"
+						}
+					],
+					grid: {
+						left: "5%",
+						right: "5%",
+						top: "10%",
+						bottom: "10%",
+						containLabel: true
+					},
+					xAxis: {
+						min: "2025-07-24 00:00:00",
+						max: "2025-07-25 10:11:43",
+						scale: true,
+						type: "time",
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+					},
+					yAxis: {
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						
+						data: [
+							"空压机1号",
+							"空压机2号",
+							"空压机3号"
+						]
+					},
+					color: [
+						"#00FF00",
+						"#FFFF00",
+						"#FF4040",
+						"#CFCFCF"
+					],
+					legend: {
+						top: 20,
+						textStyle: {
+							color: "#fff",
+						},
+						data: [
+							"运行",
+							"空闲",
+							"故障",
+							"停机"
+						]
+					},
+					series: [
+						{
+							name: "运行",
+							type: "custom",
+							renderItem: renderItem,
+							itemStyle: {
+								normal: {
+									opacity: 1
+								}
+							},
+							encode: {
+								x: [
+									1,
+									2
+								],
+								y: 0
+							},
+							data: [
+								{
+									"name": "status1",
+									"value": [
+										0,
+										"2025-07-24 00:05:23",
+										"2025-07-24 00:21:04",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status3",
+									"value": [
+										0,
+										"2025-07-24 00:22:04",
+										"2025-07-24 00:37:45",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status5",
+									"value": [
+										0,
+										"2025-07-24 00:38:05",
+										"2025-07-24 00:53:36",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status7",
+									"value": [
+										0,
+										"2025-07-24 00:54:06",
+										"2025-07-24 01:09:37",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status9",
+									"value": [
+										0,
+										"2025-07-24 01:21:37",
+										"2025-07-24 01:36:58",
+										"空压机1号",
+										"运行",
+										"15.35"
+									]
+								},
+								{
+									"name": "status11",
+									"value": [
+										0,
+										"2025-07-24 01:43:18",
+										"2025-07-24 01:58:49",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status13",
+									"value": [
+										0,
+										"2025-07-24 02:08:50",
+										"2025-07-24 02:24:31",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status15",
+									"value": [
+										0,
+										"2025-07-24 07:03:06",
+										"2025-07-24 07:18:47",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status17",
+									"value": [
+										0,
+										"2025-07-24 07:24:07",
+										"2025-07-24 07:39:38",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status19",
+									"value": [
+										0,
+										"2025-07-24 07:41:08",
+										"2025-07-24 07:56:59",
+										"空压机1号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status21",
+									"value": [
+										0,
+										"2025-07-24 08:01:09",
+										"2025-07-24 08:16:50",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status23",
+									"value": [
+										0,
+										"2025-07-24 08:21:50",
+										"2025-07-24 08:37:31",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status25",
+									"value": [
+										0,
+										"2025-07-24 08:38:11",
+										"2025-07-24 08:53:52",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status27",
+									"value": [
+										0,
+										"2025-07-24 09:06:33",
+										"2025-07-24 09:22:04",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status29",
+									"value": [
+										0,
+										"2025-07-24 09:23:14",
+										"2025-07-24 09:38:54",
+										"空压机1号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status31",
+									"value": [
+										0,
+										"2025-07-24 09:45:25",
+										"2025-07-24 10:01:06",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status33",
+									"value": [
+										0,
+										"2025-07-24 10:03:16",
+										"2025-07-24 10:18:57",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status35",
+									"value": [
+										0,
+										"2025-07-24 10:43:48",
+										"2025-07-24 10:59:29",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status37",
+									"value": [
+										0,
+										"2025-07-24 11:00:29",
+										"2025-07-24 11:16:00",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status39",
+									"value": [
+										0,
+										"2025-07-24 11:22:50",
+										"2025-07-24 11:38:31",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status41",
+									"value": [
+										0,
+										"2025-07-24 12:25:44",
+										"2025-07-24 12:41:15",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status43",
+									"value": [
+										0,
+										"2025-07-24 12:42:15",
+										"2025-07-24 12:57:56",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status45",
+									"value": [
+										0,
+										"2025-07-24 13:00:46",
+										"2025-07-24 13:16:27",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status47",
+									"value": [
+										0,
+										"2025-07-24 13:19:37",
+										"2025-07-24 13:35:18",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status49",
+									"value": [
+										0,
+										"2025-07-24 14:16:40",
+										"2025-07-24 14:32:31",
+										"空压机1号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status51",
+									"value": [
+										0,
+										"2025-07-24 14:42:21",
+										"2025-07-24 14:58:02",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status53",
+									"value": [
+										0,
+										"2025-07-24 15:00:22",
+										"2025-07-24 15:15:53",
+										"空压机1号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status55",
+									"value": [
+										0,
+										"2025-07-24 15:20:13",
+										"2025-07-24 15:35:54",
+										"空压机1号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status57",
+									"value": [
+										0,
+										"2025-07-24 21:34:24",
+										"2025-07-24 21:46:24",
+										"空压机1号",
+										"运行",
+										"12.00"
+									]
+								},
+								{
+									"name": "status59",
+									"value": [
+										0,
+										"2025-07-24 21:46:55",
+										"2025-07-24 22:02:45",
+										"空压机1号",
+										"运行",
+										"15.83"
+									]
+								},
+								{
+									"name": "status63",
+									"value": [
+										1,
+										"2025-07-24 00:04:33",
+										"2025-07-24 00:20:14",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status65",
+									"value": [
+										1,
+										"2025-07-24 00:21:14",
+										"2025-07-24 00:36:55",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status67",
+									"value": [
+										1,
+										"2025-07-24 00:37:15",
+										"2025-07-24 00:52:56",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status69",
+									"value": [
+										1,
+										"2025-07-24 00:53:16",
+										"2025-07-24 01:08:56",
+										"空压机2号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status71",
+									"value": [
+										1,
+										"2025-07-24 01:15:27",
+										"2025-07-24 01:30:58",
+										"空压机2号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status73",
+									"value": [
+										1,
+										"2025-07-24 01:35:48",
+										"2025-07-24 01:42:28",
+										"空压机2号",
+										"运行",
+										"6.67"
+									]
+								},
+								{
+									"name": "status75",
+									"value": [
+										1,
+										"2025-07-24 01:42:38",
+										"2025-07-24 01:58:49",
+										"空压机2号",
+										"运行",
+										"16.18"
+									]
+								},
+								{
+									"name": "status77",
+									"value": [
+										1,
+										"2025-07-24 02:04:50",
+										"2025-07-24 02:20:30",
+										"空压机2号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status79",
+									"value": [
+										1,
+										"2025-07-24 07:01:46",
+										"2025-07-24 07:17:27",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status81",
+									"value": [
+										1,
+										"2025-07-24 07:22:57",
+										"2025-07-24 07:38:38",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status83",
+									"value": [
+										1,
+										"2025-07-24 07:39:38",
+										"2025-07-24 07:55:29",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status85",
+									"value": [
+										1,
+										"2025-07-24 07:59:59",
+										"2025-07-24 08:15:50",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status87",
+									"value": [
+										1,
+										"2025-07-24 08:20:30",
+										"2025-07-24 08:36:11",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status89",
+									"value": [
+										1,
+										"2025-07-24 08:37:11",
+										"2025-07-24 08:52:52",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status91",
+									"value": [
+										1,
+										"2025-07-24 09:05:03",
+										"2025-07-24 09:20:43",
+										"空压机2号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status93",
+									"value": [
+										1,
+										"2025-07-24 09:22:04",
+										"2025-07-24 09:37:44",
+										"空压机2号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status95",
+									"value": [
+										1,
+										"2025-07-24 09:44:25",
+										"2025-07-24 10:00:06",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status97",
+									"value": [
+										1,
+										"2025-07-24 10:01:46",
+										"2025-07-24 10:17:37",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status99",
+									"value": [
+										1,
+										"2025-07-24 10:42:38",
+										"2025-07-24 10:58:09",
+										"空压机2号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status101",
+									"value": [
+										1,
+										"2025-07-24 10:59:09",
+										"2025-07-24 11:14:40",
+										"空压机2号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status103",
+									"value": [
+										1,
+										"2025-07-24 11:21:40",
+										"2025-07-24 11:37:31",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status105",
+									"value": [
+										1,
+										"2025-07-24 12:24:04",
+										"2025-07-24 12:39:55",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status107",
+									"value": [
+										1,
+										"2025-07-24 12:41:05",
+										"2025-07-24 12:56:46",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status109",
+									"value": [
+										1,
+										"2025-07-24 12:59:16",
+										"2025-07-24 13:15:07",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status111",
+									"value": [
+										1,
+										"2025-07-24 13:18:27",
+										"2025-07-24 13:34:08",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status113",
+									"value": [
+										1,
+										"2025-07-24 14:15:00",
+										"2025-07-24 14:30:51",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status115",
+									"value": [
+										1,
+										"2025-07-24 14:41:01",
+										"2025-07-24 14:56:52",
+										"空压机2号",
+										"运行",
+										"15.85"
+									]
+								},
+								{
+									"name": "status117",
+									"value": [
+										1,
+										"2025-07-24 14:58:42",
+										"2025-07-24 15:14:23",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status119",
+									"value": [
+										1,
+										"2025-07-24 15:19:13",
+										"2025-07-24 15:34:54",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status121",
+									"value": [
+										1,
+										"2025-07-24 21:34:54",
+										"2025-07-24 21:50:35",
+										"空压机2号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status125",
+									"value": [
+										2,
+										"2025-07-24 00:04:53",
+										"2025-07-24 00:20:34",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status127",
+									"value": [
+										2,
+										"2025-07-24 00:21:34",
+										"2025-07-24 00:37:15",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status129",
+									"value": [
+										2,
+										"2025-07-24 00:37:35",
+										"2025-07-24 00:53:16",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status131",
+									"value": [
+										2,
+										"2025-07-24 00:53:36",
+										"2025-07-24 01:09:17",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status133",
+									"value": [
+										2,
+										"2025-07-24 01:18:37",
+										"2025-07-24 01:34:18",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status135",
+									"value": [
+										2,
+										"2025-07-24 01:36:48",
+										"2025-07-24 01:58:19",
+										"空压机3号",
+										"运行",
+										"21.52"
+									]
+								},
+								{
+									"name": "status137",
+									"value": [
+										2,
+										"2025-07-24 02:00:59",
+										"2025-07-24 02:16:40",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status139",
+									"value": [
+										2,
+										"2025-07-24 07:02:16",
+										"2025-07-24 07:17:57",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status141",
+									"value": [
+										2,
+										"2025-07-24 07:23:27",
+										"2025-07-24 07:39:08",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status143",
+									"value": [
+										2,
+										"2025-07-24 07:40:18",
+										"2025-07-24 07:55:59",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status145",
+									"value": [
+										2,
+										"2025-07-24 08:00:39",
+										"2025-07-24 08:16:20",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status147",
+									"value": [
+										2,
+										"2025-07-24 08:21:10",
+										"2025-07-24 08:36:41",
+										"空压机3号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status149",
+									"value": [
+										2,
+										"2025-07-24 08:37:31",
+										"2025-07-24 08:53:12",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status151",
+									"value": [
+										2,
+										"2025-07-24 09:05:33",
+										"2025-07-24 09:21:13",
+										"空压机3号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status153",
+									"value": [
+										2,
+										"2025-07-24 09:22:24",
+										"2025-07-24 09:38:04",
+										"空压机3号",
+										"运行",
+										"15.67"
+									]
+								},
+								{
+									"name": "status155",
+									"value": [
+										2,
+										"2025-07-24 09:44:55",
+										"2025-07-24 10:00:36",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status157",
+									"value": [
+										2,
+										"2025-07-24 10:02:16",
+										"2025-07-24 10:17:57",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status159",
+									"value": [
+										2,
+										"2025-07-24 10:43:18",
+										"2025-07-24 10:58:59",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status161",
+									"value": [
+										2,
+										"2025-07-24 10:59:39",
+										"2025-07-24 11:15:20",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status163",
+									"value": [
+										2,
+										"2025-07-24 11:22:20",
+										"2025-07-24 11:37:51",
+										"空压机3号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status165",
+									"value": [
+										2,
+										"2025-07-24 12:24:44",
+										"2025-07-24 12:40:25",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status167",
+									"value": [
+										2,
+										"2025-07-24 12:41:35",
+										"2025-07-24 12:57:16",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status169",
+									"value": [
+										2,
+										"2025-07-24 12:59:56",
+										"2025-07-24 13:15:37",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status171",
+									"value": [
+										2,
+										"2025-07-24 13:18:57",
+										"2025-07-24 13:34:38",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status173",
+									"value": [
+										2,
+										"2025-07-24 14:15:50",
+										"2025-07-24 14:31:31",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status175",
+									"value": [
+										2,
+										"2025-07-24 14:41:51",
+										"2025-07-24 14:57:22",
+										"空压机3号",
+										"运行",
+										"15.52"
+									]
+								},
+								{
+									"name": "status177",
+									"value": [
+										2,
+										"2025-07-24 14:59:12",
+										"2025-07-24 15:14:53",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status179",
+									"value": [
+										2,
+										"2025-07-24 15:19:43",
+										"2025-07-24 15:35:24",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								},
+								{
+									"name": "status181",
+									"value": [
+										2,
+										"2025-07-24 21:35:04",
+										"2025-07-24 21:50:45",
+										"空压机3号",
+										"运行",
+										"15.68"
+									]
+								}
+							]
+						},
+						{
+							"name": "空闲",
+							"type": "custom",
+							renderItem: renderItem,
+							"itemStyle": {
+								"normal": {
+									"opacity": 1
+								}
+							},
+							"encode": {
+								"x": [
+									1,
+									2
+								],
+								"y": 0
+							},
+							"data": [
+								{
+									"name": "status0",
+									"value": [
+										0,
+										"2025-07-24 00:05:03",
+										"2025-07-24 00:05:23",
+										"空压机1号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status2",
+									"value": [
+										0,
+										"2025-07-24 00:21:04",
+										"2025-07-24 00:22:04",
+										"空压机1号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status4",
+									"value": [
+										0,
+										"2025-07-24 00:37:45",
+										"2025-07-24 00:38:05",
+										"空压机1号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status6",
+									"value": [
+										0,
+										"2025-07-24 00:53:36",
+										"2025-07-24 00:54:06",
+										"空压机1号",
+										"空闲",
+										"0.50"
+									]
+								},
+								{
+									"name": "status8",
+									"value": [
+										0,
+										"2025-07-24 01:09:37",
+										"2025-07-24 01:21:37",
+										"空压机1号",
+										"空闲",
+										"12.00"
+									]
+								},
+								{
+									"name": "status10",
+									"value": [
+										0,
+										"2025-07-24 01:36:58",
+										"2025-07-24 01:43:18",
+										"空压机1号",
+										"空闲",
+										"6.33"
+									]
+								},
+								{
+									"name": "status12",
+									"value": [
+										0,
+										"2025-07-24 01:58:49",
+										"2025-07-24 02:08:50",
+										"空压机1号",
+										"空闲",
+										"10.02"
+									]
+								},
+								{
+									"name": "status14",
+									"value": [
+										0,
+										"2025-07-24 02:24:31",
+										"2025-07-24 07:03:06",
+										"空压机1号",
+										"空闲",
+										"278.58"
+									]
+								},
+								{
+									"name": "status16",
+									"value": [
+										0,
+										"2025-07-24 07:18:47",
+										"2025-07-24 07:24:07",
+										"空压机1号",
+										"空闲",
+										"5.33"
+									]
+								},
+								{
+									"name": "status18",
+									"value": [
+										0,
+										"2025-07-24 07:39:38",
+										"2025-07-24 07:41:08",
+										"空压机1号",
+										"空闲",
+										"1.50"
+									]
+								},
+								{
+									"name": "status20",
+									"value": [
+										0,
+										"2025-07-24 07:56:59",
+										"2025-07-24 08:01:09",
+										"空压机1号",
+										"空闲",
+										"4.17"
+									]
+								},
+								{
+									"name": "status22",
+									"value": [
+										0,
+										"2025-07-24 08:16:50",
+										"2025-07-24 08:21:50",
+										"空压机1号",
+										"空闲",
+										"5.00"
+									]
+								},
+								{
+									"name": "status24",
+									"value": [
+										0,
+										"2025-07-24 08:37:31",
+										"2025-07-24 08:38:11",
+										"空压机1号",
+										"空闲",
+										"0.67"
+									]
+								},
+								{
+									"name": "status26",
+									"value": [
+										0,
+										"2025-07-24 08:53:52",
+										"2025-07-24 09:06:33",
+										"空压机1号",
+										"空闲",
+										"12.68"
+									]
+								},
+								{
+									"name": "status28",
+									"value": [
+										0,
+										"2025-07-24 09:22:04",
+										"2025-07-24 09:23:14",
+										"空压机1号",
+										"空闲",
+										"1.17"
+									]
+								},
+								{
+									"name": "status30",
+									"value": [
+										0,
+										"2025-07-24 09:38:54",
+										"2025-07-24 09:45:25",
+										"空压机1号",
+										"空闲",
+										"6.52"
+									]
+								},
+								{
+									"name": "status32",
+									"value": [
+										0,
+										"2025-07-24 10:01:06",
+										"2025-07-24 10:03:16",
+										"空压机1号",
+										"空闲",
+										"2.17"
+									]
+								},
+								{
+									"name": "status34",
+									"value": [
+										0,
+										"2025-07-24 10:18:57",
+										"2025-07-24 10:43:48",
+										"空压机1号",
+										"空闲",
+										"24.85"
+									]
+								},
+								{
+									"name": "status36",
+									"value": [
+										0,
+										"2025-07-24 10:59:29",
+										"2025-07-24 11:00:29",
+										"空压机1号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status38",
+									"value": [
+										0,
+										"2025-07-24 11:16:00",
+										"2025-07-24 11:22:50",
+										"空压机1号",
+										"空闲",
+										"6.83"
+									]
+								},
+								{
+									"name": "status40",
+									"value": [
+										0,
+										"2025-07-24 11:38:31",
+										"2025-07-24 12:25:44",
+										"空压机1号",
+										"空闲",
+										"47.22"
+									]
+								},
+								{
+									"name": "status42",
+									"value": [
+										0,
+										"2025-07-24 12:41:15",
+										"2025-07-24 12:42:15",
+										"空压机1号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status44",
+									"value": [
+										0,
+										"2025-07-24 12:57:56",
+										"2025-07-24 13:00:46",
+										"空压机1号",
+										"空闲",
+										"2.83"
+									]
+								},
+								{
+									"name": "status46",
+									"value": [
+										0,
+										"2025-07-24 13:16:27",
+										"2025-07-24 13:19:37",
+										"空压机1号",
+										"空闲",
+										"3.17"
+									]
+								},
+								{
+									"name": "status48",
+									"value": [
+										0,
+										"2025-07-24 13:35:18",
+										"2025-07-24 14:16:40",
+										"空压机1号",
+										"空闲",
+										"41.37"
+									]
+								},
+								{
+									"name": "status50",
+									"value": [
+										0,
+										"2025-07-24 14:32:31",
+										"2025-07-24 14:42:21",
+										"空压机1号",
+										"空闲",
+										"9.83"
+									]
+								},
+								{
+									"name": "status52",
+									"value": [
+										0,
+										"2025-07-24 14:58:02",
+										"2025-07-24 15:00:22",
+										"空压机1号",
+										"空闲",
+										"2.33"
+									]
+								},
+								{
+									"name": "status54",
+									"value": [
+										0,
+										"2025-07-24 15:15:53",
+										"2025-07-24 15:20:13",
+										"空压机1号",
+										"空闲",
+										"4.33"
+									]
+								},
+								{
+									"name": "status56",
+									"value": [
+										0,
+										"2025-07-24 15:35:54",
+										"2025-07-24 21:34:24",
+										"空压机1号",
+										"空闲",
+										"358.50"
+									]
+								},
+								{
+									"name": "status58",
+									"value": [
+										0,
+										"2025-07-24 21:46:24",
+										"2025-07-24 21:46:55",
+										"空压机1号",
+										"空闲",
+										"0.52"
+									]
+								},
+								{
+									"name": "status60",
+									"value": [
+										0,
+										"2025-07-24 22:02:45",
+										"2025-07-25 07:47:07",
+										"空压机1号",
+										"空闲",
+										"584.37"
+									]
+								},
+								{
+									"name": "status62",
+									"value": [
+										1,
+										"2025-07-24 00:04:13",
+										"2025-07-24 00:04:33",
+										"空压机2号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status64",
+									"value": [
+										1,
+										"2025-07-24 00:20:14",
+										"2025-07-24 00:21:14",
+										"空压机2号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status66",
+									"value": [
+										1,
+										"2025-07-24 00:36:55",
+										"2025-07-24 00:37:15",
+										"空压机2号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status68",
+									"value": [
+										1,
+										"2025-07-24 00:52:56",
+										"2025-07-24 00:53:16",
+										"空压机2号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status70",
+									"value": [
+										1,
+										"2025-07-24 01:08:56",
+										"2025-07-24 01:15:27",
+										"空压机2号",
+										"空闲",
+										"6.52"
+									]
+								},
+								{
+									"name": "status72",
+									"value": [
+										1,
+										"2025-07-24 01:30:58",
+										"2025-07-24 01:35:48",
+										"空压机2号",
+										"空闲",
+										"4.83"
+									]
+								},
+								{
+									"name": "status74",
+									"value": [
+										1,
+										"2025-07-24 01:42:28",
+										"2025-07-24 01:42:38",
+										"空压机2号",
+										"空闲",
+										"0.17"
+									]
+								},
+								{
+									"name": "status76",
+									"value": [
+										1,
+										"2025-07-24 01:58:49",
+										"2025-07-24 02:04:50",
+										"空压机2号",
+										"空闲",
+										"6.02"
+									]
+								},
+								{
+									"name": "status78",
+									"value": [
+										1,
+										"2025-07-24 02:20:30",
+										"2025-07-24 07:01:46",
+										"空压机2号",
+										"空闲",
+										"281.27"
+									]
+								},
+								{
+									"name": "status80",
+									"value": [
+										1,
+										"2025-07-24 07:17:27",
+										"2025-07-24 07:22:57",
+										"空压机2号",
+										"空闲",
+										"5.50"
+									]
+								},
+								{
+									"name": "status82",
+									"value": [
+										1,
+										"2025-07-24 07:38:38",
+										"2025-07-24 07:39:38",
+										"空压机2号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status84",
+									"value": [
+										1,
+										"2025-07-24 07:55:29",
+										"2025-07-24 07:59:59",
+										"空压机2号",
+										"空闲",
+										"4.50"
+									]
+								},
+								{
+									"name": "status86",
+									"value": [
+										1,
+										"2025-07-24 08:15:50",
+										"2025-07-24 08:20:30",
+										"空压机2号",
+										"空闲",
+										"4.67"
+									]
+								},
+								{
+									"name": "status88",
+									"value": [
+										1,
+										"2025-07-24 08:36:11",
+										"2025-07-24 08:37:11",
+										"空压机2号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status90",
+									"value": [
+										1,
+										"2025-07-24 08:52:52",
+										"2025-07-24 09:05:03",
+										"空压机2号",
+										"空闲",
+										"12.18"
+									]
+								},
+								{
+									"name": "status92",
+									"value": [
+										1,
+										"2025-07-24 09:20:43",
+										"2025-07-24 09:22:04",
+										"空压机2号",
+										"空闲",
+										"1.35"
+									]
+								},
+								{
+									"name": "status94",
+									"value": [
+										1,
+										"2025-07-24 09:37:44",
+										"2025-07-24 09:44:25",
+										"空压机2号",
+										"空闲",
+										"6.68"
+									]
+								},
+								{
+									"name": "status96",
+									"value": [
+										1,
+										"2025-07-24 10:00:06",
+										"2025-07-24 10:01:46",
+										"空压机2号",
+										"空闲",
+										"1.67"
+									]
+								},
+								{
+									"name": "status98",
+									"value": [
+										1,
+										"2025-07-24 10:17:37",
+										"2025-07-24 10:42:38",
+										"空压机2号",
+										"空闲",
+										"25.02"
+									]
+								},
+								{
+									"name": "status100",
+									"value": [
+										1,
+										"2025-07-24 10:58:09",
+										"2025-07-24 10:59:09",
+										"空压机2号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status102",
+									"value": [
+										1,
+										"2025-07-24 11:14:40",
+										"2025-07-24 11:21:40",
+										"空压机2号",
+										"空闲",
+										"7.00"
+									]
+								},
+								{
+									"name": "status104",
+									"value": [
+										1,
+										"2025-07-24 11:37:31",
+										"2025-07-24 12:24:04",
+										"空压机2号",
+										"空闲",
+										"46.55"
+									]
+								},
+								{
+									"name": "status106",
+									"value": [
+										1,
+										"2025-07-24 12:39:55",
+										"2025-07-24 12:41:05",
+										"空压机2号",
+										"空闲",
+										"1.17"
+									]
+								},
+								{
+									"name": "status108",
+									"value": [
+										1,
+										"2025-07-24 12:56:46",
+										"2025-07-24 12:59:16",
+										"空压机2号",
+										"空闲",
+										"2.50"
+									]
+								},
+								{
+									"name": "status110",
+									"value": [
+										1,
+										"2025-07-24 13:15:07",
+										"2025-07-24 13:18:27",
+										"空压机2号",
+										"空闲",
+										"3.33"
+									]
+								},
+								{
+									"name": "status112",
+									"value": [
+										1,
+										"2025-07-24 13:34:08",
+										"2025-07-24 14:15:00",
+										"空压机2号",
+										"空闲",
+										"40.87"
+									]
+								},
+								{
+									"name": "status114",
+									"value": [
+										1,
+										"2025-07-24 14:30:51",
+										"2025-07-24 14:41:01",
+										"空压机2号",
+										"空闲",
+										"10.17"
+									]
+								},
+								{
+									"name": "status116",
+									"value": [
+										1,
+										"2025-07-24 14:56:52",
+										"2025-07-24 14:58:42",
+										"空压机2号",
+										"空闲",
+										"1.83"
+									]
+								},
+								{
+									"name": "status118",
+									"value": [
+										1,
+										"2025-07-24 15:14:23",
+										"2025-07-24 15:19:13",
+										"空压机2号",
+										"空闲",
+										"4.83"
+									]
+								},
+								{
+									"name": "status120",
+									"value": [
+										1,
+										"2025-07-24 15:34:54",
+										"2025-07-24 21:34:54",
+										"空压机2号",
+										"空闲",
+										"360.00"
+									]
+								},
+								{
+									"name": "status122",
+									"value": [
+										1,
+										"2025-07-24 21:50:35",
+										"2025-07-25 07:47:07",
+										"空压机2号",
+										"空闲",
+										"596.53"
+									]
+								},
+								{
+									"name": "status124",
+									"value": [
+										2,
+										"2025-07-24 00:04:33",
+										"2025-07-24 00:04:53",
+										"空压机3号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status126",
+									"value": [
+										2,
+										"2025-07-24 00:20:34",
+										"2025-07-24 00:21:34",
+										"空压机3号",
+										"空闲",
+										"1.00"
+									]
+								},
+								{
+									"name": "status128",
+									"value": [
+										2,
+										"2025-07-24 00:37:15",
+										"2025-07-24 00:37:35",
+										"空压机3号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status130",
+									"value": [
+										2,
+										"2025-07-24 00:53:16",
+										"2025-07-24 00:53:36",
+										"空压机3号",
+										"空闲",
+										"0.33"
+									]
+								},
+								{
+									"name": "status132",
+									"value": [
+										2,
+										"2025-07-24 01:09:17",
+										"2025-07-24 01:18:37",
+										"空压机3号",
+										"空闲",
+										"9.33"
+									]
+								},
+								{
+									"name": "status134",
+									"value": [
+										2,
+										"2025-07-24 01:34:18",
+										"2025-07-24 01:36:48",
+										"空压机3号",
+										"空闲",
+										"2.50"
+									]
+								},
+								{
+									"name": "status136",
+									"value": [
+										2,
+										"2025-07-24 01:58:19",
+										"2025-07-24 02:00:59",
+										"空压机3号",
+										"空闲",
+										"2.67"
+									]
+								},
+								{
+									"name": "status138",
+									"value": [
+										2,
+										"2025-07-24 02:16:40",
+										"2025-07-24 07:02:16",
+										"空压机3号",
+										"空闲",
+										"285.60"
+									]
+								},
+								{
+									"name": "status140",
+									"value": [
+										2,
+										"2025-07-24 07:17:57",
+										"2025-07-24 07:23:27",
+										"空压机3号",
+										"空闲",
+										"5.50"
+									]
+								},
+								{
+									"name": "status142",
+									"value": [
+										2,
+										"2025-07-24 07:39:08",
+										"2025-07-24 07:40:18",
+										"空压机3号",
+										"空闲",
+										"1.17"
+									]
+								},
+								{
+									"name": "status144",
+									"value": [
+										2,
+										"2025-07-24 07:55:59",
+										"2025-07-24 08:00:39",
+										"空压机3号",
+										"空闲",
+										"4.67"
+									]
+								},
+								{
+									"name": "status146",
+									"value": [
+										2,
+										"2025-07-24 08:16:20",
+										"2025-07-24 08:21:10",
+										"空压机3号",
+										"空闲",
+										"4.83"
+									]
+								},
+								{
+									"name": "status148",
+									"value": [
+										2,
+										"2025-07-24 08:36:41",
+										"2025-07-24 08:37:31",
+										"空压机3号",
+										"空闲",
+										"0.83"
+									]
+								},
+								{
+									"name": "status150",
+									"value": [
+										2,
+										"2025-07-24 08:53:12",
+										"2025-07-24 09:05:33",
+										"空压机3号",
+										"空闲",
+										"12.35"
+									]
+								},
+								{
+									"name": "status152",
+									"value": [
+										2,
+										"2025-07-24 09:21:13",
+										"2025-07-24 09:22:24",
+										"空压机3号",
+										"空闲",
+										"1.18"
+									]
+								},
+								{
+									"name": "status154",
+									"value": [
+										2,
+										"2025-07-24 09:38:04",
+										"2025-07-24 09:44:55",
+										"空压机3号",
+										"空闲",
+										"6.85"
+									]
+								},
+								{
+									"name": "status156",
+									"value": [
+										2,
+										"2025-07-24 10:00:36",
+										"2025-07-24 10:02:16",
+										"空压机3号",
+										"空闲",
+										"1.67"
+									]
+								},
+								{
+									"name": "status158",
+									"value": [
+										2,
+										"2025-07-24 10:17:57",
+										"2025-07-24 10:43:18",
+										"空压机3号",
+										"空闲",
+										"25.35"
+									]
+								},
+								{
+									"name": "status160",
+									"value": [
+										2,
+										"2025-07-24 10:58:59",
+										"2025-07-24 10:59:39",
+										"空压机3号",
+										"空闲",
+										"0.67"
+									]
+								},
+								{
+									"name": "status162",
+									"value": [
+										2,
+										"2025-07-24 11:15:20",
+										"2025-07-24 11:22:20",
+										"空压机3号",
+										"空闲",
+										"7.00"
+									]
+								},
+								{
+									"name": "status164",
+									"value": [
+										2,
+										"2025-07-24 11:37:51",
+										"2025-07-24 12:24:44",
+										"空压机3号",
+										"空闲",
+										"46.88"
+									]
+								},
+								{
+									"name": "status166",
+									"value": [
+										2,
+										"2025-07-24 12:40:25",
+										"2025-07-24 12:41:35",
+										"空压机3号",
+										"空闲",
+										"1.17"
+									]
+								},
+								{
+									"name": "status168",
+									"value": [
+										2,
+										"2025-07-24 12:57:16",
+										"2025-07-24 12:59:56",
+										"空压机3号",
+										"空闲",
+										"2.67"
+									]
+								},
+								{
+									"name": "status170",
+									"value": [
+										2,
+										"2025-07-24 13:15:37",
+										"2025-07-24 13:18:57",
+										"空压机3号",
+										"空闲",
+										"3.33"
+									]
+								},
+								{
+									"name": "status172",
+									"value": [
+										2,
+										"2025-07-24 13:34:38",
+										"2025-07-24 14:15:50",
+										"空压机3号",
+										"空闲",
+										"41.20"
+									]
+								},
+								{
+									"name": "status174",
+									"value": [
+										2,
+										"2025-07-24 14:31:31",
+										"2025-07-24 14:41:51",
+										"空压机3号",
+										"空闲",
+										"10.33"
+									]
+								},
+								{
+									"name": "status176",
+									"value": [
+										2,
+										"2025-07-24 14:57:22",
+										"2025-07-24 14:59:12",
+										"空压机3号",
+										"空闲",
+										"1.83"
+									]
+								},
+								{
+									"name": "status178",
+									"value": [
+										2,
+										"2025-07-24 15:14:53",
+										"2025-07-24 15:19:43",
+										"空压机3号",
+										"空闲",
+										"4.83"
+									]
+								},
+								{
+									"name": "status180",
+									"value": [
+										2,
+										"2025-07-24 15:35:24",
+										"2025-07-24 21:35:04",
+										"空压机3号",
+										"空闲",
+										"359.67"
+									]
+								},
+								{
+									"name": "status182",
+									"value": [
+										2,
+										"2025-07-24 21:50:45",
+										"2025-07-25 07:47:07",
+										"空压机3号",
+										"空闲",
+										"596.37"
+									]
+								}
+							]
+						},
+						{
+							"name": "故障",
+							"type": "custom",
+							renderItem: renderItem,
+							"itemStyle": {
+								"normal": {
+									"opacity": 1
+								}
+							},
+							"encode": {
+								"x": [
+									1,
+									2
+								],
+								"y": 0
+							},
+							"data": []
+						},
+						{
+							"name": "停机",
+							"type": "custom",
+							renderItem: renderItem,
+							"itemStyle": {
+								"normal": {
+									"opacity": 1
+								}
+							},
+							"encode": {
+								"x": [
+									1,
+									2
+								],
+								"y": 0
+							},
+							"data": [
+								{
+									"name": "status61",
+									"value": [
+										0,
+										"2025-07-25 07:47:07",
+										"2025-07-25 14:12:49",
+										"空压机1号",
+										"停机",
+										"385.70"
+									]
+								},
+								{
+									"name": "status123",
+									"value": [
+										1,
+										"2025-07-25 07:47:07",
+										"2025-07-25 14:12:49",
+										"空压机2号",
+										"停机",
+										"385.70"
+									]
+								},
+								{
+									"name": "status183",
+									"value": [
+										2,
+										"2025-07-25 07:47:07",
+										"2025-07-25 14:12:49",
+										"空压机3号",
+										"停机",
+										"385.70"
+									]
+								}
+							]
+						}
+					]
+				};
+				function renderItem(params, api) {
+					var categoryIndex = api.value(0);
+					var start = api.coord([api.value(1), categoryIndex]);
+					var end = api.coord([api.value(2), categoryIndex]);
+					var height = api.size([0, 1])[1] * 0.6;
+				
+					var rectShape = echarts.graphic.clipRectByRect({
+						x: start[0],
+						y: start[1] - height / 2,
+						width: end[0] - start[0],
+						height: height
+					}, {
+						x: params.coordSys.x,
+						y: params.coordSys.y,
+						width: params.coordSys.width,
+						height: params.coordSys.height
+					});
+					return rectShape && {
+						type: 'rect',
+						shape: rectShape,
+						style: api.style()
+					};
+				}
+				
+				
+				
+				
+				
+				
+				
+				if (option && typeof option === "object") {
+					myChart.setOption(option, true);
+				}
+				
+				
+				
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.10.104:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

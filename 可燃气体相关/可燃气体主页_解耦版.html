@@ -1,0 +1,322 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<!-- 页面字符编码设置 -->
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<!-- 响应式设计：禁用用户缩放，设置初始缩放比例和设备宽度 -->
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>可燃气体管理系统</title>
+	
+	<!-- 样式表引入 -->
+	<!-- LayUI框架样式 - 用于界面组件 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<!-- 项目自定义样式 - 包含主题色彩和布局 -->
+	<link href="css/common-styles.css" rel="stylesheet">
+	
+	<!-- JavaScript库引入 -->
+	<!-- ECharts图表库 - 用于绘制甘特图和数据可视化 -->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<!-- JavaScript与C++交互函数 - 用于调用后端接口 -->
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<!-- C++调用JavaScript函数 - 用于接收后端回调 -->
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<!-- LayUI框架核心文件 - 提供UI组件功能 -->
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<!-- 页面模块化管理文件 - 包含各功能页面的业务逻辑 -->
+	<script type="text/javascript" src="js/page-modules.js"></script>
+	
+	<script type="text/javascript">
+		// LayUI框架配置
+		layui.config({
+			base: '../js/'  // 设置扩展模块的基础路径
+		}).extend({
+			excel: 'layui_exts/excel',  // Excel导入导出扩展
+			xmSelect: "xm-select"       // 多选下拉框扩展
+		});
+	</script>
+</head>
+<body>
+	<!-- ===========================================
+	     顶部导航栏区域
+	     功能：提供不同功能页面的导航切换
+	     =========================================== -->
+	<nav class="top-nav">
+		<div class="nav-container">
+			<!-- 导航菜单列表 -->
+			<ul class="nav-menu">
+				<!-- 实时数据页面导航 - 默认激活状态 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link active" data-page="real-time-data">可燃气体实时数据</a>
+				</li>
+				<!-- 报警信息报表页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="alarm-information-report">报警信息报表</a>
+				</li>
+				<!-- 报警信息曲线页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="alarm-info-curve">报警信息曲线</a>
+				</li>
+				<!-- 报警参数设置页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="alarm-parameter-settings">报警参数设置</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+
+	<!-- ===========================================
+	     主内容区域
+	     功能：包含所有功能页面的主容器
+	     =========================================== -->
+	<div class="main-content">
+		<!-- 实时数据页面 -->
+		<div id="real-time-data-page" class="page-container active">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">可燃气体实时数据</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">实时数据功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 报警信息报表页面 -->
+		<div id="alarm-information-report-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">报警信息报表</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">报警信息报表功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 报警信息曲线页面 -->
+		<div id="alarm-info-curve-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">报警信息曲线</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">报警信息曲线功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 报警参数设置页面 -->
+		<div id="alarm-parameter-settings-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">报警参数设置</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">报警参数设置功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	/* ===========================================
+	   页面管理器（PageManager）
+	   功能：管理多页面切换、模块初始化和导航状态
+	   =========================================== */
+	const PageManager = {
+		// 当前激活的页面ID（初始为空，避免showPage方法提前返回）
+		currentPage: '',
+		
+		/**
+		 * 初始化页面管理器
+		 * 绑定事件并显示默认页面
+		 */
+		init: function() {
+			this.bindNavigationEvents();
+			// 默认初始化实时数据页面
+			this.showPage('real-time-data');
+		},
+		
+		/**
+		 * 绑定页面导航相关事件
+		 * 主要处理导航菜单的点击事件
+		 */
+		bindNavigationEvents: function() {
+			const self = this;
+			
+			// 导航链接点击事件处理
+			$('.nav-link').on('click', function(e) {
+				e.preventDefault(); // 阻止默认链接跳转
+				const pageId = $(this).data('page'); // 获取页面ID
+				self.navigateToPage(pageId); // 显示对应页面
+			});
+		},
+		
+		/**
+		 * 导航到指定页面
+		 * @param {string} pageId - 页面ID
+		 */
+		navigateToPage: function(pageId) {
+			this.showPage(pageId); // 显示对应页面
+			this.updateNavigationState(pageId); // 更新导航状态
+		},
+		
+		/**
+		 * 显示指定页面
+		 * @param {string} pageId - 页面ID
+		 */
+		showPage: function(pageId) {
+			console.log(`显示页面: ${pageId}, 当前页面: ${this.currentPage}`);
+			
+			// 如果已经是当前页面，则不重复操作
+			if (this.currentPage === pageId) {
+				console.log('页面已经是当前页面，跳过切换');
+				return;
+			}
+			
+			// 隐藏所有页面容器
+			$('.page-container').removeClass('active');
+			
+			// 显示选中的页面容器
+			$('#' + pageId + '-page').addClass('active');
+			console.log(`页面容器 ${pageId}-page 已激活`);
+			
+			// 初始化页面对应的功能模块
+			this.initPageModule(pageId);
+			
+			// 更新当前页面记录
+			this.currentPage = pageId;
+		},
+		
+		/**
+		 * 初始化页面功能模块
+		 * 根据页面ID调用对应模块的初始化方法
+		 * @param {string} pageId - 页面ID
+		 */
+		initPageModule: function(pageId) {
+			// 确保页面切换动画完成后再初始化模块
+			setTimeout(() => {
+				console.log('正在初始化页面模块:', pageId);
+				
+				switch(pageId) {
+					case 'real-time-data':
+						// 初始化实时数据模块
+						if (window.RealTimeDataModule) {
+							window.RealTimeDataModule.init();
+						} else {
+							console.error('RealTimeDataModule模块未找到');
+						}
+						break;
+					case 'alarm-information-report':
+						// 初始化报警信息报表模块
+						if (window.AlarmInformationReportModule) {
+							window.AlarmInformationReportModule.init();
+						} else {
+							console.error('AlarmInformationReportModule模块未找到');
+						}
+						break;
+					case 'alarm-info-curve':
+						// 初始化报警信息曲线模块
+						if (window.AlarmInfoCurveModule) {
+							window.AlarmInfoCurveModule.init();
+						} else {
+							console.error('AlarmInfoCurveModule模块未找到');
+						}
+						break;
+					case 'alarm-parameter-settings':
+						// 初始化报警参数设置模块
+						if (window.AlarmParameterSettingsModule) {
+							window.AlarmParameterSettingsModule.init();
+						} else {
+							console.error('AlarmParameterSettingsModule模块未找到');
+						}
+						break;
+				}
+			}, 200); // 增加延迟时间到200ms，确保页面切换动画完成
+		},
+		
+		/**
+		 * 更新导航栏状态
+		 * 移除所有active类，为当前页面添加active类
+		 * @param {string} pageId - 页面ID
+		 */
+		updateNavigationState: function(pageId) {
+			$('.nav-link').removeClass('active'); // 移除所有导航项的激活状态
+			$('.nav-link[data-page="' + pageId + '"]').addClass('active'); // 激活当前页面导航
+		}
+	};
+
+	/* ===========================================
+	   应用程序入口
+	   初始化LayUI组件并启动页面管理器
+	   =========================================== */
+	layui.use(['form', 'laydate', 'util', 'excel', 'xmSelect', 'element'], function() {
+		// 将layui实例暴露到全局作用域，供各模块使用
+		window.layui = layui;
+		// 将jQuery实例暴露到全局作用域，供各模块使用
+		window.$ = layui.$;
+		
+		console.log('LayUI组件加载完成，准备启动页面管理器');
+		
+		// 确保所有组件都已加载完成后再启动页面管理器
+		setTimeout(() => {
+			console.log('启动页面管理器');
+			PageManager.init();
+		}, 500); // 延迟500ms确保所有LayUI组件完全就绪
+	});
+</script>
+
+</body>
+</html>

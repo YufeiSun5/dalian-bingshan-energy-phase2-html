@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产单元登录与工作日志</title>
+    <script src="../js/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background: #0f266c;
+            color: #333;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .login-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+            position: relative;
+            overflow: visible;
+        }
+
+        .login-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(42, 109, 200, 0.25);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #1d386f 0%, #2a6dc8 100%);
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-20%, -20%); }
+        }
+
+        .login-header h2 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-content {
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+            overflow: visible;
+        }
+
+        .current-user {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #1e88e5;
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.15);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100px;
+        }
+
+        .current-user::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(180deg, #1e88e5 0%, #1565c0 100%);
+        }
+
+        .current-user-left {
+            flex: 0 0 auto;
+        }
+
+        .current-user-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .current-user-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #4caf50;
+            color: white;
+            font-size: 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .current-user-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .current-user-right {
+            flex: 1;
+            text-align: right;
+            padding-left: 30px;
+        }
+
+        .current-user-name {
+            font-size: 36px;
+            color: #1d386f;
+            font-weight: bold;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .current-user-name.empty {
+            font-size: 24px;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #444;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: white;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            transition: all 0.3s;
+        }
+
+        .form-group select:hover,
+        .form-group input:hover {
+            border-color: #2a6dc8;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #1e88e5;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #aaa;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        /* 自定义下拉框样式 */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .custom-select {
+            width: 100%;
+            padding: 14px 16px;
+            background: white;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 48px;
+        }
+
+        .custom-select:hover {
+            border-color: #2a6dc8;
+        }
+
+        .custom-select.active {
+            border-color: #1e88e5;
+            box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+        }
+
+        .custom-select-text {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .custom-select-arrow {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #666;
+            transition: transform 0.3s;
+            margin-left: 10px;
+        }
+
+        .custom-select.active .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #1e88e5;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-select-dropdown.active {
+            display: block;
+        }
+
+        /* 本部门用户组 */
+        .user-group.current-dept {
+            padding: 8px 0;
+        }
+
+        .user-group-title.current-dept {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e88e5;
+            background: #e3f2fd;
+            border-bottom: 1px solid #bbdefb;
+        }
+
+        .user-option.current-dept {
+            padding: 14px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d386f;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .user-option.current-dept:hover {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .user-option.current-dept.online {
+            background: linear-gradient(90deg, #e8f5e9 0%, white 10%);
+            border-left: 4px solid #4caf50;
+        }
+
+        .user-option.current-dept.online::after {
+            content: ' [在线]';
+            color: #4caf50;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        /* 其他部门用户组 */
+        .user-group.other-dept {
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .user-group-title.other-dept {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            background: #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .user-group-title.other-dept:hover {
+            background: #eeeeee;
+            color: #333;
+        }
+
+        .user-group-title.other-dept .toggle-icon {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #999;
+            transition: transform 0.3s;
+        }
+
+        .user-group-title.other-dept.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .user-group-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .user-group-content.expanded {
+            max-height: 1000px;
+        }
+
+        .user-option.other-dept {
+            padding: 10px 30px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .user-option.other-dept:hover {
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        .user-option.other-dept.online {
+            color: #555;
+        }
+
+        .user-option.other-dept.online::after {
+            content: ' [在线]';
+            color: #4caf50;
+            font-size: 12px;
+        }
+
+        /* 隐藏原生select */
+        .form-group select.hidden-select {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            width: 0;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(30, 136, 229, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .login-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 136, 229, 0.4);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:disabled {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        /* 工作日志区域 */
+        .log-section {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .log-box {
+            background: white;
+            border: 1px solid #2a6dc8;
+            border-radius: 8px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .log-header {
+            background: #1d386f;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2a6dc8;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .log-header h3 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .log-header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            position: relative;
+        }
+
+        .actions-toggle-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .actions-toggle-btn:hover {
+            background: #1976d2;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(30, 136, 229, 0.4);
+        }
+
+        .actions-toggle-btn.active {
+            background: #1565c0;
+        }
+
+        .actions-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 5px);
+            background: white;
+            border: 2px solid #1e88e5;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            gap: 0;
+            z-index: 100;
+            overflow: hidden;
+            min-width: 120px;
+        }
+
+        .actions-menu.active {
+            display: flex;
+        }
+
+        .query-toggle-btn, .export-btn {
+            padding: 10px 20px;
+            background: white;
+            color: #333;
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .query-toggle-btn:last-child, .export-btn:last-child {
+            border-bottom: none;
+        }
+
+        .query-toggle-btn:hover, .export-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .query-toggle-btn.active {
+            background: #e3f2fd;
+            color: #1e88e5;
+            font-weight: 600;
+        }
+
+        .add-log-btn {
+            padding: 8px 16px;
+            background: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 6px rgba(30, 136, 229, 0.3);
+        }
+
+        .add-log-btn:hover {
+            background: #1976d2;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(30, 136, 229, 0.4);
+        }
+
+        /* 查询面板 */
+        .query-panel {
+            background: #f5f5f5;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            border-bottom: 0px solid #e0e0e0;
+        }
+
+        .query-panel.active {
+            max-height: 200px;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .query-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .query-form-group {
+            flex: 0 0 auto;
+        }
+
+        .query-form-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .query-form-input {
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            background: white;
+            transition: all 0.3s;
+            width: 150px;
+        }
+
+        .query-form-input:focus {
+            outline: none;
+            border-color: #1e88e5;
+            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+        }
+
+        .query-btn {
+            padding: 8px 20px;
+            background: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .query-btn:hover {
+            background: #1976d2;
+        }
+
+        .query-reset-btn {
+            padding: 8px 20px;
+            background: #757575;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .query-reset-btn:hover {
+            background: #616161;
+        }
+
+        .log-table-wrapper {
+            flex: 1;
+            overflow: auto;
+            min-height: 0;
+            padding: 0;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .log-table th {
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #1976d2;
+            border-bottom: 2px solid #90caf9;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .log-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e0e0e0;
+            background: white;
+            color: #333;
+        }
+
+        .log-table tbody tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .log-table tbody tr:hover td {
+            background: #f5f5f5 !important;
+            cursor: pointer;
+        }
+
+        .log-table .col-name {
+            width: 100px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .log-table .col-time {
+            width: 150px;
+            text-align: center;
+            color: #666;
+        }
+
+        .log-table .col-note {
+            text-align: left;
+            color: #444;
+        }
+
+        .empty-log {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 38, 108, 0.75);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 0;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #1d386f 0%, #2a6dc8 100%);
+            padding: 24px 30px;
+            position: relative;
+        }
+
+        .modal-header h3 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-body {
+            padding: 35px 30px;
+        }
+
+        .modal-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-form-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .modal-form-label {
+            display: block;
+            margin-bottom: 10px;
+            color: #444;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal-input,
+        .modal-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #333;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .modal-input:hover,
+        .modal-textarea:hover {
+            border-color: #90caf9;
+            background: white;
+        }
+
+        .modal-input:focus,
+        .modal-textarea:focus {
+            outline: none;
+            border-color: #1e88e5;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+        }
+
+        .modal-textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .modal-input::placeholder,
+        .modal-textarea::placeholder {
+            color: #aaa;
+        }
+
+        .modal-input[readonly] {
+            background: #e9ecef;
+            color: #666;
+            cursor: not-allowed;
+            border-color: #dee2e6;
+        }
+
+        .modal-input[readonly]:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .modal-footer {
+            padding: 24px 30px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e6ed;
+        }
+
+        .modal-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .modal-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .modal-btn-cancel {
+            background: white;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #f5f5f5;
+            border-color: #bbb;
+            transform: translateY(-1px);
+        }
+
+        .modal-btn-submit {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+        }
+
+        .modal-btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(30, 136, 229, 0.4);
+        }
+
+        .modal-btn-submit:active,
+        .modal-btn-cancel:active {
+            transform: translateY(0);
+        }
+
+        .modal-btn-delete {
+            background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+        }
+
+        .modal-btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(229, 57, 53, 0.4);
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1d386f;
+            border-radius: 6px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .login-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .log-section {
+                flex-direction: column;
+            }
+            
+            body {
+                overflow: auto;
+            }
+            
+            .page-container {
+                height: auto;
+                min-height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- 登录区域 -->
+        <div class="login-section">
+            <!-- 左侧：变电所 -->
+            <div class="login-box substation">
+                <div class="login-header">
+                    <h2>🔌 变电所</h2>
+                </div>
+                <div class="login-content">
+                    <div class="current-user">
+                        <div class="current-user-left">
+                            <div class="current-user-label">当前值班人员</div>
+                            <div class="current-user-status" id="currentUserStatus1" style="display: none;">在线</div>
+                        </div>
+                        <div class="current-user-right">
+                            <div class="current-user-name" id="currentUserName1">未登录</div>
+                        </div>
+                    </div>
+
+                    <form id="loginForm1">
+                        <div class="form-group">
+                            <label>选择人员</label>
+                            <div class="custom-select-wrapper">
+                                <select id="userSelect1" class="hidden-select" required>
+                                    <option value="">-- 请选择 --</option>
+                                </select>
+                                <div class="custom-select" id="customSelect1">
+                                    <span class="custom-select-text">-- 请选择 --</span>
+                                    <span class="custom-select-arrow"></span>
+                                </div>
+                                <div class="custom-select-dropdown" id="customDropdown1"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="password1" placeholder="请输入密码" required>
+                        </div>
+
+                        <button type="submit" class="login-button" id="loginButton1">换班登录</button>
+                    </form>
+
+                    <div class="message" id="message1"></div>
+                </div>
+            </div>
+
+            <!-- 右侧：污水及空压机 -->
+            <div class="login-box wastewater">
+                <div class="login-header">
+                    <h2>💧 污水及空压机</h2>
+                </div>
+                <div class="login-content">
+                    <div class="current-user">
+                        <div class="current-user-left">
+                            <div class="current-user-label">当前值班人员</div>
+                            <div class="current-user-status" id="currentUserStatus2" style="display: none;">在线</div>
+                        </div>
+                        <div class="current-user-right">
+                            <div class="current-user-name" id="currentUserName2">未登录</div>
+                        </div>
+                    </div>
+
+                    <form id="loginForm2">
+                        <div class="form-group">
+                            <label>选择人员</label>
+                            <div class="custom-select-wrapper">
+                                <select id="userSelect2" class="hidden-select" required>
+                                    <option value="">-- 请选择 --</option>
+                                </select>
+                                <div class="custom-select" id="customSelect2">
+                                    <span class="custom-select-text">-- 请选择 --</span>
+                                    <span class="custom-select-arrow"></span>
+                                </div>
+                                <div class="custom-select-dropdown" id="customDropdown2"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="password2" placeholder="请输入密码" required>
+                        </div>
+
+                        <button type="submit" class="login-button" id="loginButton2">换班登录</button>
+                    </form>
+
+                    <div class="message" id="message2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工作日志区域 -->
+        <div class="log-section">
+            <!-- 左侧：变电所日志 -->
+            <div class="log-box substation">
+                <div class="log-header">
+                    <h3>变电所工作日志</h3>
+                    <div class="log-header-actions">
+                        <button class="actions-toggle-btn" onclick="toggleActionsMenu(1)">⋮</button>
+                        <div class="actions-menu" id="actionsMenu1">
+                            <button class="query-toggle-btn" onclick="toggleQueryPanel(1)">查询</button>
+                            <button class="export-btn" onclick="exportLogs(1, '变电所')">导出</button>
+                        </div>
+                        <button class="add-log-btn" onclick="openLogModal('变电所')">+ 新增记录</button>
+                    </div>
+                </div>
+                <div class="query-panel" id="queryPanel1">
+                    <div class="query-form">
+                        <div class="query-form-group">
+                            <label class="query-form-label">开始时间</label>
+                            <input type="date" class="query-form-input" id="startDate1">
+                        </div>
+                        <div class="query-form-group">
+                            <label class="query-form-label">结束时间</label>
+                            <input type="date" class="query-form-input" id="endDate1">
+                        </div>
+                        <div class="query-form-group">
+                            <button class="query-btn" onclick="queryLogs(1, '变电所')">查询</button>
+                        </div>
+                        <div class="query-form-group">
+                            <button class="query-reset-btn" onclick="resetQuery(1, '变电所')">重置</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-table-wrapper">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th class="col-name">值班人员</th>
+                                <th class="col-time">记录时间</th>
+                                <th class="col-note">工作记录</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTable1" onclick="handleLogClick(event, '变电所')">
+                            <tr><td colspan="3" class="empty-log">暂无记录</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 右侧：污水及空压机日志 -->
+            <div class="log-box wastewater">
+                <div class="log-header">
+                    <h3>污水及空压机工作日志</h3>
+                    <div class="log-header-actions">
+                        <button class="actions-toggle-btn" onclick="toggleActionsMenu(2)">⋮</button>
+                        <div class="actions-menu" id="actionsMenu2">
+                            <button class="query-toggle-btn" onclick="toggleQueryPanel(2)">查询</button>
+                            <button class="export-btn" onclick="exportLogs(2, '污水及空压机')">导出</button>
+                        </div>
+                        <button class="add-log-btn" onclick="openLogModal('污水及空压机')">+ 新增记录</button>
+                    </div>
+                </div>
+                <div class="query-panel" id="queryPanel2">
+                    <div class="query-form">
+                        <div class="query-form-group">
+                            <label class="query-form-label">开始时间</label>
+                            <input type="date" class="query-form-input" id="startDate2">
+                        </div>
+                        <div class="query-form-group">
+                            <label class="query-form-label">结束时间</label>
+                            <input type="date" class="query-form-input" id="endDate2">
+                        </div>
+                        <div class="query-form-group">
+                            <button class="query-btn" onclick="queryLogs(2, '污水及空压机')">查询</button>
+                        </div>
+                        <div class="query-form-group">
+                            <button class="query-reset-btn" onclick="resetQuery(2, '污水及空压机')">重置</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-table-wrapper">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th class="col-name">值班人员</th>
+                                <th class="col-time">记录时间</th>
+                                <th class="col-note">工作记录</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTable2" onclick="handleLogClick(event, '污水及空压机')">
+                            <tr><td colspan="3" class="empty-log">暂无记录</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑日志模态框 -->
+    <div class="modal" id="logModal" onclick="handleModalClick(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">新增工作记录</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-form-row">
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">值班人员</label>
+                        <input type="text" class="modal-input" id="modalUserName" readonly>
+                    </div>
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">记录时间</label>
+                        <input type="text" class="modal-input" id="modalDateTime" readonly>
+                    </div>
+                </div>
+                <div class="modal-form-group full-width">
+                    <label class="modal-form-label">工作记录</label>
+                    <textarea class="modal-textarea" id="modalNote" placeholder="请输入工作记录内容..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-delete" id="deleteLogBtn" onclick="deleteLog()" style="display: none; margin-right: auto;">
+                    <span style="position: relative; z-index: 1;">删除</span>
+                </button>
+                <button class="modal-btn modal-btn-cancel" onclick="closeLogModal()">
+                    <span style="position: relative; z-index: 1;">取消</span>
+                </button>
+                <button class="modal-btn modal-btn-submit" onclick="submitLog()">
+                    <span style="position: relative; z-index: 1;">提交</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            // SQL API 地址
+            SQL_API: 'http://192.168.7.229:8004/api/sql/run-sql',
+            // SCADA API 地址
+            SCADA_API: 'http://192.168.7.229:8004/api/scada',
+            // 左侧单元配置
+            LEFT: {
+                UNIT_NAME: '变电所',
+                SCADA_VAR_NAME: '变电所user'
+            },
+            // 右侧单元配置
+            RIGHT: {
+                UNIT_NAME: '污水及空压机',
+                SCADA_VAR_NAME: '污水空压机user'
+            }
+        };
+
+        // ==================== 状态管理 ====================
+        let allUsers = [];
+
+        // ==================== 初始化 ====================
+        async function init() {
+            await loadUsers();
+            await checkCurrentUser(1, CONFIG.LEFT.UNIT_NAME);
+            await checkCurrentUser(2, CONFIG.RIGHT.UNIT_NAME);
+            await loadLogs(1, CONFIG.LEFT.UNIT_NAME);
+            await loadLogs(2, CONFIG.RIGHT.UNIT_NAME);
+            setupEventListeners();
+            initQueryDateDefaults();
+            
+            // 每30秒刷新一次日志
+            setInterval(() => {
+                loadLogs(1, CONFIG.LEFT.UNIT_NAME);
+                loadLogs(2, CONFIG.RIGHT.UNIT_NAME);
+            }, 30000);
+        }
+
+        // ==================== 初始化查询日期默认值 ====================
+        function initQueryDateDefaults() {
+            const now = new Date();
+            const year = now.getFullYear();
+            
+            // 开始时间：当前年的1月1日
+            const startDate = `${year}-01-01`;
+            
+            // 结束时间：当前年的12月31日
+            const endDate = `${year}-12-31`;
+            
+            // 设置默认值
+            document.getElementById('startDate1').value = startDate;
+            document.getElementById('endDate1').value = endDate;
+            document.getElementById('startDate2').value = startDate;
+            document.getElementById('endDate2').value = endDate;
+        }
+
+        // ==================== 加载用户列表 ====================
+        async function loadUsers() {
+            try {
+                const sql = "SELECT id, employee_id, username, password, unit_name, is_online, role FROM sys_users ORDER BY unit_name, username";
+                const response = await sendSQL(sql);
+                
+                if (response && response.data) {
+                    allUsers = response.data;
+                    populateUserSelects();
+                } else {
+                    throw new Error('获取用户列表失败');
+                }
+            } catch (error) {
+                console.error('加载用户失败:', error);
+                alert('加载用户列表失败，请刷新页面重试');
+            }
+        }
+
+            // ==================== 填充下拉框 ====================
+            function populateUserSelects() {
+                // 填充左侧（变电所）
+                populateSelectForUnit(1, CONFIG.LEFT.UNIT_NAME);
+                // 填充右侧（污水及空压机）
+                populateSelectForUnit(2, CONFIG.RIGHT.UNIT_NAME);
+            }
+
+            function populateSelectForUnit(side, targetUnitName) {
+                const userSelect = document.getElementById(`userSelect${side}`);
+                const customSelect = document.getElementById(`customSelect${side}`);
+                const customDropdown = document.getElementById(`customDropdown${side}`);
+
+                // 清空现有选项
+                userSelect.innerHTML = '<option value="">-- 请选择 --</option>';
+                customDropdown.innerHTML = '';
+
+                // 分类用户
+                const targetUsers = allUsers.filter(u => u.unit_name === targetUnitName);
+                const otherUsers = allUsers.filter(u => u.unit_name !== targetUnitName);
+
+                // 1. 创建本部门用户组
+                if (targetUsers.length > 0) {
+                    const currentDeptGroup = document.createElement('div');
+                    currentDeptGroup.className = 'user-group current-dept';
+                    
+                    const title = document.createElement('div');
+                    title.className = 'user-group-title current-dept';
+                    title.textContent = `当前部门：${targetUnitName}`;
+                    currentDeptGroup.appendChild(title);
+
+                    targetUsers.forEach(user => {
+                        const option = document.createElement('div');
+                        option.className = `user-option current-dept${user.is_online ? ' online' : ''}`;
+                        option.textContent = `${user.username} (${user.employee_id})`;
+                        option.dataset.employeeId = user.employee_id;
+                        option.dataset.userId = user.id;
+                        option.dataset.username = user.username;
+                        option.dataset.password = user.password;
+                        option.dataset.unitName = user.unit_name;
+                        option.dataset.isOnline = user.is_online;
+                        
+                        option.addEventListener('click', () => selectUser(side, option));
+                        currentDeptGroup.appendChild(option);
+
+                        // 同步到原生select
+                        const nativeOption = document.createElement('option');
+                        nativeOption.value = user.employee_id;
+                        nativeOption.textContent = `${user.username} (${user.employee_id})${user.is_online ? ' [在线]' : ''}`;
+                        nativeOption.dataset.userId = user.id;
+                        nativeOption.dataset.username = user.username;
+                        nativeOption.dataset.password = user.password;
+                        nativeOption.dataset.unitName = user.unit_name;
+                        nativeOption.dataset.isOnline = user.is_online;
+                        userSelect.appendChild(nativeOption);
+                    });
+                    
+                    customDropdown.appendChild(currentDeptGroup);
+                }
+
+                // 2. 创建其他部门用户组（默认折叠）
+                if (otherUsers.length > 0) {
+                    const unitGroups = {};
+                    otherUsers.forEach(user => {
+                        if (!unitGroups[user.unit_name]) {
+                            unitGroups[user.unit_name] = [];
+                        }
+                        unitGroups[user.unit_name].push(user);
+                    });
+
+                    Object.keys(unitGroups).sort().forEach(unitName => {
+                        const otherDeptGroup = document.createElement('div');
+                        otherDeptGroup.className = 'user-group other-dept';
+                        
+                        const title = document.createElement('div');
+                        title.className = 'user-group-title other-dept';
+                        title.innerHTML = `<span>${unitName}</span><span class="toggle-icon"></span>`;
+                        title.addEventListener('click', () => toggleGroup(title));
+                        otherDeptGroup.appendChild(title);
+
+                        const content = document.createElement('div');
+                        content.className = 'user-group-content';
+                        
+                        unitGroups[unitName].forEach(user => {
+                            const option = document.createElement('div');
+                            option.className = `user-option other-dept${user.is_online ? ' online' : ''}`;
+                            option.textContent = `${user.username} (${user.employee_id})`;
+                            option.dataset.employeeId = user.employee_id;
+                            option.dataset.userId = user.id;
+                            option.dataset.username = user.username;
+                            option.dataset.password = user.password;
+                            option.dataset.unitName = user.unit_name;
+                            option.dataset.isOnline = user.is_online;
+                            
+                            option.addEventListener('click', () => selectUser(side, option));
+                            content.appendChild(option);
+
+                            // 同步到原生select
+                            const nativeOption = document.createElement('option');
+                            nativeOption.value = user.employee_id;
+                            nativeOption.textContent = `  ${user.username} [${user.unit_name}]${user.is_online ? ' [在线]' : ''}`;
+                            nativeOption.dataset.userId = user.id;
+                            nativeOption.dataset.username = user.username;
+                            nativeOption.dataset.password = user.password;
+                            nativeOption.dataset.unitName = user.unit_name;
+                            nativeOption.dataset.isOnline = user.is_online;
+                            userSelect.appendChild(nativeOption);
+                        });
+                        
+                        otherDeptGroup.appendChild(content);
+                        customDropdown.appendChild(otherDeptGroup);
+                    });
+                }
+
+                // 注意：下拉框的点击事件在setupEventListeners中统一设置
+            }
+
+            // 切换下拉框显示/隐藏
+            function toggleDropdown(side) {
+                const customSelect = document.getElementById(`customSelect${side}`);
+                const customDropdown = document.getElementById(`customDropdown${side}`);
+                
+                // 关闭其他下拉框
+                [1, 2].forEach(s => {
+                    if (s !== side) {
+                        closeDropdown(s);
+                    }
+                });
+
+                customSelect.classList.toggle('active');
+                customDropdown.classList.toggle('active');
+            }
+
+            // 关闭下拉框
+            function closeDropdown(side) {
+                const customSelect = document.getElementById(`customSelect${side}`);
+                const customDropdown = document.getElementById(`customDropdown${side}`);
+                customSelect.classList.remove('active');
+                customDropdown.classList.remove('active');
+            }
+
+            // 切换其他部门分组展开/折叠
+            function toggleGroup(titleElement) {
+                const content = titleElement.nextElementSibling;
+                titleElement.classList.toggle('expanded');
+                content.classList.toggle('expanded');
+            }
+
+            // 选择用户
+            function selectUser(side, optionElement) {
+                const customSelect = document.getElementById(`customSelect${side}`);
+                const customSelectText = customSelect.querySelector('.custom-select-text');
+                const userSelect = document.getElementById(`userSelect${side}`);
+                const customDropdown = document.getElementById(`customDropdown${side}`);
+                
+                // 更新显示文本
+                const username = optionElement.dataset.username;
+                const employeeId = optionElement.dataset.employeeId;
+                customSelectText.textContent = `${username} (${employeeId})`;
+                
+                // 更新原生select的值
+                userSelect.value = optionElement.dataset.employeeId;
+                
+                // 触发change事件（用于表单验证）
+                userSelect.dispatchEvent(new Event('change'));
+                
+                // 折叠所有其他部门分组
+                const otherDeptGroups = customDropdown.querySelectorAll('.user-group.other-dept');
+                otherDeptGroups.forEach(group => {
+                    const title = group.querySelector('.user-group-title.other-dept');
+                    const content = group.querySelector('.user-group-content');
+                    if (title && content) {
+                        title.classList.remove('expanded');
+                        content.classList.remove('expanded');
+                    }
+                });
+                
+                // 关闭下拉框
+                closeDropdown(side);
+            }
+
+            // ==================== 检查当前在线用户 ====================
+            async function checkCurrentUser(side, unitName) {
+                try {
+                    // 获取对应的SCADA变量名
+                    const scadaVarName = side === 1 ? CONFIG.LEFT.SCADA_VAR_NAME : CONFIG.RIGHT.SCADA_VAR_NAME;
+                    
+                    // 从SCADA读取当前值班人
+                    const scadaResponse = await fetch(`${CONFIG.SCADA_API}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tags: [scadaVarName]
+                        })
+                    });
+                    
+                    const scadaData = await scadaResponse.json();
+                    const currentUserName = document.getElementById(`currentUserName${side}`);
+                    const currentUserStatus = document.getElementById(`currentUserStatus${side}`);
+                    
+                    if (scadaData && scadaData.data && scadaData.data.length > 0) {
+                        const userName = scadaData.data[0].V;
+                        
+                        if (userName && userName.trim() !== '') {
+                            // 根据用户名查询完整信息
+                            const sql = `SELECT employee_id, username, unit_name FROM sys_users WHERE username = '${userName}' LIMIT 1`;
+                            const userResponse = await sendSQL(sql);
+                            
+                            if (userResponse && userResponse.data && userResponse.data.length > 0) {
+                                const user = userResponse.data[0];
+                                
+                                // 显示用户名（如果是跨部门，显示原部门）
+                                if (user.unit_name === unitName) {
+                                    currentUserName.textContent = user.username;
+                                } else {
+                                    currentUserName.textContent = `${user.username} [${user.unit_name}]`;
+                                }
+                                
+                                currentUserName.classList.remove('empty');
+                                
+                                // 显示在线状态
+                                currentUserStatus.style.display = 'inline-flex';
+                                
+                                // 缓存用户信息（用于新增日志）
+                                currentModalUserCache[unitName] = {
+                                    employee_id: user.employee_id,
+                                    username: user.username,
+                                    unit_name: user.unit_name
+                                };
+                            } else {
+                                currentUserName.textContent = userName;
+                                currentUserName.classList.remove('empty');
+                                currentUserStatus.style.display = 'inline-flex';
+                            }
+                        } else {
+                            currentUserName.textContent = '未登录';
+                            currentUserName.classList.add('empty');
+                            currentUserStatus.style.display = 'none';
+                            delete currentModalUserCache[unitName];
+                        }
+                    } else {
+                        currentUserName.textContent = '未登录';
+                        currentUserName.classList.add('empty');
+                        currentUserStatus.style.display = 'none';
+                        delete currentModalUserCache[unitName];
+                    }
+                } catch (error) {
+                    console.error('检查当前用户失败:', error);
+                    document.getElementById(`currentUserName${side}`).textContent = '未登录';
+                }
+            }
+
+            // ==================== 事件监听 ====================
+            function setupEventListeners() {
+                // 左侧（变电所）事件监听
+                setupSideListeners(1, CONFIG.LEFT);
+                // 右侧（污水及空压机）事件监听
+                setupSideListeners(2, CONFIG.RIGHT);
+            }
+
+            function setupSideListeners(side, config) {
+                const loginForm = document.getElementById(`loginForm${side}`);
+                const customSelect = document.getElementById(`customSelect${side}`);
+
+                // 表单提交
+                loginForm.addEventListener('submit', (e) => handleLogin(e, side, config));
+
+                // 自定义下拉框点击事件（只设置一次）
+                if (customSelect && !customSelect.dataset.listenerAdded) {
+                    customSelect.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleDropdown(side);
+                    });
+                    customSelect.dataset.listenerAdded = 'true';
+                }
+            }
+
+            // 点击外部关闭下拉框（全局事件，只添加一次）
+            if (!window.dropdownClickHandlerAdded) {
+                document.addEventListener('click', (e) => {
+                    for (let side = 1; side <= 2; side++) {
+                        const customSelect = document.getElementById(`customSelect${side}`);
+                        const customDropdown = document.getElementById(`customDropdown${side}`);
+                        if (customSelect && customDropdown && 
+                            !customSelect.contains(e.target) && 
+                            !customDropdown.contains(e.target)) {
+                            closeDropdown(side);
+                        }
+                    }
+                });
+                window.dropdownClickHandlerAdded = true;
+            }
+
+            // ==================== 登录处理 ====================
+            async function handleLogin(e, side, config) {
+                e.preventDefault();
+
+                const userSelect = document.getElementById(`userSelect${side}`);
+                const passwordInput = document.getElementById(`password${side}`);
+
+                const selectedEmployeeId = userSelect.value;
+                const password = passwordInput.value.trim();
+
+                if (!selectedEmployeeId) {
+                    showMessage(side, '请选择用户', 'error');
+                    return;
+                }
+
+                if (!password) {
+                    showMessage(side, '请输入密码', 'error');
+                    return;
+                }
+
+                // 获取选中用户的数据
+                const selectedOption = userSelect.options[userSelect.selectedIndex];
+
+                const userData = {
+                    userId: selectedOption.dataset.userId,
+                    employeeId: selectedEmployeeId,
+                    username: selectedOption.dataset.username,
+                    password: selectedOption.dataset.password,
+                    unitName: selectedOption.dataset.unitName,
+                    isOnline: selectedOption.dataset.isOnline === '1'
+                };
+
+                // 验证密码
+                if (password !== userData.password) {
+                    showMessage(side, '密码错误', 'error');
+                    return;
+                }
+
+                // 直接执行登录（会自动把上一个人顶下去）
+                await performLogin(side, config, userData);
+            }
+
+            // ==================== 执行登录 ====================
+            async function performLogin(side, config, userData) {
+                const loginButton = document.getElementById(`loginButton${side}`);
+                const loginForm = document.getElementById(`loginForm${side}`);
+                const currentUserName = document.getElementById(`currentUserName${side}`);
+                const targetUnitName = config.UNIT_NAME;
+
+                try {
+                    loginButton.disabled = true;
+                    loginButton.textContent = '登录中...';
+
+                    // 步骤1: 更新数据库 - 将目标单元其他用户设为离线
+                    const sql1 = `UPDATE sys_users SET is_online = 0 WHERE unit_name = '${targetUnitName}' AND employee_id != '${userData.employeeId}'`;
+                    await sendSQL(sql1);
+
+                    // 步骤2: 更新数据库 - 将当前用户设为在线
+                    const sql2 = `UPDATE sys_users SET is_online = 1 WHERE employee_id = '${userData.employeeId}'`;
+                    const updateResult = await sendSQL(sql2);
+
+                    if (!updateResult || updateResult.error) {
+                        throw new Error('更新用户在线状态失败');
+                    }
+
+                    // 步骤3: 写入SCADA变量
+                    await writeSCADAVariable(config.SCADA_VAR_NAME, userData.username);
+
+                    // 登录成功
+                    showMessage(side, `登录成功！欢迎 ${userData.username}`, 'success');
+                    
+                    // 更新当前用户显示（显示用户名和原部门）
+                    const currentUserStatus = document.getElementById(`currentUserStatus${side}`);
+                    if (userData.unitName === targetUnitName) {
+                        currentUserName.textContent = userData.username;
+                    } else {
+                        currentUserName.textContent = `${userData.username} [${userData.unitName}]`;
+                    }
+                    currentUserName.classList.remove('empty');
+                    currentUserStatus.style.display = 'inline-flex';
+                    
+                    // 缓存当前登录用户信息（用于新增日志）
+                    currentModalUserCache[targetUnitName] = {
+                        employee_id: userData.employeeId,
+                        username: userData.username,
+                        unit_name: userData.unitName
+                    };
+                    
+                    // 重新加载用户列表（更新在线状态显示）
+                    await loadUsers();
+                    
+                    // 清空表单
+                    loginForm.reset();
+                    
+                    // 重置自定义下拉框显示
+                    const customSelectText = document.querySelector(`#customSelect${side} .custom-select-text`);
+                    if (customSelectText) {
+                        customSelectText.textContent = '-- 请选择 --';
+                    }
+                    closeDropdown(side);
+
+                } catch (error) {
+                    console.error('登录失败:', error);
+                    showMessage(side, '登录失败: ' + error.message, 'error');
+                } finally {
+                    loginButton.disabled = false;
+                    loginButton.textContent = '换班登录';
+                }
+            }
+
+        // ==================== 写入SCADA变量 ====================
+        async function writeSCADAVariable(varName, username) {
+            try {
+                const response = await fetch(`${CONFIG.SCADA_API}/write`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: [
+                            {
+                                N: varName,
+                                V: username
+                            }
+                        ]
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok || result.error) {
+                    console.warn('SCADA写入警告:', result);
+                    // 不抛出错误，因为数据库更新已成功
+                }
+                
+                console.log('SCADA变量写入成功:', varName, '=', username);
+            } catch (error) {
+                console.error('SCADA写入失败:', error);
+                // 不抛出错误，因为数据库更新已成功
+            }
+        }
+
+        // ==================== SQL请求 ====================
+        async function sendSQL(sql) {
+            console.log('执行SQL:', sql);
+            
+            const response = await fetch(CONFIG.SQL_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ sql })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('SQL响应:', data);
+            return data;
+        }
+
+        // ==================== 消息显示 ====================
+        function showMessage(side, text, type = 'info') {
+            const messageDiv = document.getElementById(`message${side}`);
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        function hideMessage(side) {
+            const messageDiv = document.getElementById(`message${side}`);
+            messageDiv.style.display = 'none';
+        }
+
+        // ==================== 加载工作日志 ====================
+        // 缓存当前查询的数据（用于导出）
+        let currentLogData = {
+            1: [],
+            2: []
+        };
+
+        async function loadLogs(side, unitName, startDate = null, endDate = null) {
+            try {
+                let sql = `SELECT * FROM duty_records WHERE unit_name = '${unitName}'`;
+                
+                // 添加时间范围过滤
+                if (startDate) {
+                    sql += ` AND date >= '${startDate} 00:00:00'`;
+                }
+                if (endDate) {
+                    sql += ` AND date <= '${endDate} 23:59:59'`;
+                }
+                
+                sql += ` ORDER BY date DESC LIMIT 365`;
+                
+                const response = await sendSQL(sql);
+                
+                const tbody = document.getElementById(`logTable${side}`);
+                
+                if (response && response.data && response.data.length > 0) {
+                    // 缓存数据用于导出
+                    currentLogData[side] = response.data;
+                    
+                    tbody.innerHTML = '';
+                    response.data.forEach(record => {
+                        const tr = document.createElement('tr');
+                        tr.dataset.recordId = record.no;
+                        tr.dataset.userId = record.user_id;
+                        tr.dataset.userName = record.user_name;
+                        tr.dataset.date = record.date;
+                        tr.dataset.note = record.note;
+                        tr.dataset.unitName = record.unit_name;
+                        tr.innerHTML = `
+                            <td class="col-name">${record.user_name || '-'}</td>
+                            <td class="col-time">${formatDateTime(record.date)}</td>
+                            <td class="col-note">${record.note || '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    currentLogData[side] = [];
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-log">暂无记录</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载工作日志失败:', error);
+            }
+        }
+
+        // ==================== 格式化日期时间 ====================
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hour}:${minute}`;
+        }
+
+        // ==================== 打开新增/编辑日志模态框 ====================
+        let currentModalUnit = '';
+        let currentModalUserCache = {}; // 缓存当前登录的用户信息
+        let currentEditingRecordId = null; // 当前编辑的记录ID
+        let currentEditingRecordOriginalUserId = null; // 当前编辑记录的原始用户ID
+        
+        async function openLogModal(unitName, recordData = null) {
+            currentModalUnit = unitName;
+            currentEditingRecordId = recordData ? recordData.recordId : null;
+            currentEditingRecordOriginalUserId = recordData ? recordData.userId : null;
+            
+            // 关闭操作菜单
+            const side = unitName === CONFIG.LEFT.UNIT_NAME ? 1 : 2;
+            const menu = document.getElementById(`actionsMenu${side}`);
+            const toggleBtn = menu?.previousElementSibling;
+            if (menu) menu.classList.remove('active');
+            if (toggleBtn) toggleBtn.classList.remove('active');
+            
+            // 填充模态框标题
+            document.getElementById('modalTitle').textContent = recordData ? `编辑工作记录 - ${unitName}` : `新增工作记录 - ${unitName}`;
+            
+            if (recordData) {
+                // 编辑模式：填充已有数据
+                document.getElementById('modalUserName').value = `${recordData.userName} (${recordData.unitName || unitName})`;
+                document.getElementById('modalUserName').dataset.userId = recordData.userId;
+                document.getElementById('modalUserName').dataset.userName = recordData.userName;
+                document.getElementById('modalUserName').dataset.userUnit = recordData.unitName || unitName;
+                
+                // 显示数据库中的原始时间
+                document.getElementById('modalDateTime').value = formatDateTime(recordData.date);
+                
+                document.getElementById('modalNote').value = recordData.note || '';
+                
+                // 编辑模式显示删除按钮
+                document.getElementById('deleteLogBtn').style.display = 'block';
+            } else {
+                // 新增模式
+                const currentUser = currentModalUserCache[unitName];
+                
+                if (!currentUser) {
+                    alert(`请先登录${unitName}人员`);
+                    return;
+                }
+                
+                document.getElementById('modalUserName').value = `${currentUser.username} (${currentUser.unit_name})`;
+                document.getElementById('modalUserName').dataset.userId = currentUser.employee_id;
+                document.getElementById('modalUserName').dataset.userName = currentUser.username;
+                document.getElementById('modalUserName').dataset.userUnit = currentUser.unit_name;
+                
+                // 当前时间
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hour = String(now.getHours()).padStart(2, '0');
+                const minute = String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('modalDateTime').value = `${year}-${month}-${day} ${hour}:${minute}`;
+                
+                document.getElementById('modalNote').value = '';
+                
+                // 新增模式隐藏删除按钮
+                document.getElementById('deleteLogBtn').style.display = 'none';
+            }
+            
+            // 显示模态框
+            document.getElementById('logModal').classList.add('active');
+        }
+
+        // ==================== 点击表格行编辑记录 ====================
+        function handleLogClick(event, unitName) {
+            const tr = event.target.closest('tr');
+            if (!tr || !tr.dataset.recordId) return;
+            
+            const recordData = {
+                recordId: tr.dataset.recordId,
+                userId: tr.dataset.userId,
+                userName: tr.dataset.userName,
+                date: tr.dataset.date,
+                note: tr.dataset.note,
+                unitName: tr.dataset.unitName
+            };
+            
+            openLogModal(unitName, recordData);
+        }
+
+        // ==================== 关闭模态框 ====================
+        function closeLogModal() {
+            document.getElementById('logModal').classList.remove('active');
+            currentEditingRecordId = null;
+            currentEditingRecordOriginalUserId = null;
+        }
+
+        // ==================== 点击模态框背景关闭 ====================
+        function handleModalClick(event) {
+            if (event.target === document.getElementById('logModal')) {
+                closeLogModal();
+            }
+        }
+
+        // ==================== 提交工作记录 ====================
+        async function submitLog() {
+            const userId = document.getElementById('modalUserName').dataset.userId;
+            const userName = document.getElementById('modalUserName').dataset.userName;
+            const dateTime = document.getElementById('modalDateTime').value;
+            const note = document.getElementById('modalNote').value.trim();
+            
+            if (!note) {
+                alert('请输入工作记录内容');
+                return;
+            }
+            
+            // 如果是编辑模式，检查是否修改他人记录
+            if (currentEditingRecordId && currentEditingRecordOriginalUserId) {
+                const currentUser = currentModalUserCache[currentModalUnit];
+                
+                // 如果修改的不是本人的记录，需要验证原记录作者的密码
+                if (currentUser && currentEditingRecordOriginalUserId !== currentUser.employee_id) {
+                    const password = prompt('您正在修改他人记录，请输入该记录作者的密码进行验证：');
+                    
+                    if (!password) {
+                        return; // 用户取消
+                    }
+                    
+                    // 验证原记录作者的密码
+                    const sql = `SELECT password FROM sys_users WHERE employee_id = '${currentEditingRecordOriginalUserId}' LIMIT 1`;
+                    const response = await sendSQL(sql);
+                    
+                    if (!response || !response.data || response.data.length === 0 || response.data[0].password !== password) {
+                        alert('密码错误');
+                        return;
+                    }
+                }
+            }
+            
+            try {
+                let sql;
+                if (currentEditingRecordId) {
+                    // 更新记录
+                    sql = `UPDATE duty_records 
+                           SET note = '${note.replace(/'/g, "''")}', 
+                               date = '${dateTime}:00'
+                           WHERE no = ${currentEditingRecordId}`;
+                } else {
+                    // 插入新记录
+                    sql = `INSERT INTO duty_records (user_id, user_name, date, note, unit_name) 
+                           VALUES ('${userId}', '${userName}', '${dateTime}:00', '${note.replace(/'/g, "''")}', '${currentModalUnit}')`;
+                }
+                
+                const response = await sendSQL(sql);
+                
+                if (response && !response.error) {
+                    // 添加记录不提示，修改记录提示
+                    if (currentEditingRecordId) {
+                        alert('记录更新成功');
+                    }
+                    closeLogModal();
+                    
+                    // 刷新对应的日志列表
+                    if (currentModalUnit === CONFIG.LEFT.UNIT_NAME) {
+                        await loadLogs(1, CONFIG.LEFT.UNIT_NAME);
+                    } else {
+                        await loadLogs(2, CONFIG.RIGHT.UNIT_NAME);
+                    }
+                } else {
+                    throw new Error(currentEditingRecordId ? '更新记录失败' : '插入记录失败');
+                }
+            } catch (error) {
+                console.error('提交工作记录失败:', error);
+                alert('提交失败，请重试');
+            }
+        }
+
+        // ==================== 切换操作菜单 ====================
+        function toggleActionsMenu(side) {
+            const menu = document.getElementById(`actionsMenu${side}`);
+            const btn = event.target;
+            
+            // 关闭其他菜单
+            [1, 2].forEach(s => {
+                if (s !== side) {
+                    const otherMenu = document.getElementById(`actionsMenu${s}`);
+                    const otherBtn = otherMenu.previousElementSibling;
+                    otherMenu.classList.remove('active');
+                    otherBtn.classList.remove('active');
+                }
+            });
+            
+            menu.classList.toggle('active');
+            btn.classList.toggle('active');
+            
+            event.stopPropagation();
+        }
+
+        // 点击外部关闭操作菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.log-header-actions')) {
+                [1, 2].forEach(side => {
+                    const menu = document.getElementById(`actionsMenu${side}`);
+                    const btn = menu?.previousElementSibling;
+                    if (menu) menu.classList.remove('active');
+                    if (btn) btn.classList.remove('active');
+                });
+            }
+        });
+
+        // ==================== 切换查询面板 ====================
+        function toggleQueryPanel(side) {
+            const panel = document.getElementById(`queryPanel${side}`);
+            const btn = event.target;
+            
+            panel.classList.toggle('active');
+            btn.classList.toggle('active');
+            
+            // 关闭操作菜单
+            const menu = document.getElementById(`actionsMenu${side}`);
+            const toggleBtn = menu.previousElementSibling;
+            menu.classList.remove('active');
+            toggleBtn.classList.remove('active');
+        }
+
+        // ==================== 查询日志 ====================
+        async function queryLogs(side, unitName) {
+            const startDate = document.getElementById(`startDate${side}`).value;
+            const endDate = document.getElementById(`endDate${side}`).value;
+            
+            if (!startDate && !endDate) {
+                alert('请至少选择一个时间条件');
+                return;
+            }
+            
+            // 验证日期范围
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays < 0) {
+                    alert('结束时间不能早于开始时间');
+                    return;
+                }
+                
+                if (diffDays > 365) {
+                    alert('查询时间范围不能超过365天');
+                    return;
+                }
+            }
+            
+            await loadLogs(side, unitName, startDate, endDate);
+        }
+
+        // ==================== 重置查询 ====================
+        async function resetQuery(side, unitName) {
+            // 重置为默认值（当前年的1月1日到12月31日）
+            const now = new Date();
+            const year = now.getFullYear();
+            const startDate = `${year}-01-01`;
+            const endDate = `${year}-12-31`;
+            
+            document.getElementById(`startDate${side}`).value = startDate;
+            document.getElementById(`endDate${side}`).value = endDate;
+            
+            await loadLogs(side, unitName, startDate, endDate);
+        }
+
+        // ==================== 导出日志 ====================
+        function exportLogs(side, unitName) {
+            const data = currentLogData[side];
+            
+            if (!data || data.length === 0) {
+                alert('没有可导出的数据');
+                return;
+            }
+            
+            // 准备导出数据
+            const exportData = data.map(record => ({
+                '值班人员': record.user_name || '-',
+                '记录时间': formatDateTime(record.date),
+                '工作记录': record.note || '-',
+                '所属单元': record.unit_name || '-'
+            }));
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            
+            // 设置列宽
+            ws['!cols'] = [
+                { wch: 15 },  // 值班人员
+                { wch: 20 },  // 记录时间
+                { wch: 50 },  // 工作记录
+                { wch: 20 }   // 所属单元
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, '工作日志');
+            
+            // 生成文件名
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const fileName = `${unitName}_工作日志_${dateStr}_${timeStr}.xlsx`;
+            
+            // 导出文件
+            XLSX.writeFile(wb, fileName);
+            
+            // 关闭操作菜单
+            const menu = document.getElementById(`actionsMenu${side}`);
+            const toggleBtn = menu.previousElementSibling;
+            menu.classList.remove('active');
+            toggleBtn.classList.remove('active');
+        }
+
+        // ==================== 删除日志 ====================
+        async function deleteLog() {
+            if (!currentEditingRecordId) {
+                alert('无法删除：未找到记录ID');
+                return;
+            }
+            
+            // 验证管理员密码
+            const adminPassword = prompt('删除记录需要管理员权限，请输入管理员(admin)密码：');
+            
+            if (!adminPassword) {
+                return; // 用户取消
+            }
+            
+            try {
+                // 验证admin密码
+                const sql = `SELECT password FROM sys_users WHERE employee_id = 'admin' LIMIT 1`;
+                const response = await sendSQL(sql);
+                
+                if (!response || !response.data || response.data.length === 0) {
+                    alert('管理员账户不存在');
+                    return;
+                }
+                
+                if (response.data[0].password !== adminPassword) {
+                    alert('管理员密码错误');
+                    return;
+                }
+                
+                // 确认删除
+                if (!confirm('确定要删除这条记录吗？删除后无法恢复！')) {
+                    return;
+                }
+                
+                // 执行删除
+                const deleteSql = `DELETE FROM duty_records WHERE no = ${currentEditingRecordId}`;
+                const deleteResponse = await sendSQL(deleteSql);
+                
+                if (deleteResponse && !deleteResponse.error) {
+                    alert('记录删除成功');
+                    closeLogModal();
+                    
+                    // 刷新对应的日志列表
+                    if (currentModalUnit === CONFIG.LEFT.UNIT_NAME) {
+                        await loadLogs(1, CONFIG.LEFT.UNIT_NAME);
+                    } else {
+                        await loadLogs(2, CONFIG.RIGHT.UNIT_NAME);
+                    }
+                } else {
+                    throw new Error('删除记录失败');
+                }
+            } catch (error) {
+                console.error('删除工作记录失败:', error);
+                alert('删除失败，请重试');
+            }
+        }
+
+        // ==================== 页面加载时初始化 ====================
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+

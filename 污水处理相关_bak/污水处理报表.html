@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>污水处理统计报表</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script src="./chart-table-config.js"></script>
+
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 (1:1 还原) */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        /* 切换按钮组 */
+        .time-type-group { display: flex; align-items: center; gap: 5px; }
+        .time-type-btn {
+            padding: 6px 14px;
+            border: 1px solid #2a6dc8;
+            background: transparent;
+            color: #b9d3f4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .time-type-btn:hover { background: rgba(42, 109, 200, 0.3); color: #fff; }
+        .time-type-btn.active {
+            background: #1e88e5;
+            border-color: #1e88e5;
+            color: white;
+            box-shadow: 0 0 8px rgba(30,136,229,0.5);
+        }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-bg-orange { background-color: #ffb800 !important; }
+
+        /* 内容布局 */
+        .content-area { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+        .top-section { flex: 6; display: flex; gap: 8px; min-height: 0; }
+        
+        .table-box { flex: 6; background: #1d386f; border: 1px solid #2a6dc8; border-radius: 4px; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
+        .right-charts-box { flex: 4; display: flex; flex-direction: column; gap: 8px; }
+        .right-chart-item { flex: 1; background: #102a5c; border: 1px solid #2a6dc8; border-radius: 4px; position: relative; padding: 10px; }
+        
+        .bottom-section { flex: 4; display: flex; gap: 8px; min-height: 0; }
+        .bottom-chart-item { flex: 1; background: #102a5c; border: 1px solid #2a6dc8; border-radius: 4px; position: relative; padding: 10px; }
+        .chart-container { width: 100%; height: 100%; }
+
+        /* 表格样式 */
+        .tech-table-wrapper { flex: 1; overflow: auto; }
+        .tech-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tech-table th, .tech-table td { border: 1px solid #3c8ce7; padding: 8px 5px; text-align: center; color: #fff; }
+        .tech-table thead th { background: #0c6ed3; color: #fff; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+        .tech-table tbody td { background: #1e4e89; }
+        .tech-table tbody tr:hover td { background: rgba(48, 127, 190, 0.9); }
+        
+        .cell-red-text { color: #ff4d4f !important; font-weight: bold; }
+        .cell-green-bg { background: #92d050 !important; color: #000 !important; font-weight: bold; }
+        .cell-summary-label { color: #fff; font-weight: bold; }
+        .cell-merged { vertical-align: middle; background: #1d386f; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="date-group">
+                    <label>统计时间</label>
+                    <input type="text" id="date-input" readonly>
+                </div>
+                <div class="time-type-group">
+                    <button class="time-type-btn active" data-type="month">月度</button>
+                    <button class="time-type-btn" data-type="year">年度</button>
+                </div>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title" id="page-title">污水处理月报</span>
+            </div>
+            <div class="toolbar-right">
+                <button type="button" id="btn-search" class="layui-btn layui-btn-sm">
+                    <i class="layui-icon layui-icon-search"></i> 查询
+                </button>
+                <button type="button" id="btn-export" class="layui-btn layui-btn-sm layui-bg-orange">
+                    <i class="layui-icon layui-icon-export"></i> 导出
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="top-section">
+                <div class="table-box">
+                    <div class="tech-table-wrapper">
+                        <table class="tech-table" id="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="15%">类别</th>
+                                    <th width="20%">名称</th>
+                                    <th width="20%">单价(不含税)</th>
+                                    <th width="20%">本月用量</th>
+                                    <th width="25%">本月费用(元)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="right-charts-box">
+                    <div class="right-chart-item"><div class="chart-container" id="chart-water-usage"></div></div>
+                    <div class="right-chart-item"><div class="chart-container" id="chart-power-usage"></div></div>
+                </div>
+            </div>
+
+            <div class="bottom-section">
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-per-unit"></div></div>
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-cost-trend"></div></div>
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-sludge"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'jquery'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        
+        // ============================================
+        // 1. 变量隔离存储 (满足需求)
+        // ============================================
+        var queryStore = {
+            currentType: 'month',  // 当前模式: 'month' | 'year'
+            monthValue: '2025-10', // 专门存储月度选择
+            yearValue: '2025'      // 专门存储年度选择
+        };
+        
+        // ============================================
+        // 2. 初始化与事件
+        // ============================================
+        
+        // 初始化图表实例
+        window.PAGE_CONFIG.initCharts();
+        // 初始加载一次数据
+        performSearch();
+
+        // 渲染日期选择器
+        function renderDateInput() {
+            // 移除旧元素以重置 laydate 实例
+            $('#date-input').remove();
+            $('.date-group').append('<input type="text" id="date-input" readonly>');
+            
+            // 根据当前模式，取不同的变量值
+            var initVal = (queryStore.currentType === 'month') 
+                          ? queryStore.monthValue 
+                          : queryStore.yearValue;
+
+            laydate.render({ 
+                elem: '#date-input', 
+                type: queryStore.currentType, // 'month' 或 'year'
+                value: initVal,
+                theme: '#1e88e5',
+                done: function(value, date){
+                    // 关键：选择后，更新对应变量，互不干扰
+                    if(queryStore.currentType === 'month') {
+                        queryStore.monthValue = value;
+                    } else {
+                        queryStore.yearValue = value;
+                    }
+                }
+            });
+            updateTitle();
+        }
+
+        function updateTitle() {
+            var text = (queryStore.currentType === 'month') ? '污水处理月报' : '污水处理年报';
+            // 可选：把日期加到标题里 $('#page-title').text(text + ' (' + $('#date-input').val() + ')');
+            $('#page-title').text(text);
+        }
+
+        // 切换按钮点击
+        $('.time-type-btn').on('click', function() {
+            var type = $(this).data('type');
+            if(type === queryStore.currentType) return;
+
+            // UI 更新
+            $('.time-type-btn').removeClass('active');
+            $(this).addClass('active');
+
+            // 逻辑更新
+            queryStore.currentType = type;
+            
+            // 重新渲染选择器（会读取 queryStore 中对应的变量）
+            renderDateInput();
+            
+            // 自动触发一次查询，或者等用户点查询按钮
+            performSearch(); 
+        });
+
+        // 查询按钮点击
+        $('#btn-search').click(function() {
+            performSearch();
+        });
+
+        // ============================================
+        // 3. 执行查询 (模拟 SQL 触发)
+        // ============================================
+        function performSearch() {
+            var type = queryStore.currentType;
+            // 只有当前模式对应的值被使用
+            var value = (type === 'month') ? queryStore.monthValue : queryStore.yearValue;
+
+            // 模拟 Loading
+            var idx = layer.load(2, { shade: 0.1 });
+
+            // 调用 Mock 数据接口
+            window.PAGE_CONFIG.fetchData(type, value).then(data => {
+                layer.close(idx);
+                // 1. 更新表格
+                renderTable(data.tableData);
+                // 2. 更新图表
+                window.PAGE_CONFIG.updateCharts(data.chartData);
+                
+                layer.msg(`已加载 [${value}] 的${type === 'month' ? '月度' : '年度'}数据`);
+            });
+        }
+
+        // 渲染表格 (HTML 生成逻辑)
+        function renderTable(data) {
+            var html = '';
+            // 药品用量 (合并行)
+            html += `
+                <tr>
+                    <td rowspan="4" class="cell-merged">药品用量</td>
+                    <td>PFS(KG)</td>
+                    <td class="cell-red-text">${data.drugs[0].price}</td>
+                    <td class="cell-red-text">${data.drugs[0].usage}</td>
+                    <td class="cell-green-bg">${data.drugs[0].cost}</td>
+                </tr>
+                <tr><td>NaOH(KG)</td><td class="cell-red-text">${data.drugs[1].price}</td><td class="cell-red-text">${data.drugs[1].usage}</td><td class="cell-green-bg">${data.drugs[1].cost}</td></tr>
+                <tr><td>阴PAM(KG)</td><td class="cell-red-text">${data.drugs[2].price}</td><td class="cell-red-text">${data.drugs[2].usage}</td><td class="cell-green-bg">${data.drugs[2].cost}</td></tr>
+                <tr><td>阳PAM(KG)</td><td class="cell-red-text">${data.drugs[3].price}</td><td class="cell-red-text">${data.drugs[3].usage}</td><td class="cell-green-bg">${data.drugs[3].cost}</td></tr>
+            `;
+            // 自来水 & 电
+            html += `
+                <tr><td>自来水量</td><td>吨</td><td class="cell-red-text">${data.water.price}</td><td class="cell-red-text">${data.water.usage}</td><td class="cell-green-bg">${data.water.cost}</td></tr>
+                <tr><td>电量</td><td>千瓦.时</td><td class="cell-red-text">${data.power.price}</td><td class="cell-red-text">${data.power.usage}</td><td class="cell-green-bg">${data.power.cost}</td></tr>
+            `;
+            // 合计
+            html += `<tr><td colspan="4" class="cell-summary-label">本月费用合计（元）</td><td class="cell-green-bg" style="font-size:15px;">${data.totalCost}</td></tr>`;
+            // 底部指标
+            html += `<tr><td colspan="4" class="cell-summary-label">污水处理量（吨）</td><td class="cell-red-text">${data.metrics.processAmount}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">每吨污水成本（元/吨）</td><td class="cell-green-bg">${data.metrics.costPerTon}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">本月压缩机成品产量（台）</td><td class="cell-red-text">${data.metrics.productAmount}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">单台污水量（吨/台）</td><td class="cell-green-bg">${data.metrics.waterPerUnit}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">污泥产出量（吨）</td><td>${data.metrics.sludge}</td></tr>`;
+
+            $('#table-body').html(html);
+        }
+
+        // 首次运行
+        renderDateInput();
+        window.addEventListener('resize', () => window.PAGE_CONFIG.resizeCharts());
+    });
+    </script>
+</body>
+</html>

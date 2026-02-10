@@ -1,0 +1,1101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能统计明细曲线</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/'
+		}).extend({
+			excel: 'layui_exts/excel',
+			xmSelect: "xm-select"
+		});
+	</script>
+	</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+
+	/* 调整新增的变电所下拉框样式 */
+	.layui-input-inline[style*="margin-right: 15px"] {
+		min-width: 120px;
+	}
+
+	/* 调整电表选择下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 20px"] {
+		min-width: 180px;
+	}
+
+	/* 调整分类能耗下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 10px"] {
+		min-width: 100px;
+	}
+
+	/* 调整时间选择模式下拉框宽度 */
+	.layui-input-inline[style*="margin-right: 25px"] {
+		min-width: 110px;
+	}
+
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	/* 日期选择器范围选中样式 - 绿色高亮 */
+	/* 开始日期和结束日期 - layui默认使用 layui-this 类 */
+	.layui-laydate-content td.layui-this {
+		background-color: #16b777 !important;
+		color: #fff !important;
+	}
+	
+	/* 范围中间的日期 - layui使用 laydate-selected 类标记范围内的日期 */
+	.layui-laydate-content td.laydate-selected {
+		background-color: #e8f8f5 !important;
+		color: #333 !important;
+	}
+	
+	/* 鼠标悬停在日期上的效果 */
+	.layui-laydate-content td:hover {
+		background-color: #e8f8f5 !important;
+		color: #333 !important;
+	}
+	
+	/* 鼠标悬停在已选中日期上的效果 */
+	.layui-laydate-content td.layui-this:hover {
+		background-color: #16b777 !important;
+		color: #fff !important;
+	}
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<div class="layui-inline" style = "margin-right : 15px;float:left">
+								<label class="layui-form-label" style = "width:auto" >时间选择模式</label>
+								<div class="layui-input-inline" style="width: 115px;">
+									<select id = "timeMode" name="timeMode" lay-filter="timeMode">
+										<option value="day" selected>单日</option>
+										<option value="multi" >多日</option>
+										<option value="range" >自定义范围</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="layui-inline" style = "margin-right : 15px;float:left">
+								<label class="layui-form-label" style = "width:auto" >日期选择</label>
+								
+								<!-- 单日模式输入框 -->
+								<div class="layui-inline" id="single-date-container">
+									<div class="layui-input-inline" style="width: 130px;">
+										<input type="text" autocomplete="off" id="single-date-input" class="layui-input" placeholder="选择日期" >
+									</div>
+								</div>
+								
+								<!-- 多日模式输入框 + 多选组件 -->
+								<div class="layui-inline" id="multi-date-container" style="display: none;">
+									<div class="layui-input-inline" style="width: 130px;">
+										<input type="text" autocomplete="off" id="multi-date-input" class="layui-input" placeholder="选择日期" >
+									</div>
+									<!-- 多选组件容器 - 优化宽度 -->
+									<div class="layui-inline" id = "selectedDate" style = "width:200px;margin-left:8px;" >
+									</div>
+								</div>
+								
+								<!-- 范围模式输入框 -->
+								<div class="layui-inline" id="range-date-container" style="display: none;">
+									<div class="layui-input-inline" style="width: 200px;">
+										<input type="text" autocomplete="off" id="range-date-input" class="layui-input" placeholder="选择日期范围" >
+									</div>
+								</div>
+							</div>
+
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变电所：</label>
+							<div class="layui-input-inline" style = "margin-right : 15px">
+								<select id = "substation" name="substation" lay-filter="substation">
+									<option value="1" selected>一号变电所</option>
+									<option value="2">二号变电所</option>
+									<option value="3">三号变电所</option>
+								</select>
+							</div>
+
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">电表选择：</label>
+							<div class="layui-input-inline" style = "margin-right : 20px">
+								<select id = "sreachNo" name="sreachNo" lay-filter="sreachNo">
+									<option value=" 51" selected>1#变压器主开关</option>
+									<option value=" 110002">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房</option>
+									<option value=" 110003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;宿舍二三楼照明</option>
+									<option value=" 110004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;办公照明</option>
+									<option value=" 110005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发消防系统</option>
+									<option value=" 110006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装GCS</option>
+									<option value=" 110007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机9号</option>
+									<option value=" 110008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M456</option>
+									<option value=" 110009">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M123</option>
+									<option value=" 110010">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 110011">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 110012">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装31#</option>
+									<option value=" 110013">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装照明</option>
+									<option value=" 52">2#变压器主开关</option>
+									<option value=" 120002">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢4#</option>
+									<option value=" 120006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装32#</option>
+									<option value=" 120007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;空压机照明辅助</option>
+									<option value=" 120009">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120010">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢1#</option>
+									<option value=" 120011">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢3#</option>
+									<option value=" 120012">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+									<option value=" 120013">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装空调</option>
+									<option value=" 120014">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R290风机</option>
+									<option value=" 120015">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所内用电</option>
+									<option value=" 120016">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CO2性能试验</option>
+									<option value=" 120017">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机13#柜</option>
+									<option value=" 120018">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+								</select>
+							</div>
+
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto;">分类能耗：</label>
+								<div class="layui-input-inline" style = "margin-right : 10px">
+									<select name="classification" id = 'classification'  lay-filter="classification">
+										<option value="P_ABC" selected>功率</option>
+										<option value="A_A" >A项电流</option>
+										<option value="A_B" >B项电流</option>
+										<option value="A_C" >C项电流</option>
+									</select>
+								</div>
+							</div>
+
+
+
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>-->
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">电能统计明细曲</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">kW·h</span>
+								</div>
+								<div id = "chart" style = "height:100%;padding:0 10 0 10" >
+								
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel','xmSelect'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		var xmSelect = layui.xmSelect; // 从layui获取xmSelect
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var timeMode = "day";
+		
+		// 存储三种模式的laydate实例
+		var laydateInstances = {
+			single: null,
+			multi: null,
+			range: null
+		};
+
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 变电所选择联动逻辑
+		form.on('select(substation)', function(data){
+			updateMeterOptions(data.value);
+		});
+
+		// 更新电表选择选项的函数
+		function updateMeterOptions(substationId) {
+			var meterSelect = document.getElementById('sreachNo');
+			meterSelect.innerHTML = ''; // 清空现有选项
+
+			var options = '';
+
+			if (substationId === '1') {
+				// 只显示一号变电所的电表
+				options = `
+					<option value=" 51" selected>1#变压器主开关</option>
+					<option value=" 110002">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房</option>
+					<option value=" 110003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;宿舍二三楼照明</option>
+					<option value=" 110004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;办公照明</option>
+					<option value=" 110005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发消防系统</option>
+					<option value=" 110006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装GCS</option>
+					<option value=" 110007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机9号</option>
+					<option value=" 110008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M456</option>
+					<option value=" 110009">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M123</option>
+					<option value=" 110010">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 110011">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 110012">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装31#</option>
+					<option value=" 110013">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装照明</option>
+					<option value=" 52">2#变压器主开关</option>
+					<option value=" 120002">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢4#</option>
+					<option value=" 120006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装32#</option>
+					<option value=" 120007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;空压机照明辅助</option>
+					<option value=" 120009">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120010">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢1#</option>
+					<option value=" 120011">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢3#</option>
+					<option value=" 120012">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 120013">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装空调</option>
+					<option value=" 120014">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R290风机</option>
+					<option value=" 120015">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所内用电</option>
+					<option value=" 120016">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CO2性能试验</option>
+					<option value=" 120017">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机13#柜</option>
+					<option value=" 120018">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+				`;
+			} else if (substationId === '2') {
+				// 只显示二号变电所的电表
+				options = `
+					<option value=" 12" selected>1#变压器主开关</option>
+					<option value=" 13">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西</option>
+					<option value=" 14">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西并</option>
+					<option value=" 210004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 210005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2#变压器主开关</option>
+					<option value=" 15">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2#变机加GCS东</option>
+					<option value=" 220003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 220004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新电机绕线</option>
+					<option value=" 220005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子设备</option>
+					<option value=" 220006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子照明</option>
+					<option value=" 17">3#变压器主开关</option>
+					<option value=" 18">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冷水机组、瑞星退火炉</option>
+					<option value=" 220003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冰山帕特</option>
+					<option value=" 220004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室</option>
+					<option value=" 220005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室_1</option>
+					<option value=" 220006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力2#</option>
+					<option value=" 220007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力4#</option>
+					<option value=" 220008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢2#</option>
+					<option value=" 220009">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新碱清洗</option>
+					<option value=" 220010">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新磷化</option>
+					<option value=" 220011">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 20">4#变压器主开关</option>
+					<option value=" 19">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新退火炉</option>
+					<option value=" 240003">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新壳体GCS柜</option>
+					<option value=" 240004">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;食堂电锅</option>
+					<option value=" 240005">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机8</option>
+					<option value=" 240006">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机10</option>
+					<option value=" 240007">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机7</option>
+					<option value=" 240008">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机11</option>
+				`;
+			} else if (substationId === '3') {
+				// 只显示三号变电所的电表
+				options = `
+					<option value=" 1 " selected>1#变压器主开关</option>
+					<option value=" 2 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所用电</option>
+					<option value=" 3 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;污水处理</option>
+					<option value=" 4 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;预留</option>
+					<option value=" 5 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久实验室3#动力柜</option>
+					<option value=" 6 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发中心GCS柜</option>
+					<option value=" 7 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发大马力性能实验室</option>
+					<option value=" 8 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久试验室2#柜</option>
+					<option value=" 9 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久1#5#柜</option>
+					<option value=" 10 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发堵转实验室左侧</option>
+					<option value=" 11 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发预留</option>
+					<option value=" 310012 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 310013 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 26 ">2#变压器主开关</option>
+					<option value=" 320002 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320003 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320004 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房</option>
+					<option value=" 320005 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新成品</option>
+					<option value=" 320006 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320007 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320008 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;热水炉</option>
+					<option value=" 320009 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发290性能实验室</option>
+					<option value=" 320010 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;焓差试验室</option>
+					<option value=" 320011 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320012 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320013 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装凸焊机</option>
+					<option value=" 320014 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备1</option>
+					<option value=" 320015 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备2</option>
+					<option value=" 320016 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320017 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力3高压柜</option>
+					<option value=" 320018 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久4#、8#、9#动力柜</option>
+					<option value=" 320019 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久6#动力柜</option>
+					<option value=" 320020 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久7#动力柜</option>
+					<option value=" 320021 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320022 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B座大办冷水机组-左</option>
+					<option value=" 320023 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value=" 320024 ">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B座大办冷水机组-右</option>
+				`;
+			}
+
+			meterSelect.innerHTML = options;
+			form.render('select'); // 重新渲染下拉框
+		}
+
+		// 时间选择模式切换逻辑
+		form.on('select(timeMode)', function(data){
+			switchTimeMode(data.value);
+		});
+
+		// 切换时间选择模式的函数 - 使用独立的输入框和实例
+		function switchTimeMode(mode) {
+			timeMode = mode;
+			console.log('切换到时间模式：', mode);
+
+			// 隐藏所有容器
+			$("#single-date-container").hide();
+			$("#multi-date-container").hide();
+			$("#range-date-container").hide();
+			$("#selectedDate").hide();
+
+			// 清理所有laydate实例
+			$('.layui-laydate').remove();
+			
+			// 销毁旧的laydate实例
+			Object.keys(laydateInstances).forEach(key => {
+				if (laydateInstances[key]) {
+					// laydate没有直接的销毁方法，通过移除事件监听器来清理
+					laydateInstances[key] = null;
+				}
+			});
+
+			if(mode === "day"){
+				// 单日模式：显示单日输入框
+				$("#single-date-container").show();
+				
+				// 清空输入框
+				$('#single-date-input').val('');
+				
+				setTimeout(function() {
+					laydateInstances.single = laydate.render({
+						type: "date",
+						elem: '#single-date-input',
+						value: new Date(),
+						format: 'yyyy-MM-dd',  // 明确指定格式
+						done: function(value, date, endDate){
+							console.log('单日模式选择：', value);
+						}
+					});
+				}, 50);
+
+			} else if(mode === "multi"){
+				// 多日模式：显示多日输入框 + 多选组件
+				$("#multi-date-container").show();
+				$("#selectedDate").show();
+
+				// 清空输入框
+				$('#multi-date-input').val('');
+				
+				setTimeout(function() {
+					laydateInstances.multi = laydate.render({
+						type: "date",
+						elem: '#multi-date-input',
+						value: new Date(),
+						format: 'yyyy-MM-dd',  // 明确指定格式
+						done: function(value, date, endDate){
+							console.log('多日模式选择：', value);
+							addDateToMultiSelect(value);
+						}
+					});
+				}, 50);
+
+				// 初始化多选组件
+				initMultiSelect();
+
+			} else if(mode === "range"){
+				// 范围模式：显示范围输入框
+				$("#range-date-container").show();
+
+				// 设置默认范围：本月1日到今天
+				let now = new Date();
+				let firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); // 本月1日
+
+				// 使用标准的日期格式化方法，确保格式完全符合 yyyy-MM-dd
+				function formatDate(date) {
+					let year = date.getFullYear();
+					let month = ('0' + (date.getMonth() + 1)).slice(-2); // 确保两位数
+					let day = ('0' + date.getDate()).slice(-2); // 确保两位数
+					return year + '-' + month + '-' + day;
+				}
+
+				let startDateStr = formatDate(firstDayOfMonth); // 本月1日
+				let endDateStr = formatDate(now); // 今天
+				let defaultRange = startDateStr + ' - ' + endDateStr;
+
+				// 先清空输入框，避免格式冲突
+				$('#range-date-input').val('');
+
+				// 延迟渲染，确保DOM更新完成
+				setTimeout(function() {
+					// 渲染范围选择器 - 关键修复：使用 range: true 而不是字符串
+					laydateInstances.range = laydate.render({
+						type: "date",
+						elem: '#range-date-input',
+						range: true,  // 修复：使用布尔值 true，而不是字符串
+						format: 'yyyy-MM-dd',  // 明确指定格式
+						// 先不设置默认值，让laydate自己处理，避免格式问题
+						// value: defaultRange,  
+						done: function(value, date, endDate){
+							console.log('范围选择完成：', value);
+							if(!value) return;
+							
+							let dates = value.split(' - ');
+							if(dates.length === 2) {
+								let startDate = new Date(dates[0]);
+								let endDateObj = new Date(dates[1]);
+								const millisecondsPerDay = 24 * 60 * 60 * 1000;
+								const diffInMilliseconds = Math.abs(endDateObj.getTime() - startDate.getTime());
+								// 计算实际天数差（包含起始日期和结束日期）
+								const diffInDays = Math.floor(diffInMilliseconds / millisecondsPerDay) + 1;
+
+								// 限制最多31天（包含起始和结束日期）
+								if(diffInDays > 31){
+									layer.alert("开始时间和结束时间最多相差31天");
+									// 清空输入框，让用户重新选择
+									$('#range-date-input').val('');
+								}
+							}
+						}
+					});
+					
+					// 渲染完成后，手动设置默认值
+					setTimeout(function() {
+						$('#range-date-input').val(defaultRange);
+						console.log('设置默认范围（本月1日到今天）：', defaultRange);
+					}, 100);
+				}, 50); // 延迟50毫秒确保DOM更新完成
+			}
+
+			// 重新渲染表单
+			form.render();
+			console.log('模式', mode, '切换完成');
+		}
+
+		// 初始化多选组件 - 简化版本
+		function initMultiSelect() {
+			try {
+				console.log('开始初始化xmSelect多选组件');
+
+				// 检查xmSelect是否可用
+				if (!xmSelect) {
+					console.error('xmSelect组件未加载，请检查layui配置');
+					layer.alert('日期多选组件加载失败，请检查layui配置');
+					$("#selectedDate").html('<input type="text" class="layui-input" placeholder="组件加载失败，请检查配置" readonly>');
+					return;
+				}
+
+				// 清理旧实例
+				if(window.xmSelectInstance) {
+					try {
+						window.xmSelectInstance.destroy();
+						window.xmSelectInstance = null;
+					} catch(e) {
+						console.log('销毁旧实例失败，忽略：', e);
+					}
+				}
+
+				// 清理DOM
+				$('#selectedDate').empty();
+				$('.xm-select-parent').remove();
+
+				// 创建新实例
+				window.xmSelectInstance = xmSelect.render({
+					el: '#selectedDate',
+					data: [],
+					name: 'multiDateSelect',
+					filterable: false,
+					toolbar: { show: true, list: ['ALL', 'CLEAR', 'REVERSE'] },
+					on: function(data){
+						console.log('多选变化：', data);
+					},
+				});
+				console.log('xmSelect多选组件初始化成功');
+			} catch (error) {
+				console.error('xmSelect初始化失败：', error);
+				layer.alert('日期多选组件初始化失败：' + error.message);
+				$("#selectedDate").html('<input type="text" class="layui-input" placeholder="多选组件初始化失败" readonly>');
+			}
+		}
+
+		// 添加日期到多选组件 - 优化版本
+		function addDateToMultiSelect(dateValue) {
+			if(!dateValue) {
+				console.warn('要添加的日期值为空');
+				return;
+			}
+
+			try {
+				console.log('尝试添加日期到多选组件：', dateValue);
+
+				// 检查xmSelect是否可用
+				if (!xmSelect) {
+					console.error('xmSelect组件未加载，无法添加日期');
+					layer.alert('多选组件未加载，请刷新页面重试');
+					return;
+				}
+
+				// 检查全局实例是否存在
+				if (!window.xmSelectInstance) {
+					console.warn('xmSelect全局实例不存在，重新初始化');
+					initMultiSelect();
+					return;
+				}
+
+				// 获取当前选中的数据
+				let currentValues = [];
+				try {
+					currentValues = window.xmSelectInstance.getValue() || [];
+				} catch(e) {
+					console.warn('获取当前值失败，重新初始化：', e);
+					initMultiSelect();
+					return;
+				}
+
+				// 检查日期是否已存在
+				let exists = currentValues.some(item => item.value === dateValue);
+				if(exists) {
+					console.log('日期已存在，跳过添加：', dateValue);
+					return;
+				}
+
+				// 添加新日期到数组
+				let newValues = [...currentValues, {
+					name: dateValue,
+					value: dateValue,
+					selected: true
+				}];
+
+				// 更新组件数据
+				try {
+					window.xmSelectInstance.update({
+						data: newValues
+					});
+					console.log('成功添加日期到多选组件：', dateValue);
+				} catch(e) {
+					console.error('更新xmSelect数据失败：', e);
+					// 备用方案：重新渲染整个组件
+					renderMultiSelectWithNewData(newValues);
+				}
+
+			} catch (error) {
+				console.error('添加日期到多选组件失败：', error);
+				layer.alert('添加日期失败：' + error.message);
+			}
+		}
+
+		// 备用方案：重新渲染整个多选组件
+		function renderMultiSelectWithNewData(data) {
+			try {
+				// 销毁旧实例
+				if(window.xmSelectInstance) {
+					window.xmSelectInstance.destroy();
+					window.xmSelectInstance = null;
+				}
+
+				// 清理DOM
+				$('#selectedDate').empty();
+				$('.xm-select-parent').remove();
+
+				// 重新创建实例
+				window.xmSelectInstance = xmSelect.render({
+					el: '#selectedDate',
+					data: data,
+					name: 'multiDateSelect',
+					filterable: false,
+					toolbar: { show: true, list: ['ALL', 'CLEAR', 'REVERSE'] },
+					on: function(data){
+						console.log('多选组件重新渲染后的变化：', data);
+					},
+				});
+				console.log('备用渲染方案成功，数据：', data);
+			} catch(e) {
+				console.error('备用渲染方案也失败了：', e);
+				layer.alert('多选组件渲染失败，请刷新页面');
+			}
+		}
+
+		// 初始化为单日模式
+		switchTimeMode("day");
+		
+		
+		// 查询功能
+		$('#search').on('click', async function() {
+			try {
+				let classification = $('#classification').val();
+				let xAxisData = [];
+				let legendData = [];
+				let seriesData = [];
+				let selectDatas = [];
+
+				if(timeMode === "day"){
+					// 单日模式：从单日输入框获取数据
+					let singleDateInput = document.getElementById('single-date-input');
+					if(!singleDateInput || !singleDateInput.value){
+						layer.alert("请选择日期");
+						return;
+					}
+					selectDatas.push(singleDateInput.value);
+					
+				} else if(timeMode === "multi"){
+					// 多日模式：从多选组件获取数据
+					try {
+						if (!xmSelect) {
+							layer.alert("多选组件未加载，无法查询");
+							return;
+						}
+
+						let multiData;
+						if (window.xmSelectInstance) {
+							// 使用全局实例获取数据
+							multiData = {
+								options: {
+									data: window.xmSelectInstance.getValue()
+								}
+							};
+						} else {
+							// 备用方案：尝试通过ID获取
+							multiData = xmSelect.get('#selectedDate', true);
+						}
+
+						if (!multiData || !multiData.options || multiData.options.data.length === 0) {
+							layer.alert("请选择至少一个日期");
+							return;
+						}
+						for(let i = 0; i < multiData.options.data.length; i++){
+							selectDatas.push(multiData.options.data[i].value);
+						}
+						console.log('多日模式，选中日期：', selectDatas);
+					} catch (error) {
+						console.error('多选数据获取失败：', error);
+						layer.alert('获取多选日期失败：' + error.message);
+						return;
+					}
+					
+				} else if(timeMode === "range"){
+					// 范围模式：从范围输入框获取数据
+					let rangeDateInput = document.getElementById('range-date-input');
+					if(!rangeDateInput || !rangeDateInput.value){
+						layer.alert("请选择日期范围");
+						return;
+					}
+
+					let rangeValue = rangeDateInput.value;
+					// 解析范围字符串 "2025-11-01 - 2025-11-07"
+					let dates = rangeValue.split(' - ');
+					if(dates.length !== 2){
+						layer.alert("日期范围格式错误");
+						return;
+					}
+
+					let startdate = dates[0].trim();
+					let enddate = dates[1].trim();
+
+					// 生成日期范围内的所有日期
+					let startDate = new Date(startdate);
+					let endDate = new Date(enddate);
+					const millisecondsPerDay = 24 * 60 * 60 * 1000;
+					const diffInMilliseconds = Math.abs(endDate.getTime() - startDate.getTime());
+					const days = Math.floor(diffInMilliseconds / millisecondsPerDay) + 1; // 修复：使用Math.floor
+
+					for(let i = 0; i < days; i++){
+						let tempDate = new Date(startDate);
+						tempDate.setDate(startDate.getDate() + i);
+						let dateStr = tempDate.getFullYear() + "-" +
+							((tempDate.getMonth() + 1) >= 10 ? (tempDate.getMonth() + 1) : "0" + (tempDate.getMonth() + 1)) + "-" +
+							(tempDate.getDate() >= 10 ? tempDate.getDate() : "0" + tempDate.getDate());
+						selectDatas.push(dateStr);
+					}
+				}
+
+				// 按日期排序
+				selectDatas.sort(function(a, b){
+					return new Date(a) - new Date(b);
+				});
+
+				// 循环查询每一天的数据
+				for(let i = 0; i < selectDatas.length; i++){
+					var sql = " select DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as datetime,"+classification+" from data_all \n";
+					sql+=" where date > DATE_ADD(DATE_SUB(DATE_FORMAT('"+selectDatas[i]+"','%Y-%m-%d 7:00:00'),INTERVAL 5 MINUTE ),INTERVAL 0 day) \n"
+					+ "  and date < DATE_ADD(DATE_SUB(DATE_FORMAT('"+selectDatas[i]+"','%Y-%m-%d 7:00:00'),INTERVAL 5 MINUTE ),INTERVAL 1 day )   \n"
+					+ "  and no = "+$("#sreachNo").val()+" " ;
+					console.info(sql);
+					const data = await sendSQL(sql);
+					console.info(data);
+
+					// 在第一次循环的时候确立时间x轴
+					let datas = [];
+					if(xAxisData.length == 0 && data.data.length != 0){
+						for(let j = 0; j < data.data.length; j++){
+							let tempdate = new Date(data.data[j].datetime);
+							xAxisData.push((tempdate.getHours()>=10?tempdate.getHours():"0"+tempdate.getHours())+":"+(tempdate.getMinutes() >= 10?tempdate.getMinutes():"0"+tempdate.getMinutes())+":"+(tempdate.getSeconds()>=10?tempdate.getSeconds():"0"+tempdate.getSeconds()));
+						}
+					}
+
+					// 循环确立legend名称和数据
+					if(data.data.length>0){
+						for(let j = 0; j < data.data.length; j++){
+							datas.push(data.data[j][classification]);
+						}
+						let tempdate = new Date(data.data[0].datetime);
+						let legendName = tempdate.getFullYear() + "-"+( (tempdate.getMonth() + 1) >= 10 ? (tempdate.getMonth() + 1):"0"+(tempdate.getMonth() + 1)) + "-" + (tempdate.getDate()>=10 ? tempdate.getDate() :"0"+tempdate.getDate())+$('#classification').find("option:selected").text();
+						legendData.push(legendName);
+
+						seriesData.push({
+							name: legendName,
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: datas,
+							smooth: 0.5 // 设置折线弧度
+						});
+					}
+				}
+
+				console.info(legendData);
+				
+				
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+				var myChart = echarts.init(document.getElementById('chart'));
+				var option = {
+					//backgroundColor: 'rgb(8, 15, 51)',
+					//title: {
+					//  text: '历史曲线图'
+					//},
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						data: legendData,
+						right: '10%',
+						top: '5%',
+						orient:'vertical',
+						textStyle: {
+							color: "#fff",
+						},
+					},
+					grid: {
+						left: '3%',
+						right: '4%',
+						top: '15%',
+						bottom: '3%',
+						containLabel: true
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						data: xAxisData
+					},
+					yAxis: {
+						type: 'value',
+						scale: true,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							show:false,
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						splitLine: {
+							show: true,
+							lineStyle: {
+								color: '#ffff',
+								//width: 2,
+							},
+						},
+					},
+					series: seriesData
+					/*[
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						},
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						}
+					]*/
+				};
+				
+				if (option && typeof option === "object") {
+					myChart.setOption(option, true);
+				}
+				
+				
+				
+			} catch (err) {
+				console.error('查询出错：', err);
+				layer.alert('查询出错：' + err.message);
+			}
+		});
+		
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

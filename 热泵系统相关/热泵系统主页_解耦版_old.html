@@ -1,0 +1,798 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<!-- 页面字符编码设置 -->
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<!-- 响应式设计：禁用用户缩放，设置初始缩放比例和设备宽度 -->
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>热泵系统管理系统</title>
+	
+	<!-- 样式表引入 -->
+	<!-- LayUI框架样式 - 用于界面组件 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<!-- 项目自定义样式 - 包含主题色彩和布局 -->
+	<link href="css/common-styles.css" rel="stylesheet">
+	
+	<!-- JavaScript库引入 -->
+	<!-- ECharts图表库 - 用于绘制甘特图和数据可视化 -->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<!-- JavaScript与C++交互函数 - 用于调用后端接口 -->
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<!-- C++调用JavaScript函数 - 用于接收后端回调 -->
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<!-- LayUI框架核心文件 - 提供UI组件功能 -->
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<!-- 主脚本文件 - 包含所有业务逻辑 -->
+	<script type="text/javascript" src="js/main.js"></script>
+	
+	<script type="text/javascript">
+		// LayUI框架配置
+		layui.config({
+			base: '../js/'  // 设置扩展模块的基础路径
+		}).extend({
+			excel: 'layui_exts/excel',  // Excel导入导出扩展
+			xmSelect: "xm-select"       // 多选下拉框扩展
+		});
+	</script>
+</head>
+<body>
+	<!-- ===========================================
+	     顶部导航栏区域
+	     功能：提供不同功能页面的导航切换
+	     =========================================== -->
+	<nav class="top-nav">
+		<div class="nav-container">
+			<!-- 导航菜单列表 -->
+			<ul class="nav-menu">
+				<!-- 实时数据页面导航 - 默认激活状态 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link active" data-page="real-time-data">热泵系统实时数据</a>
+				</li>
+				<!-- 热泵系统报表页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="heat-pump-system-report">热泵系统报表</a>
+				</li>
+				<!-- 热泵系统曲线页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="heat-pump-system-curve">热泵系统曲线</a>
+				</li>
+				<!-- 热量同比分析页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="heat-quantity-year-on-year">热量同比分析</a>
+				</li>
+				<!-- 热量环比分析页面导航 -->
+				<li class="nav-item">
+					<a href="#" class="nav-link" data-page="heat-quantity-chain">热量环比分析</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+
+	<!-- ===========================================
+	     主内容区域
+	     功能：包含所有功能页面的主容器
+	     =========================================== -->
+	<div class="main-content">
+		<!-- 实时数据页面 -->
+		<div id="real-time-data-page" class="page-container active">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:7px;">
+										<!-- 实时数据切换容器区域 -->
+										<div class="realtime-data-container">
+
+											<!-- 切换按钮组 -->
+											<div class="switch-buttons">
+												<button class="switch-btn active" data-target="data-panel-1">大办</button>
+												<button class="switch-btn" data-target="data-panel-2">东大棚</button>
+												<button class="switch-btn" data-target="data-panel-3">研发</button>
+											</div>
+
+											<!-- 数据面板1 - 默认显示 -->
+											<div id="data-panel-1" class="data-panel active" style="background-color: rgba(41, 98, 255, 0.3);">
+												<div class="panel-header">
+													<h2 class="panel-title">大 办 空 气 源 热 泵 机 组</h2>
+												</div>
+												<div class="panel-content">
+													<div class="data-container">
+														<!-- 图片区域 - 占45%高度 -->
+														<div class="image-section">
+															<!-- 背景层 -->
+															<div class="image-background"></div>
+															<!-- 图片层 -->
+															<div class="image-layer">
+																<img src="assets/大办1600_360.png" alt="大办热泵系统图" class="system-image">
+															</div>
+															<!-- 数据点位层 -->
+															<div class="data-points-layer">
+																<!-- 总进水数据组 -->
+																<div class="data-point" style="top: 4%; left: 79.5%;">
+																	<div class="point-label">进水压力</div>
+																	<div class="point-value" id="total-inlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 92%;">
+																	<div class="point-label">进水流量</div>
+																	<div class="point-value" id="total-inlet-flow">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 86%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="total-inlet-temp">###</div>
+																</div>
+																
+																<!-- 总出水数据组 -->
+																<div class="data-point" style="top: 32%; right: 8%;">
+																	<div class="point-label">出水压力</div>
+																	<div class="point-value" id="total-outlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 32%; right: 2%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="total-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组1进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit1-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 12.8%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit1-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组2进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 20.8%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit2-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 28.3%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit2-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组3进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 36.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit3-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 43.9%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit3-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组4进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 52%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit4-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 59.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit4-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组5进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 67.3%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit5-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 74.8%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit5-outlet-temp">###</div>
+																</div>
+																
+																<!-- 机组6进出水温度 -->
+																<div class="data-point" style="top: 26.6%; left: 82.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="unit6-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 57.4%; left: 90.1%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="unit6-outlet-temp">###</div>
+																</div>
+															</div>
+														</div>
+														<!-- 连接面区域 - 连接图片和卡片 -->
+														<div class="connection-lines-section">
+															<svg class="connection-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+																<!-- 渐变定义 - 从图片底部到卡片顶部的自然过渡 -->
+																<defs>
+																	<linearGradient id="gradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+																		<stop offset="0%" style="stop-color:rgba(100, 181, 246, 0.15);stop-opacity:1" />
+																		<stop offset="50%" style="stop-color:rgba(100, 181, 246, 0.45);stop-opacity:1" />
+																		<stop offset="100%" style="stop-color:rgba(100, 181, 246, 0.6);stop-opacity:1" />
+																	</linearGradient>
+																</defs>
+																<path class="connection-area" data-pump="1" 
+																	d="M 3.5,0 Q 0,30 0,100 L 16.2,100 Q 11,30 9.5,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+																
+																<!-- 热泵2连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="2" 
+																	d="M 19,0 Q 19.6,30 17,100 L 33,100 Q 29,30 26,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+																
+																<!-- 热泵3连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="3" 
+																	d="M 34.5,0 Q 35,30 33.5,100 L 49.6,100 Q 46,30 41,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+																
+																<!-- 热泵4连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="4" 
+																	d="M 50.2,0 Q 51,30 50.3,100 L 66.5,100 Q 62,30 56.7,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+																
+																<!-- 热泵5连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="5" 
+																	d="M 65.5,0 Q 67,30 67,100 L 83,100 Q 77,30 72.6,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+																
+																<!-- 热泵6连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="6" 
+																	d="M 80.5,0 Q 83,30 84,100 L 99.5,100 Q 95,30 87,0 Z" 
+																	fill="url(#gradient1)" 
+																	stroke="rgba(100, 181, 246, 0.7)" 
+																	stroke-width="0.3"/>
+															</svg>
+														</div>
+														<!-- 热泵卡片区域 - 占47%高度 -->
+														<div class="pump-cards-section">
+															<div class="pump-cards-container">
+																<!-- 热泵1卡片 -->
+																<div class="pump-card" data-pump="1">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵1</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵2卡片 -->
+																<div class="pump-card" data-pump="2">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵2</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵3卡片 -->
+																<div class="pump-card" data-pump="3">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵3</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵4卡片 -->
+																<div class="pump-card" data-pump="4">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵4</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵5卡片 -->
+																<div class="pump-card" data-pump="5">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵5</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵6卡片 -->
+																<div class="pump-card" data-pump="6">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵6</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<!-- 数据面板2 - 默认隐藏 -->
+											<div id="data-panel-2" class="data-panel" style="display: none;">
+												<div class="panel-header">
+													<h2 class="panel-title">东 大 棚 空 气 源 热 泵 机 组</h2>
+												</div>
+												<div class="panel-content">
+													<div class="data-container">
+														<!-- 图片区域 - 占45%高度 -->
+														<div class="image-section">
+															<!-- 背景层 -->
+															<div class="image-background"></div>
+															<!-- 图片层 -->
+															<div class="image-layer">
+																<img src="assets/东大棚1600_360.png" alt="东大棚热泵系统图" class="system-image">
+															</div>
+															<!-- 数据点位层 -->
+															<div class="data-points-layer">
+																<!-- 总进水数据组 -->
+																<div class="data-point" style="top: 4%; left: 79.5%;">
+																	<div class="point-label">进水压力</div>
+																	<div class="point-value" id="dd-inlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 92%;">
+																	<div class="point-label">进水流量</div>
+																	<div class="point-value" id="dd-inlet-flow">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 86%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-inlet-temp">###</div>
+																</div>
+
+																<!-- 总出水数据组 -->
+																<div class="data-point" style="top: 32%; right: 8%;">
+																	<div class="point-label">出水压力</div>
+																	<div class="point-value" id="dd-outlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 32%; right: 2%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组1进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-unit1-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 77%; left: 21.8%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-unit1-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组2进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 20.8%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-unit2-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 33.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-unit2-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组3进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 36.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-unit3-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 45.4%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-unit3-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组4进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 52%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-unit4-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 57.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-unit4-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组5进出水温度 -->
+																<div class="data-point" style="top: 26.6%; left: 82.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="dd-unit5-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 80.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="dd-unit5-outlet-temp">###</div>
+																</div>
+															</div>
+														</div>
+														<!-- 连接面区域 - 连接图片和卡片 -->
+														<div class="connection-lines-section">
+															<svg class="connection-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+																<!-- 渐变定义 - 从图片底部到卡片顶部的自然过渡 -->
+																<defs>
+																	<linearGradient id="gradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+																		<stop offset="0%" style="stop-color:rgba(100, 181, 246, 0.15);stop-opacity:1" />
+																		<stop offset="50%" style="stop-color:rgba(100, 181, 246, 0.45);stop-opacity:1" />
+																		<stop offset="100%" style="stop-color:rgba(100, 181, 246, 0.6);stop-opacity:1" />
+																	</linearGradient>
+																</defs>
+																<!-- 热泵1连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="1"
+																	d="M 3.5,0 Q 0,30 0,100 L 19.5,100 Q 15,30 12,0 Z"
+																	fill="url(#gradient2)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵2连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="2"
+																	d="M 21,0 Q 21.6,30 19,100 L 39,100 Q 35,30 31,0 Z"
+																	fill="url(#gradient2)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵3连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="3"
+																	d="M 40,0 Q 40.5,30 38,100 L 58,100 Q 54,30 50,0 Z"
+																	fill="url(#gradient2)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵4连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="4"
+																	d="M 58,0 Q 59,30 56.5,100 L 76,100 Q 72,30 67,0 Z"
+																	fill="url(#gradient2)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵5连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="5"
+																	d="M 75,0 Q 77,30 77,100 L 99.5,100 Q 93,30 85,0 Z"
+																	fill="url(#gradient2)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+															</svg>
+														</div>
+														<!-- 热泵卡片区域 - 占47%高度 -->
+														<div class="pump-cards-section">
+															<div class="pump-cards-container">
+																<!-- 热泵1卡片 -->
+																<div class="pump-card" data-pump="1">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵1</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵2卡片 -->
+																<div class="pump-card" data-pump="2">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵2</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵3卡片 -->
+																<div class="pump-card" data-pump="3">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵3</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵4卡片 -->
+																<div class="pump-card" data-pump="4">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵4</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵5卡片 -->
+																<div class="pump-card" data-pump="5">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵5</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+											<!-- 数据面板3 - 默认隐藏 -->
+											<div id="data-panel-3" class="data-panel" style="display: none;">
+												<div class="panel-header">
+													<h2 class="panel-title">研 发 空 气 源 热 泵 机 组</h2>
+												</div>
+												<div class="panel-content">
+													<div class="data-container">
+														<!-- 图片区域 - 占45%高度 -->
+														<div class="image-section">
+															<!-- 背景层 -->
+															<div class="image-background"></div>
+															<!-- 图片层 -->
+															<div class="image-layer">
+																<img src="assets/研发1600_360.png" alt="研发热泵系统图" class="system-image">
+															</div>
+															<!-- 数据点位层 -->
+															<div class="data-points-layer">
+																<!-- 总进水数据组 -->
+																<div class="data-point" style="top: 4%; left: 79.5%;">
+																	<div class="point-label">进水压力</div>
+																	<div class="point-value" id="yf-inlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 92%;">
+																	<div class="point-label">进水流量</div>
+																	<div class="point-value" id="yf-inlet-flow">###</div>
+																</div>
+																<div class="data-point" style="top: 4%; left: 86%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="yf-inlet-temp">###</div>
+																</div>
+
+																<!-- 总出水数据组 -->
+																<div class="data-point" style="top: 32%; right: 8%;">
+																	<div class="point-label">出水压力</div>
+																	<div class="point-value" id="yf-outlet-pressure">###</div>
+																</div>
+																<div class="data-point" style="top: 32%; right: 2%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="yf-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组1进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="yf-unit1-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 67%; left: 21.8%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="yf-unit1-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组2进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 20.8%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="yf-unit2-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 33.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="yf-unit2-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组3进出水温度 -->
+																<div class="data-point" style="top: 29.4%; left: 36.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="yf-unit3-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 45.4%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="yf-unit3-outlet-temp">###</div>
+																</div>
+
+																<!-- 机组4进出水温度 -->
+																<div class="data-point" style="top: 26.6%; left: 82.5%;">
+																	<div class="point-label">进水温度</div>
+																	<div class="point-value" id="yf-unit4-inlet-temp">###</div>
+																</div>
+																<div class="data-point" style="top: 53.5%; left: 80.6%;">
+																	<div class="point-label">出水温度</div>
+																	<div class="point-value" id="yf-unit4-outlet-temp">###</div>
+																</div>
+															</div>
+														</div>
+														<!-- 连接面区域 - 连接图片和卡片 -->
+														<div class="connection-lines-section">
+															<svg class="connection-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+																<!-- 渐变定义 - 从图片底部到卡片顶部的自然过渡 -->
+																<defs>
+																	<linearGradient id="gradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+																		<stop offset="0%" style="stop-color:rgba(100, 181, 246, 0.15);stop-opacity:1" />
+																		<stop offset="50%" style="stop-color:rgba(100, 181, 246, 0.45);stop-opacity:1" />
+																		<stop offset="100%" style="stop-color:rgba(100, 181, 246, 0.6);stop-opacity:1" />
+																	</linearGradient>
+																</defs>
+																<!-- 热泵1连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="1"
+																	d="M 3.5,0 Q 0,30 0,100 L 24.5,100 Q 20,30 16,0 Z"
+																	fill="url(#gradient3)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵2连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="2"
+																	d="M 26,0 Q 26.6,30 24,100 L 49.5,100 Q 45,30 40,0 Z"
+																	fill="url(#gradient3)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵3连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="3"
+																	d="M 42,0 Q 42.5,30 40,100 L 74.5,100 Q 70,30 65,0 Z"
+																	fill="url(#gradient3)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+
+																<!-- 热泵4连接面 - 曲线面 -->
+																<path class="connection-area" data-pump="4"
+																	d="M 67,0 Q 69,30 69,100 L 99.5,100 Q 91,30 83,0 Z"
+																	fill="url(#gradient3)"
+																	stroke="rgba(100, 181, 246, 0.7)"
+																	stroke-width="0.3"/>
+															</svg>
+														</div>
+														<!-- 热泵卡片区域 - 占47%高度 -->
+														<div class="pump-cards-section">
+															<div class="pump-cards-container">
+																<!-- 热泵1卡片 -->
+																<div class="pump-card" data-pump="1">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵1</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵2卡片 -->
+																<div class="pump-card" data-pump="2">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵2</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵3卡片 -->
+																<div class="pump-card" data-pump="3">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵3</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+																<!-- 热泵4卡片 -->
+																<div class="pump-card" data-pump="4">
+																	<div class="pump-card-header">
+																		<h3 class="pump-card-title">热泵4</h3>
+																	</div>
+																	<div class="pump-card-content">
+																		<p>正在开发中...</p>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 热泵系统报表页面 -->
+		<div id="heat-pump-system-report-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">热泵系统报表</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">热泵系统报表功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 热泵系统曲线页面 -->
+		<div id="heat-pump-system-curve-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">热泵系统曲线</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">热泵系统曲线功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 热量同比分析页面 -->
+		<div id="heat-quantity-year-on-year-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">热量同比分析</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">热量同比分析功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 热量环比分析页面 -->
+		<div id="heat-quantity-chain-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">热量环比分析</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">热量环比分析功能开发中...</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	// LayUI初始化
+	layui.use(['form', 'laydate', 'util', 'excel', 'xmSelect', 'element'], function() {
+		window.layui = layui;
+		window.$ = layui.$;
+		
+		// 延迟初始化，确保DOM完全加载
+		setTimeout(() => {
+			initApp();
+		}, 500);
+	});
+</script>
+
+</body>
+</html>

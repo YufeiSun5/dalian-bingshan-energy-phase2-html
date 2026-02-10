@@ -1,0 +1,528 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>水表工艺图</title>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript">
+		// 水表数据配置
+		const gasMeterConfig = {
+			// 27组数据的位置配置 (x, y 为容器内的百分比位置，0-100)
+			positions: [
+				{ x: 19, y: 12.5 },   // 第1组位置
+				/*{ x: 20, y: 17.5 },   // 第2组位置
+				{ x: 64, y: 17 },   // 第3组位置
+				{ x: 54.5, y: 77 },   // 第4组位置
+				{ x: 69.8, y: 17 },   // 第5组位置
+				{ x: 95.7, y: 72.6 },   // 第6组位置
+				{ x: 55.7, y: 30.5 },   // 第7组位置
+				{ x: 95.7, y: 68 },   // 第8组位置
+				{ x: 50, y: 56 },   // 第9组位置
+				{ x: 64.5, y: 35 },   // 第10组位置
+				{ x: 64, y: 22 },   // 第11组位置
+				{ x: 58.5, y: 35 },   // 第12组位置
+				{ x: 91.5, y: 54 },   // 第13组位置
+				{ x: 60, y: 46 },   // 第14组位置
+				{ x: 86, y: 65 },   // 第15组位置
+				{ x: 70.5, y: 61 },   // 第16组位置
+				{ x: 93, y: 36 },   // 第17组位置
+				{ x: 84, y: 39 },   // 第18组位置
+				{ x: 60.9, y: 59 },   // 第19组位置
+				{ x: 28, y: 34 },   // 第20组位置
+				{ x: 44, y: 32 },   // 第21组位置
+				{ x: 50.3, y: 32 },   // 第22组位置
+				{ x: 93.2, y: 91.3 },   // 第23组位置
+				{ x: 86, y: 59.5 },   // 第24组位置
+				{ x: 86, y: 48.5 },   // 第25组位置
+				{ x: 86, y: 54 },   // 第26组位置
+				{ x: 78, y: 43 },   // 第27组位置*/
+			],
+
+			// 每组数据的标题和指示灯配置
+			titles: [
+				{ title: "1#", indicatorPosition: "left" },    // 第1组
+				{ title: "2#", indicatorPosition: "left" },    // 第2组
+				{ title: "3#", indicatorPosition: "right" },    // 第3组
+				{ title: "4#", indicatorPosition: "right" },    // 第4组
+				{ title: "5#", indicatorPosition: "left" },    // 第5组
+				{ title: "6#", indicatorPosition: "left" },    // 第6组
+				{ title: "7#", indicatorPosition: "right" },    // 第7组
+				{ title: "8#", indicatorPosition: "left" },    // 第8组
+				{ title: "9#", indicatorPosition: "right" },    // 第9组
+				{ title: "10#", indicatorPosition: "left" },    // 第10组
+				{ title: "11#", indicatorPosition: "right" },    // 第11组
+				{ title: "12#", indicatorPosition: "right" },    // 第12组
+				{ title: "13#", indicatorPosition: "right" },    // 第13组
+				{ title: "14#", indicatorPosition: "right" },    // 第14组
+				{ title: "15#", indicatorPosition: "right" },    // 第15组
+				{ title: "16#", indicatorPosition: "left" },    // 第16组
+				{ title: "17#", indicatorPosition: "right" },    // 第17组
+				{ title: "18#", indicatorPosition: "left" },    // 第18组
+				{ title: "19#", indicatorPosition: "right" },   // 第19组
+				{ title: "20#", indicatorPosition: "left" },   // 第20组
+				{ title: "21#", indicatorPosition: "right" },   // 第21组
+				{ title: "22#", indicatorPosition: "right" },   // 第22组
+				{ title: "23#", indicatorPosition: "right" },   // 第23组
+				{ title: "24#", indicatorPosition: "right" },   // 第24组
+				{ title: "25#", indicatorPosition: "right" },   // 第25组
+				{ title: "26#", indicatorPosition: "right" },   // 第26组
+				{ title: "27#", indicatorPosition: "right" },   // 第27组
+			],
+
+			// 数据初始值
+			data: {
+				dailyUsage: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]  // 27个当日用量（由SQL查询计算）
+			}
+		};
+
+		// 初始化数据显示
+		function initDataDisplay() {
+			const container = document.getElementById('dataDisplay');
+			container.innerHTML = '';
+
+			for (let i = 0; i < 1; i++) {
+				const group = document.createElement('div');
+				group.className = 'data-group';
+				group.id = `data-group-${i}`;
+
+				// 设置位置
+				const pos = gasMeterConfig.positions[i];
+				group.style.left = pos.x + '%';
+				group.style.top = pos.y + '%';
+				group.style.transform = 'translate(-50%, -50%)';
+
+				// 获取标题配置
+				const titleConfig = gasMeterConfig.titles[i];
+
+				// 创建标题行
+				const titleRow = document.createElement('div');
+				titleRow.className = 'title-row';
+
+				// 创建指示灯
+				const indicator = document.createElement('div');
+				indicator.className = `status-indicator ${titleConfig.indicatorPosition}`;
+
+				// 创建标题文本
+				const titleText = document.createElement('div');
+				titleText.className = 'title-text';
+				titleText.textContent = titleConfig.title;
+
+				// 根据指示灯位置排列
+				if (titleConfig.indicatorPosition === 'left') {
+					titleRow.appendChild(indicator);
+					titleRow.appendChild(titleText);
+				} else {
+					titleRow.appendChild(titleText);
+					titleRow.appendChild(indicator);
+				}
+
+				// 创建数据行
+				const dataRow = document.createElement('div');
+				dataRow.className = 'data-row';
+
+				// 当日用量显示
+				const totalDiv = document.createElement('div');
+				totalDiv.className = 'data-item total';
+				totalDiv.innerHTML = `
+					<div class="data-label">当日用量</div>
+					<div class="data-value">
+						<span id="total-${i}">加载中...</span>
+						<span class="data-unit">m³</span>
+					</div>
+				`;
+
+				dataRow.appendChild(totalDiv);
+
+				group.appendChild(titleRow);
+				group.appendChild(dataRow);
+				container.appendChild(group);
+			}
+		}
+
+		// 注意：数据现在完全由SQL自动查询，不再需要手动更新
+		// 如需手动触发查询，请使用: queryDailyUsage()
+
+		// 根据变量名查找水表索引
+		function findMeterIndex(meterName) {
+			// 变量名映射表 - 支持多种格式调用同一组数据
+			const meterMap = {
+				// ============ 标准meter变量名 ============
+				'meter1': 0, 'meter2': 1, 'meter3': 2, 'meter4': 3, 'meter5': 4, 
+				'meter6': 5, 'meter7': 6, 'meter8': 7, 'meter9': 8, 'meter10': 9, 
+				'meter11': 10, 'meter12': 11, 'meter13': 12, 'meter14': 13, 'meter15': 14,
+				'meter16': 15, 'meter17': 16, 'meter18': 17, 'meter19': 18, 'meter20': 19,
+				'meter21': 20, 'meter22': 21, 'meter23': 22, 'meter24': 23, 'meter25': 24,
+				'meter26': 25, 'meter27': 26,
+
+				// ============ 水表编号变量名（推荐使用）===========
+				'1#': 0, '2#': 1, '3#': 2, '4#': 3, '5#': 4,
+				'6#': 5, '7#': 6, '8#': 7, '9#': 8, '10#': 9,
+				'11#': 10, '12#': 11, '13#': 12, '14#': 13, '15#': 14,
+				'16#': 15, '17#': 16, '18#': 17, '19#': 18, '20#': 19,
+				'21#': 20, '22#': 21, '23#': 22, '24#': 23, '25#': 24,
+				'26#': 25, '27#': 26,
+
+				// ============ 兼容旧的水表命名 ===========
+				'水表1': 0, '水表2': 1, '水表3': 2, '水表4': 3, '水表5': 4,
+				'水表6': 5, '水表7': 6, '水表8': 7, '水表9': 8, '水表10': 9,
+				'水表11': 10, '水表12': 11, '水表13': 12, '水表14': 13, '水表15': 14,
+				'水表16': 15, '水表17': 16, '水表18': 17, '水表19': 18, '水表20': 19,
+				'水表21': 20, '水表22': 21, '水表23': 22, '水表24': 23, '水表25': 24,
+				'水表26': 25, '水表27': 26
+			};
+
+			return meterMap[meterName] !== undefined ? meterMap[meterName] : -1;
+		}
+
+		// 更新单个水表数据（内部函数）
+		// dailyUsage: SQL查询得到的当日用量
+		function updateSingleData(meterIndex, dailyUsage) {
+			if (meterIndex < 0 || meterIndex >= 27) {
+				console.error('水表索引必须在0-26之间');
+				return;
+			}
+
+			// 更新配置数据
+			gasMeterConfig.data.dailyUsage[meterIndex] = dailyUsage;
+
+			// 更新显示
+			const totalElement = document.getElementById(`total-${meterIndex}`);
+
+			if (totalElement) {
+				if (dailyUsage !== null && dailyUsage !== undefined) {
+					totalElement.textContent = parseFloat(dailyUsage).toFixed(2);
+				} else {
+					totalElement.textContent = '无数据';
+				}
+			}
+		}
+
+		// SQL查询函数
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+		}
+
+		// 查询所有水表的当日用量（使用SQL直接计算）
+		async function queryDailyUsage() {
+			// 使用SQL查询逻辑日内的最大值减去最小值
+			// 逻辑日：早上7:00到第二天7:00算是一天
+			const sql = `SELECT 
+				water_ID,
+				MAX(FLOW_TOTAL) - MIN(FLOW_TOTAL) AS daily_usage
+			FROM 
+				\`sy\`.\`data_water\`
+			WHERE 
+				water_ID BETWEEN 1 AND 27
+				AND FLOW_TOTAL > 0
+				AND FLOW_TOTAL < 999999999
+				AND \`date\` >= CASE 
+					WHEN DATE_FORMAT(NOW(), '%H:%i:%s') < '07:00:00' 
+					THEN CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 07:00:00')
+					ELSE CONCAT(CURDATE(), ' 07:00:00')
+				END
+				AND \`date\` <= NOW()
+			GROUP BY 
+				water_ID`;
+
+			try {
+				console.log('查询当日用量:', sql);
+				
+				const result = await sendSQL(sql);
+				
+				// 检查返回的数据格式：可能是 {success: true, data: Array} 或直接是 {data: Array}
+				const dataArray = (result && result.success && result.data) ? result.data : (result && result.data ? result.data : result);
+				
+				if (dataArray && Array.isArray(dataArray) && dataArray.length > 0) {
+					// 初始化所有水表为null
+					for (let i = 0; i < 27; i++) {
+						gasMeterConfig.data.dailyUsage[i] = null;
+					}
+					
+					// 处理查询结果（water_ID从1开始，数组索引从0开始）
+					dataArray.forEach(row => {
+						const waterID = row.water_ID;
+						const dailyUsage = row.daily_usage;
+						
+						if (waterID >= 1 && waterID <= 27) {
+							const meterIndex = waterID - 1;
+							updateSingleData(meterIndex, dailyUsage);
+							console.log(`水表 ${waterID}# 当日用量: ${dailyUsage !== null && dailyUsage !== undefined ? parseFloat(dailyUsage).toFixed(2) : '无数据'}`);
+						}
+					});
+					
+					console.log('当日用量查询完成');
+				} else {
+					console.warn('查询结果为空或格式错误:', result);
+					// 如果没有数据，将所有水表显示为"无数据"
+					for (let i = 0; i < 27; i++) {
+						updateSingleData(i, null);
+					}
+				}
+			} catch (error) {
+				console.error('查询当日用量失败:', error);
+				// 查询失败时，将所有水表显示为"无数据"
+				for (let i = 0; i < 27; i++) {
+					updateSingleData(i, null);
+				}
+			}
+		}
+
+		// 定时器变量
+		let dailyUsageTimer = null;
+
+		// 启动定时查询当日用量（每3分钟查询一次）
+		function startDailyUsageQuery() {
+			// 立即执行一次
+			queryDailyUsage();
+			
+			// 每3分钟查询一次（180000毫秒 = 3分钟）
+			dailyUsageTimer = setInterval(queryDailyUsage, 3 * 60 * 1000);
+			console.log('当日用量定时查询已启动（每3分钟查询一次）');
+		}
+
+		// 停止定时查询
+		function stopDailyUsageQuery() {
+			if (dailyUsageTimer) {
+				clearInterval(dailyUsageTimer);
+				dailyUsageTimer = null;
+				console.log('当日用量定时查询已停止');
+			}
+		}
+
+
+	// 页面加载完成后初始化
+	window.onload = function() {
+		initDataDisplay();
+		
+		// 启动定时查询当日用量（每3分钟查询一次）
+		startDailyUsageQuery();
+		
+		// 在控制台打印使用说明
+		console.log('%c========== 水表数据更新说明 ==========', 'color: #00ff00; font-size: 14px; font-weight: bold;');
+		console.log('%c【自动功能】当日用量自动查询:', 'color: #00ff00; font-size: 13px; font-weight: bold;');
+		console.log('• 页面已启动自动查询当日用量功能');
+		console.log('• 查询间隔: 每3分钟一次');
+		console.log('• 计算方式: SQL查询逻辑日内FLOW_TOTAL的最大值减去最小值');
+		console.log('• 数据过滤: 排除FLOW_TOTAL为0或999999999的数据');
+		console.log('• 逻辑日: 早上7:00到第二天7:00算是一天');
+		console.log('• 控制函数: startDailyUsageQuery() - 启动自动查询');
+		console.log('           stopDailyUsageQuery() - 停止自动查询');
+		console.log('           queryDailyUsage() - 手动执行一次查询');
+		console.log('');
+		
+		console.log('%c【重要提示】', 'color: #ff6666; font-size: 13px; font-weight: bold;');
+		console.log('• 数据完全由SQL自动查询，无需手动更新');
+		console.log('• 如需手动触发查询，请使用: queryDailyUsage()');
+		console.log('• 页面显示的是当日用量（逻辑日内最大值 - 最小值）');
+	};
+	</script>
+</head>
+<style>
+	body{
+		margin: 0;
+		padding: 0;
+		height: 100vh;
+		width: 100vw;
+		overflow: hidden;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+		background: #0f266c;
+	}
+
+	.container {
+		position: relative;
+		width: 1720px;
+		height: 1080px;
+		margin: 0;
+		padding: 0;
+		background: #0f266c;
+		overflow: hidden;
+	}
+
+	.background-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		z-index: 2;
+	}
+
+	/* 数据显示样式 */
+	#dataDisplay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.data-group {
+		position: absolute;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+		transform: translate(-50%, -50%);
+		background: rgba(255, 150, 50, 0.15);
+		border: 1px solid rgba(255, 150, 50, 0.6);
+		border-radius: 8px;
+		padding: 6px 7px;
+		box-shadow:
+			0 0 15px rgba(255, 150, 50, 0.4),
+			0 0 25px rgba(255, 150, 50, 0.3),
+			inset 0 0 10px rgba(255, 150, 50, 0.1);
+		backdrop-filter: blur(6px);
+	}
+
+	.title-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0px;
+		padding: 2px 4px;
+		min-width: 105px;
+		background: transparent;
+	}
+
+	.title-text {
+		font-size: 16px;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.95);
+		text-shadow: 0 0 4px rgba(255, 150, 50, 0.6);
+		flex: 1;
+		text-align: center;
+	}
+
+	.status-indicator {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: rgba(255, 150, 50, 0.9);
+		box-shadow:
+			0 0 12px rgba(255, 150, 50, 0.7),
+			0 0 20px rgba(255, 150, 50, 0.5),
+			0 0 30px rgba(255, 150, 50, 0.3);
+	}
+
+	.status-indicator.left {
+		order: -1;
+	}
+
+	.status-indicator.right {
+		order: 1;
+	}
+
+	.data-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 2px;
+		width: 100%;
+	}
+
+	
+	.data-item {
+		background: rgba(40, 60, 100, 0.5);
+		border: 1px solid rgba(255, 180, 120, 0.3);
+		border-radius: 4px;
+		padding: 3px 5px;
+		color: #ffffff;
+		font-size: 9px;
+		font-weight: 500;
+		text-align: center;
+		min-width: 70px;
+		
+		backdrop-filter: blur(6px);
+		transition: all 0.3s ease;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.data-item:hover {
+		border-color: rgba(255, 200, 150, 0.6);
+		background: rgba(60, 80, 120, 0.7);
+		transform: scale(1.03);
+	}
+
+	.data-label {
+		font-size: 9px;
+		color: rgba(200, 220, 255, 0.9);
+		margin-bottom: 2px;
+		font-weight: 600;
+		text-shadow: 0 0 3px rgba(100, 150, 255, 0.6);
+	}
+
+	.data-value {
+		font-size: 15px;
+		font-weight: bold;
+		color: rgba(150, 255, 220, 0.95);
+		text-shadow: 0 0 3px rgba(100, 200, 255, 0.5);
+	}
+
+	.data-unit {
+		font-size: 12px;
+		color: rgba(180, 230, 255, 0.9);
+		margin-left: 1px;
+		font-weight: 500;
+	}
+
+	/* 页面标题样式 */
+	.page-header {
+		position: absolute;
+		top: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 10;
+		text-align: center;
+	}
+
+	.page-title {
+		font-size: 30px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.95);
+		text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+		margin: 0;
+		padding: 10px 0;
+		letter-spacing: 8px;
+	}
+
+	</style>
+<body>
+	<!-- 页面大标题 -->
+	<div class="page-header">
+		<h1 class="page-title">冰山松洋压缩机(大连)有限公司水流量图</h1>
+	</div>
+
+	<div class="container">
+		<img src="白色透明底V2.png" class="background-image" alt="水表工艺图" />
+
+		<!-- 数据显示区域 -->
+		<div id="dataDisplay">
+			<!-- 27组数据，每组包含累计流量 -->
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<!-- 文档类型声明，指定为HTML5标准。 -->
+<html lang="zh-CN"> <!-- 根元素，lang属性指定页面主要语言为简体中文，有助于浏览器和搜索引擎优化。 -->
+<head>
+    <!-- head部分包含文档的元数据，是浏览器和搜索引擎读取的信息，不直接在页面显示。 -->
+    <meta charset="UTF-8"> <!-- 指定文档的字符编码为UTF-8，以正确显示包括中文在内的多语言字符。 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 视口元标签，确保页面在移动设备上以设备宽度进行渲染，并设置初始缩放为1.0，是响应式设计的关键。 -->
+    <title>动力实施课电量占比及统计</title> <!-- 文档标题，将显示在浏览器标签页上。 -->
+    
+    <!-- === 外部资源依赖 === -->
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script src="../js/xlsx.full.min.js"></script>
+    <script src="../js/echarts.js"></script>
+<style>
+    /* CSS样式定义区域，用于控制页面的视觉表现。 */
+    
+    /* --- 全局与基础样式 --- */
+    html, body {
+        height: 100%; /* 确保html和body元素占满整个视口高度。 */
+        margin: 0; /* 移除浏览器默认的外边距。 */
+        padding: 0; /* 移除浏览器默认的内边距。 */
+        font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif; /* <-- 【调整】统一字体，去掉STHeiTi */
+        background-color: #0f266c; /* 设置全局背景色，适用于深色主题的数据看板。 */
+        color: #d0d2e0; /* 设置全局默认文字颜色。 */
+        overflow-x: hidden; /* 只防止横向滚动 */
+        overflow-y: auto; /* 允许纵向滚动 */
+        font-size: 13px;  /* <-- 【新增】全局字体大小13px */
+    }
+
+    /* --- 美化页面滚动条 --- */
+    body::-webkit-scrollbar {
+        width: 10px;
+    }
+    body::-webkit-scrollbar-track {
+        background-color: #0f266c;
+        border-left: 1px solid #1d386f;
+    }
+    body::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #2a6dc8 0%, #1d5aa6 100%);
+        border-radius: 5px;
+        border: 2px solid #0f266c;
+    }
+    body::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #3d7ed9 0%, #2a6dc8 100%);
+    }
+    body::-webkit-scrollbar-thumb:active {
+        background: linear-gradient(180deg, #5089e0 0%, #3d7ed9 100%);
+    }
+
+    /* --- 主要布局容器 --- */
+    .dashboard-container {
+        display: flex; /* 启用Flexbox布局模型。 */
+        flex-direction: column; /* 设置主轴为垂直方向，使子元素从上到下排列。 */
+        min-height: 100vh; /* 改为最小高度，允许内容撑开 */
+        padding: 12px; /* <-- 【调整】从15px改为12px */
+        box-sizing: border-box; /* 内边距和边框将包含在元素的总宽度和高度内，简化布局计算。 */
+        gap: 12px; /* <-- 【调整】从15px改为12px */
+    }
+
+    /* --- 卡片通用样式 --- */
+    .card-block {
+        background-color: #1d386f; /* 卡片背景色，与全局背景形成对比。 */
+        border: 1px solid #2a6dc8; /* 卡片边框。 */
+        border-radius: 5px; /* 圆角边框，使界面更柔和。 */
+        display: flex; /* 卡片自身也作为flex容器。 */
+        flex-direction: column; /* 卡片内部元素垂直排列。 */
+    }
+    
+    /* --- 筛选栏 --- */
+    .filter-bar {
+        flex-shrink: 0; /* 防止该容器在空间不足时被压缩，保持其原始高度。 */
+        flex-direction: row; /* 覆盖.card-block的设置，使其内部元素水平排列。 */
+        justify-content: space-between; /* 沿主轴（水平）对齐：首个元素在起点，末尾元素在终点，其余元素平均分布。 */
+        align-items: center; /* 沿交叉轴（垂直）对齐：所有子项居中。 */
+    }
+
+    /* --- 顶部居中大标题样式 --- */
+    .top-bar-title {
+        font-size: 24px; /* 标题字体大小。 */
+        font-weight: bold; /* 字体加粗。 */
+        color: #ffffff; /* 标题颜色。 */
+        letter-spacing: 2px; /* 字符间距，增加可读性。 */
+    }
+    
+    /* --- 筛选栏内Layui组件的样式覆盖 --- */
+    .filter-bar .layui-form-item {
+        display: flex; /* 确保表单项内部也使用flex布局。 */
+        justify-content: center; /* 水平居中对齐 */
+        align-items: center; /* 垂直居中对齐 */
+        margin-bottom: 0; /* 移除Layui表单项的默认下边距，以适应单行筛选栏。 */
+        margin-top:5px;
+    }
+
+    .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        width: auto; /* 标签宽度自适应内容。 */
+    }
+    .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1); /* 输入框背景色。 */
+        border-color: transparent; /* 移除边框。 */
+        color: #fff; /* 输入文字颜色。 */
+    }
+    .filter-bar .layui-input::placeholder {
+        color: #bbb; /* 占位符文字颜色。 */
+    }
+    .filter-bar .layui-btn {
+        margin-left: 10px; /* 按钮之间的左边距。 */
+    }
+    .filter-bar .layui-bg-orange {
+        background-color: #fa8c16; /* 自定义橙色按钮的背景色。 */
+        border-color: #fa8c16;
+    }
+
+    /* --- 主要内容区域 --- */
+    .main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 15px; /* 子元素间距 */
+    }
+    
+    .main-content .card-block {
+        /* 移除flex限制，让表格容器根据内容自适应高度 */
+    }
+    
+    /* 表格卡片 */
+    .table-card {
+        /* 移除最小高度限制 */
+    }
+
+    /* --- 卡片头部样式 --- */
+    .card-header {
+        background-color: #29498e;
+		color: #fff;
+        padding: 8px 12px;        /* <-- 【调整】从10px 15px改为8px 12px */
+        border-bottom: 1px solid #2a6dc8;
+        font-size: 15px;          /* <-- 【调整】从16px改为15px */
+        flex-shrink: 0; /* 高度固定，不被压缩。 */
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* 左右两端对齐。 */
+        gap: 15px;                /* <-- 【调整】从20px改为15px */
+    }
+
+    .header-summary {
+        font-size: 15px;          /* <-- 【调整】从17px改为15px */
+        font-weight: normal;
+        color: #fff7ca; /* 高亮摘要文本颜色。 */
+    }
+    .header-unit {
+		font-size: 13px;          /* <-- 【调整】从14px改为13px */
+        font-weight: normal;
+        color: #b9d3f4;
+        flex-shrink: 0; /* 防止单位文本换行。 */
+    }
+
+    /* --- 表格区域特定样式 --- */
+    .table-container {
+        overflow: visible; /* 允许表格完全显示，不裁剪 */
+        padding: 10px;
+        position: relative; /* 为可能的绝对定位子元素提供定位上下文。 */
+    }
+    
+    /* --- 表格及弹窗的详细样式，通过!important提升优先级以覆盖Layui默认样式 --- */
+    .table-container .layui-table { 
+        border: 1px solid #3c8ce7 !important; 
+        background-color: transparent; 
+        table-layout: fixed; /* <-- 【调整】固定表格布局 */
+        width: 100%;
+        min-height: 300px;    /* <-- 【新增】最低表格高度 */
+    }
+    .table-container .layui-table th, .table-container .layui-table td { 
+        border: 1px solid #3c8ce7 !important; 
+        background-color: #1e4e89 !important; 
+        color: #ffffff; 
+        font-weight: bold; 
+        text-align: center; 
+        vertical-align: middle; 
+        padding: 5px 3px;     /* <-- 【调整】从2px 3px改为5px 3px，增加高度 */
+        font-size: 12px;      /* <-- 【调整】从11px改为12px */
+        min-width: 48px;      /* <-- 【调整】数据列最小宽度 */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        word-break: break-all;
+        transition: background-color 0.2s ease-in-out; 
+    }
+    .table-container .layui-table th[data-month], .table-container .layui-table td[data-month] { cursor: pointer; } /* 为带月份的列添加鼠标指针，提示可点击。 */
+    .table-container .layui-table th { 
+        font-size: 12px;      /* <-- 【调整】保持12px */
+        background-color: #0c6ed3 !important; 
+    }
+    .table-container .layui-table .left-header { 
+        background-color: #0c6ed3 !important; 
+        width: 60px !important;     /* <-- 【调整】项目列宽度从80px改为60px */
+        min-width: 60px !important;
+        font-size: 14px;            /* <-- 【新增】项目列字体14px */
+        font-weight: 500;           /* <-- 【新增】项目列加粗 */
+    }
+    
+    /* 月份列的电量和占比列 */
+    .table-container .layui-table td[id$='_val'] {
+        width: 75px !important;     /* <-- 【新增】月份电量列宽度 */
+        min-width: 75px !important;
+    }
+    .table-container .layui-table td[id$='_pct'] {
+        width: 55px !important;     /* <-- 【调整】占比列从45px改为55px */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】占比列字体13px */
+        font-weight: bold;
+    }
+    
+    /* 合计列 */
+    .table-container .layui-table td[id$='_total']:not([id$='_total_pct']),
+    .table-container .layui-table td[id='total_sum'] {
+        width: 55px !important;     /* <-- 【新增】合计列宽度 */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】合计列字体13px */
+        font-weight: bold;
+    }
+    
+    /* 占比总计列 */
+    .table-container .layui-table td[id$='_total_pct'],
+    .table-container .layui-table td[id='total_ratio'] {
+        width: 55px !important;     /* <-- 【新增】占比总计列宽度 */
+        min-width: 55px !important;
+        font-size: 13px;            /* <-- 【新增】占比总计列字体13px */
+        font-weight: bold;
+    }
+    
+    /* ========== 交错背景色设置 ========== */
+    /* 顶部合计行背景色 */
+    .table-container .layui-table tr.total-elec-row td:not(.left-header):not(.col-hover) { 
+        background-color: #143a6b !important; 
+        color: #ffffff !important; 
+    }
+    
+    /* 数据行交错背景色 - 排除人工录入单元格 */
+    .table-container .layui-table tr.unit-bg-1 td:not(.left-header):not(.col-hover):not(.manual-input) { 
+        background-color: #1e4e89 !important; 
+        color: #ffffff !important; 
+    }
+    .table-container .layui-table tr.unit-bg-2 td:not(.left-header):not(.col-hover):not(.manual-input) { 
+        background-color: #143a6b !important; 
+        color: #ffffff !important; 
+    }
+    
+    /* 所有左侧表头统一背景色 */
+    .table-container .layui-table tr.total-elec-row td.left-header,
+    .table-container .layui-table tr.unit-bg-1 td.left-header, 
+    .table-container .layui-table tr.unit-bg-2 td.left-header { 
+        background-color: #0c6ed3 !important; 
+        color: #ffffff !important; 
+        font-weight: bold; 
+    }
+    
+    /* 人工录入单元格的背景色 - 保持红色文字 */
+    .table-container .layui-table tr.unit-bg-1 td.manual-input:not(.col-hover) { 
+        background-color: #1e4e89 !important; 
+        color: #ff0000 !important; 
+    }
+    .table-container .layui-table tr.unit-bg-2 td.manual-input:not(.col-hover) { 
+        background-color: #143a6b !important; 
+        color: #ff0000 !important; 
+    }
+    
+    /* 人工录入数据标红 - 最高优先级 */
+    .table-container .layui-table td.manual-input { 
+        color: #ff0000 !important; 
+    }
+    
+    /* 鼠标悬停时人工录入数据依然保持红色 */
+    .table-container .layui-table td.manual-input.col-hover { 
+        color: #ff0000 !important; 
+    }
+    
+    .table-container .layui-table th.col-hover, .table-container .layui-table td.col-hover { background-color: rgb(112, 167, 255) !important; } /* 列悬浮高亮样式。 */
+    .layui-table tbody tr:hover { background-color: transparent !important; } /* 禁用行的悬浮效果，以列高亮为主。 */
+    /* 图表区域样式 */
+    .charts-container {
+        height: 500px; /* 固定图表容器高度，防止溢出 */
+        display: flex;
+        gap: 15px;
+        flex-shrink: 0; /* 防止图表容器被压缩 */
+    }
+    
+    .chart-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%; /* 占满父容器高度 */
+        overflow: hidden; /* 防止图表溢出 */
+    }
+    
+    .line-chart-wrapper {
+        flex: 3;
+    }
+    
+    .pie-chart-wrapper {
+        flex: 2;
+    }
+    
+    .chart-content {
+        flex-grow: 1;
+        padding: 10px;
+        min-height: 0; /* 确保图表不会超出容器 */
+        overflow: hidden; /* 防止图表溢出 */
+    }
+    
+    .card-header-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .main-title {
+        font-size: 15px;
+        font-weight: normal;
+        color: #fff7ca;
+    }
+    
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .unit-label {
+        font-size: 13px;
+        font-weight: normal;
+        color: #b9d3f4;
+        flex-shrink: 0;
+    }
+    
+    /* 自定义滚动条样式（WebKit/Blink内核浏览器，如Chrome, Safari）。 */
+    .table-container::-webkit-scrollbar,
+    .main-content::-webkit-scrollbar,
+    .chart-content::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb,
+    .main-content::-webkit-scrollbar-thumb,
+    .chart-content::-webkit-scrollbar-thumb,
+    body::-webkit-scrollbar-thumb,
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+        border-radius: 6px;
+        border: 1px solid #1d386f;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover,
+    .main-content::-webkit-scrollbar-thumb:hover,
+    .chart-content::-webkit-scrollbar-thumb:hover,
+    body::-webkit-scrollbar-thumb:hover,
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    
+    .table-container::-webkit-scrollbar-track,
+    .main-content::-webkit-scrollbar-track,
+    .chart-content::-webkit-scrollbar-track,
+    body::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-track {
+        background: linear-gradient(90deg, #0f266c 0%, #18589b 50%, #1d386f 100%);
+        border-radius: 6px;
+        border: 1px solid #0a1d4a;
+    }
+    
+    .table-container::-webkit-scrollbar-corner,
+    .main-content::-webkit-scrollbar-corner,
+    .chart-content::-webkit-scrollbar-corner,
+    body::-webkit-scrollbar-corner,
+    ::-webkit-scrollbar-corner {
+        background-color: #1d386f;
+    }
+</style>
+</head>
+<body>
+
+<!-- 页面主体内容容器 -->
+<div class="dashboard-container">
+    <!-- 顶部筛选/操作栏 -->
+    <div class="card-block filter-bar">
+        <!-- 左侧筛选区 -->
+        <div class="layui-form" lay-filter="filter-form-left">
+						<div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">年份</label>
+							<div class="layui-input-inline">
+                        <!-- 年份选择输入框，将由Layui的laydate模块渲染成日期选择器。 -->
+                        <input type="text" id="year-selector" class="layui-input" placeholder="请选择年份">
+								</div>
+							</div>
+							</div>
+						</div>
+
+        <!-- 中部标题 -->
+        <div class="top-bar-title">动力实施课电量占比及统计</div>
+
+        <!-- 右侧操作按钮区 -->
+        <div class="layui-form" lay-filter="filter-form-right">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <!-- 查询按钮 -->
+                    <button id="search-btn" class="layui-btn">
+                        <i class="layui-icon layui-icon-search"></i>
+                        <span>查询</span>
+                    </button>
+                    <!-- 导出按钮 -->
+                    <button id="export-btn" class="layui-btn layui-bg-orange">
+                        <span>导出</span>
+                        <i class="layui-icon layui-icon-print"></i>
+                    </button>
+                </div>
+            </div>
+					</div>
+				</div>
+				
+    <!-- 主要数据展示区 -->
+    <div class="main-content">
+        <div class="card-block">
+            <!-- 卡片头部，包含动态摘要和单位信息 -->
+            <div class="card-header">
+                <div class="header-summary">
+                    <!-- 此span将由JavaScript动态填充月度汇总信息。 -->
+                    <span id="header-summary-text"></span>
+								</div>
+                <div class="header-unit">
+                    <span>电能单位（千瓦时）</span>
+							</div>
+						</div>
+            <!-- 表格容器 -->
+            <div class="table-container">
+                <!-- 数据表格，其内容将由JavaScript动态生成。 -->
+                <table class="layui-table" id="data-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">项目</th>
+                            <!-- 表头月份，colspan="2"表示每个月占两列（值和占比）。data-month属性用于JS事件处理。 -->
+                            <th colspan="2" data-month="1">1月份</th>
+                            <th colspan="2" data-month="2">2月份</th>
+                            <th colspan="2" data-month="3">3月份</th>
+                            <th colspan="2" data-month="4">4月份</th>
+                            <th colspan="2" data-month="5">5月份</th>
+                            <th colspan="2" data-month="6">6月份</th>
+                            <th colspan="2" data-month="7">7月份</th>
+                            <th colspan="2" data-month="8">8月份</th>
+                            <th colspan="2" data-month="9">9月份</th>
+                            <th colspan="2" data-month="10">10月份</th>
+                            <th colspan="2" data-month="11">11月份</th>
+                            <th colspan="2" data-month="12">12月份</th>
+                            <th>合计</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <!-- 表格主体，初始为空，由JS填充。 -->
+                    <tbody>
+                    </tbody>
+                </table>
+			</div>
+		</div>
+	</div>
+    
+    <!-- 图表区域 - 左右布局 -->
+    <div class="charts-container">
+        <!-- 左侧曲线图 -->
+        <div class="card-block chart-card line-chart-wrapper">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <div class="main-title">各单元月度用电趋势</div>
+                </div>
+                <div class="header-controls">
+                    <span class="unit-label">电能单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="chart-content" id="line-chart"></div>
+        </div>
+        
+        <!-- 右侧饼图 -->
+        <div class="card-block chart-card pie-chart-wrapper">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <div class="main-title" id="pie-chart-title">各单元用电占比</div>
+                </div>
+                <div class="header-controls">
+                    <span class="unit-label">电量占比统计</span>
+                </div>
+            </div>
+            <div class="chart-content" id="pie-chart"></div>
+        </div>
+    </div>
+</div>
+		
+<!-- 引入Layui的JavaScript文件，必须在body闭合标签前，以确保DOM加载完毕。 -->
+<script src="../js/layui.js"></script>
+<script>
+    // 使用layui.use来加载所需模块，并执行回调函数。
+    layui.use(['laydate', 'form', 'layer'], function(){
+        // --- 1. 模块与变量初始化 ---
+        const laydate = layui.laydate; // 日期时间选择模块
+        const form = layui.form;       // 表单模块，用于表单渲染和事件监听
+        const layer = layui.layer;     // 弹层模块
+        const $ = layui.jquery;        // jQuery库，Layui内置
+        let globalData; // 全局变量，用于缓存从API获取并处理后的数据，避免重复请求。
+        let myChart = null;   // 曲线图实例
+        let pieChart = null;  // 饼图实例
+
+        // --- 2. 核心配置 ---
+        // 【关键配置】定义了所有需要统计的业务单元。
+        // 这是数据驱动UI的核心，增删改此处的对象，将自动反映在UI和数据处理逻辑中。
+        const itemConfig = [
+            { key: 'kongya', name: '空压机', no: 1 },
+            { key: 'wushui', name: '污水处理区', no: 12 },
+            { key: 'biandian', name: '变电所', no: 16 },
+            { key: 'lengre', name: '冷热机组', no: 52 },
+            { key: 'weixiu', name: '维修室', no: 999 }
+        ];
+        
+        // ===== 【数据来源配置】 =====
+        // 配置每个单元的数据来源：true = 人工录入（标红），false = 系统采集（正常显示）
+        // 只需要修改这里的配置，就能控制哪些数据显示为红色
+        const dataSourceConfig = {
+            kongya: false,      // 空压机：系统采集
+            wushui: false,      // 污水处理区：系统采集
+            biandian: false,    // 变电所：系统采集
+            lengre: false,      // 冷热机组：系统采集（不标红）
+            weixiu: true        // 维修室：人工录入（标红）
+        };
+        
+        // 从配置中提取所有key，方便后续遍历和数据索引。
+        const groupKeys = itemConfig.map(item => item.key);
+        
+        // --- 3. 函数定义 ---
+
+        /**
+         * @function initChart
+         * @description 初始化ECharts图表实例
+         * @returns {boolean} 初始化是否成功
+         */
+        function initChart() {
+            const lineDom = document.getElementById('line-chart');
+            const pieDom = document.getElementById('pie-chart');
+            if (!lineDom || !pieDom) return false;
+            
+            // 初始化曲线图
+            myChart = echarts.init(lineDom);
+            myChart.setOption({
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#1d386f',
+                    borderColor: '#2a6dc8',
+                    textStyle: { color: '#fff' },
+                    formatter: (params) => {
+                        if (!Array.isArray(params)) params = [params];
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            const displayValue = param.value === null || param.value === undefined ? 0 : param.value;
+                            result += `${param.seriesName}: ${displayValue}<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    textStyle: { color: '#d0d2e0' },
+                    top: 10
+                },
+                grid: { left: 60, right: 40, bottom: 40, top: 60 },
+                xAxis: {
+                    type: 'category',
+                    data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                    axisLine: { lineStyle: { color: '#2a6dc8' } },
+                    axisLabel: { color: '#d0d2e0' }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '用电量(kWh)',
+                    nameTextStyle: { color: '#d0d2e0' },
+                    axisLine: { lineStyle: { color: '#2a6dc8' } },
+                    axisLabel: { color: '#d0d2e0' },
+                    splitLine: { lineStyle: { color: '#2a6dc8', opacity: 0.3 } }
+                },
+                series: []
+            });
+            
+            // 初始化饼图
+            pieChart = echarts.init(pieDom);
+            pieChart.setOption({
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: '#1d386f',
+                    borderColor: '#2a6dc8',
+                    textStyle: { color: '#fff' }
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: '5%',
+                    left: 'center',
+                    textStyle: { color: '#d0d2e0', fontSize: 11 },
+                    type: 'scroll'
+                },
+                series: [{
+                    name: '用电占比',
+                    type: 'pie',
+                    radius: '65%',
+                    center: ['50%', '45%'],
+                    data: [],
+                    itemStyle: { borderWidth: 2, borderColor: '#1d386f' },
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+                    labelLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.5)' } }
+                }]
+            });
+            
+            // 窗口大小变化时重新调整图表
+            window.addEventListener('resize', () => {
+                myChart && myChart.resize();
+                pieChart && pieChart.resize();
+            });
+            
+            return true;
+        }
+
+        /**
+         * @function updateChart
+         * @description 更新图表数据
+         */
+        function updateChart() {
+            if (!myChart || !pieChart) return;
+            
+            const lineSeries = [];
+            const pieData = [];
+            const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+            
+            itemConfig.forEach((item, index) => {
+                // 读取12个月用电数据
+                const data = [];
+                for (let m = 1; m <= 12; m++) {
+                    const val = $(`#${item.key}_m${m}_val`).text().replace(/,/g, '');
+                    data.push(val ? Number(val) : null);
+                }
+                
+                // 添加曲线图系列
+                lineSeries.push({
+                    name: item.name,
+                    type: 'line',
+                    data: data,
+                    smooth: true,
+                    connectNulls: false,
+                    symbol: 'circle',
+                    symbolSize: 4,
+                    itemStyle: {
+                        color: colors[index % colors.length]
+                    },
+                    lineStyle: {
+                        color: colors[index % colors.length]
+                    }
+                });
+                
+                // 【修复】饼图数据使用四舍五入后的值（从表格读取的已经是四舍五入后的值）
+                const totalElec = $(`#${item.key}_total`).text().replace(/,/g, '');
+                if (totalElec && Number(totalElec) > 0) {
+                    pieData.push({
+                        name: item.name,
+                        value: Number(totalElec),  // 这里的值已经是四舍五入后的值
+                        itemStyle: {
+                            color: colors[index % colors.length]
+                        }
+                    });
+                }
+            });
+            
+            // 更新曲线图
+            myChart.setOption({
+                legend: { data: itemConfig.map(item => item.name) },
+                series: lineSeries
+            });
+            
+            // 【修复】更新饼图 - 手动计算百分比，确保与表格一致
+            pieChart.setOption({
+                tooltip: {
+                    formatter: function(params) {
+                        // 手动计算百分比
+                        const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                        const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+                        return `${params.seriesName}<br/>${params.name}: ${params.value.toLocaleString()} (${percentage}%)`;
+                    }
+                },
+                series: [{
+                    data: pieData,
+                    label: { 
+                        formatter: function(params) {
+                            // 手动计算百分比，确保与表格一致
+                            const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                            const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+                            return `${percentage}%`;
+                        }, 
+                        color: '#fff', 
+                        position: 'outside' 
+                    }
+                }]
+            });
+        }
+
+        /**
+         * @function showLineChartTooltipForMonth
+         * @param {number} month - 月份
+         * @description 显示曲线图指定月份的tooltip
+         */
+        function showLineChartTooltipForMonth(month) {
+            if (!myChart) return;
+            
+            const monthIndex = parseInt(month) - 1;
+            if (monthIndex >= 0 && monthIndex < 12) {
+                myChart.dispatchAction({
+                    type: 'showTip',
+                    seriesIndex: 0,
+                    dataIndex: monthIndex
+                });
+            }
+        }
+
+        /**
+         * @function updatePieChartForMonth
+         * @param {number} month - 月份
+         * @description 更新饼图显示指定月份数据
+         */
+        function updatePieChartForMonth(month) {
+            if (!pieChart) return;
+            
+            const pieData = [];
+            const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+            
+            itemConfig.forEach((item, index) => {
+                // 【修复】从表格读取四舍五入后的值
+                const monthElec = $(`#${item.key}_m${month}_val`).text().replace(/,/g, '');
+                if (monthElec && Number(monthElec) > 0) {
+                    pieData.push({
+                        name: item.name,
+                        value: Number(monthElec),  // 这里的值已经是四舍五入后的值
+                        itemStyle: {
+                            color: colors[index % colors.length]
+                        }
+                    });
+                }
+            });
+            
+            // 更新饼图标题和数据
+            $('#pie-chart-title').text(`${month}月份各单元用电占比`);
+            // 【修复】手动计算百分比，确保与表格一致
+            pieChart.setOption({
+                tooltip: {
+                    formatter: function(params) {
+                        // 手动计算百分比
+                        const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                        const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+                        return `${params.seriesName}<br/>${params.name}: ${params.value.toLocaleString()} (${percentage}%)`;
+                    }
+                },
+                series: [{
+                    data: pieData,
+                    label: { 
+                        formatter: function(params) {
+                            // 手动计算百分比，确保与表格一致
+                            const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                            const percentage = total > 0 ? ((params.value / total * 100).toFixed(2)) : '0.00';
+                            return `${percentage}%`;
+                        }, 
+                        color: '#fff', 
+                        position: 'outside' 
+                    }
+                }]
+            });
+        }
+
+        /**
+         * @function generateDynamicContent
+         * @description 根据 itemConfig 动态生成表格主体 (tbody) 的DOM结构。
+         * 实现了配置与视图的解耦，提高了代码的可维护性。
+         */
+        function generateDynamicContent() {
+            const tableBody = $('#data-table tbody'); // 缓存表格主体jQuery对象
+            
+            // 清空旧内容，为重绘做准备
+            tableBody.empty();
+
+            // 生成合计行（深蓝色背景）
+            let totalRow = `
+                <tr class="total-elec-row">
+                    <td colspan="2" class="left-header">合计电量</td>
+                    ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="total_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="total_sum" class="data-cell"></td>
+                    <td id="total_ratio" class="data-cell">100%</td>
+                </tr>
+            `;
+            tableBody.append(totalRow);
+
+            // 遍历配置项，为每个业务单元生成表格行（交错背景）
+            itemConfig.forEach((item, index) => {
+                // 确定背景色样式（交错显示）
+                const bgClass = index % 2 === 0 ? 'unit-bg-1' : 'unit-bg-2';
+                
+                let row = `<tr class="dynamic-row ${bgClass}">`;
+                
+                // 判断是否是人工录入数据（根据配置）
+                const isManualInput = dataSourceConfig[item.key] || false;
+                const manualInputClass = isManualInput ? ' manual-input' : '';
+                
+                row += `
+                        <td colspan="2" class="left-header">${item.name}</td>
+                        ${Array.from({length: 12}, (_, i) => `
+                            <td id="${item.key}_m${i+1}_val" class="data-cell${manualInputClass}" data-month="${i+1}"></td>
+                            <td id="${item.key}_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>
+                        `).join('')}
+                        <td id="${item.key}_total" class="data-cell"></td>
+                        <td id="${item.key}_total_pct" class="data-cell"></td>
+                    </tr>
+                `;
+                tableBody.append(row);
+            });
+        }
+
+        /**
+         * @async
+         * @function sendSQL
+         * @param {string} strsql - 要执行的SQL查询语句。
+         * @returns {Promise<object>} - 返回一个Promise，resolve时为API的响应数据，通常是 { data: [...] } 格式。
+         * @description 封装了fetch API，用于向后端发送SQL查询请求。包含错误处理和加载状态。
+         */
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) { // 检查HTTP状态码是否在200-299范围
+                    layer.msg(`数据加载失败: ${res.statusText}`);
+                    return { data: [] }; // 返回空数据结构以防后续代码崩溃
+                }
+                return await res.json(); // 解析响应体为JSON
+            } catch (err) { // 捕获网络错误或JSON解析错误
+                console.error('sendSQL Error:', err); // 在控制台记录详细错误信息，便于调试
+                layer.msg('数据加载失败，请检查网络或联系管理员。');
+                return { data: [] };
+            }
+        }
+
+        /**
+         * @async
+         * @function fetchAndProcessData
+         * @param {string} year - 需要查询的年份。
+         * @returns {Promise<object>} - 返回包含处理后部门数据和公司总计数据的对象。
+         * @description 负责构建SQL查询，并行获取数据，并将返回的扁平数据结构转换为更适合前端渲染的嵌套对象结构。
+         */
+        async function fetchAndProcessData(year) {
+            const startdate = `${year}-01-01`;
+            const enddate = `${year}-12-31`;
+            
+            // 获取当前日期用于判断是否需要查询今日实时数据
+			let now = new Date();
+			let compareDate = new Date(now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate());
+			
+            // ========================================================================
+            // 【动力实施课数据结构配置说明】
+            // ========================================================================
+            // 合计电量 = 空压机 + 污水处理区 + 变电所 + 冷热机组 + 维修室
+            // ├── 空压机 (410001, 410003, 410004, 120010, 410002, 120011, 120005, 410007) - 系统采集
+            // ├── 污水处理区 (3) - 系统采集
+            // ├── 变电所 (120015, 520012, 2) - 系统采集
+            // ├── 冷热机组 (320022, 320024, 420003, 420004, 420013, 420014, 420015) - 系统采集
+            // └── 维修室 (50001) - 人工录入（data_elec_temp_input.sum_elec）
+            //
+            // 数据来源：
+            // - 系统采集数据：sum_elec_group_by_day (按NO分组统计) + data_all (今日实时)
+            // - 人工录入数据：data_elec_temp_input (50001=维修室)
+            // - 公司总用电：(1,12,16,17,20,26,51,52) - 230003
+            //
+            // 计算逻辑：
+            // - 合计电量 = 各单元电量之和（含维修室）
+            // - 占比 = (单元电量 / 合计电量) × 100%
+            // - 占公司比 = (合计电量 / 公司总用电) × 100%
+            //
+            // 特别说明：
+            // - 维修室数据从人工录入表查询，需要通过 NO=50001 从 data_elec_temp_input 获取
+            // - 今日实时数据判断：当查询日期包含当天，且当前时间在7:00后，需补充 data_all 表的实时数据
+            // - data_all 查询逻辑：如果当前时间>=7:00，则取 CURDATE()+7小时 之后的数据；否则取前一天+7小时之后的数据
+            // ========================================================================
+            
+            console.log('\n');
+            console.log('████████████████████████████████████████████████████████████████');
+            console.log('█                                                              █');
+            console.log('█          动力实施课电量占比及统计 - SQL查询日志              █');
+            console.log('█                                                              █');
+            console.log('████████████████████████████████████████████████████████████████');
+            console.log('📅 查询时间范围:');
+            console.log('   开始日期: ' + startdate);
+            console.log('   结束日期: ' + enddate);
+            console.log('   查询时刻: ' + new Date().toLocaleString('zh-CN'));
+            console.log('────────────────────────────────────────────────────────────────\n');
+            
+            // 构建SQL查询 - 系统采集数据（使用与今日数据相同的NO）
+            let sql = "with basedata as ( \n"
+                + "     -- 空压机历史数据 \n"
+                + "     SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '空压机' as elec_name, sum_elec \n"
+                + "     FROM sum_elec_group_by_day \n"
+                + "     WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+                + "         AND no IN (410001, 410003, 410004, 120010, 410002, 120011, 120005, 410007) \n"
+                + "     UNION ALL \n"
+                + "     -- 污水处理区历史数据 \n"
+                + "     SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '污水处理区' as elec_name, sum_elec \n"
+                + "     FROM sum_elec_group_by_day \n"
+                + "     WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+                + "         AND no IN (3) \n"
+                + "     UNION ALL \n"
+                + "     -- 变电所历史数据 \n"
+                + "     SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '变电所' as elec_name, sum_elec \n"
+                + "     FROM sum_elec_group_by_day \n"
+                + "     WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+                + "         AND no IN (120015, 520012, 2) \n"
+                + "     UNION ALL \n"
+                + "     -- 冷热机组历史数据 \n"
+                + "     SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '冷热机组' as elec_name, sum_elec \n"
+                + "     FROM sum_elec_group_by_day \n"
+                + "     WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+                + "         AND no IN (320022, 320024, 420003, 420004, 420013, 420014, 420015) \n";
+            
+            // 如果当前日期在查询范围内，需要查询今日数据
+			if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+				// 构建今日数据查询SQL（使用新的查询逻辑）
+				const todaySql = ""
+				+ " SELECT \n"
+				+ "     IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+				+ "     '空压机' as elec_name, \n"
+				+ "     SUM(CASE WHEN `NO` IN (410001, 410003, 410004, 120010, 410002, 120011, 120005, 410007) \n"
+				+ "              THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+				+ " FROM ( \n"
+				+ "     SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+				+ "     FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+				+ "     WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+				+ "                        DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+				+ "                        DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+				+ "         AND `NO` IN (410001, 410003, 410004, 120010, 410002, 120011, 120005, 410007) \n"
+				+ "         AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+				+ "     GROUP BY `NO` \n"
+				+ " ) AS kongya_data \n"
+				+ " UNION ALL \n"
+				+ " SELECT \n"
+				+ "     IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+				+ "     '污水处理区' as elec_name, \n"
+				+ "     SUM(CASE WHEN `NO` IN (3) \n"
+				+ "              THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+				+ " FROM ( \n"
+				+ "     SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+				+ "     FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+				+ "     WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+				+ "                        DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+				+ "                        DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+				+ "         AND `NO` IN (3) \n"
+				+ "         AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+				+ "     GROUP BY `NO` \n"
+				+ " ) AS wushui_data \n"
+				+ " UNION ALL \n"
+				+ " SELECT \n"
+				+ "     IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+				+ "     '变电所' as elec_name, \n"
+				+ "     SUM(CASE WHEN `NO` IN (120015, 520012, 2) \n"
+				+ "              THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+				+ " FROM ( \n"
+				+ "     SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+				+ "     FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+				+ "     WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+				+ "                        DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+				+ "                        DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+				+ "         AND `NO` IN (120015, 520012, 2) \n"
+				+ "         AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+				+ "     GROUP BY `NO` \n"
+				+ " ) AS biandian_data \n"
+				+ " UNION ALL \n"
+				+ " SELECT \n"
+				+ "     IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+				+ "     '冷热机组' as elec_name, \n"
+				+ "     SUM(CASE WHEN `NO` IN (320022, 320024, 420003, 420004, 420013, 420014, 420015) \n"
+				+ "              THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+				+ " FROM ( \n"
+				+ "     SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+				+ "     FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+				+ "     WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+				+ "                        DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+				+ "                        DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+				+ "         AND `NO` IN (320022, 320024,420003, 420004, 420013, 420014, 420015) \n"
+				+ "         AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+				+ "     GROUP BY `NO` \n"
+				+ " ) AS lengre_data \n";
+				
+				sql += " union all \n" + todaySql;
+			}
+            
+		sql += ""
+		+" ) \n"
+		+" SELECT elec_name \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 1 THEN t.sum_elec ELSE null END) AS month1_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 2 THEN t.sum_elec ELSE null END) AS month2_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 3 THEN t.sum_elec ELSE null END) AS month3_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 4 THEN t.sum_elec ELSE null END) AS month4_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 5 THEN t.sum_elec ELSE null END) AS month5_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 6 THEN t.sum_elec ELSE null END) AS month6_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 7 THEN t.sum_elec ELSE null END) AS month7_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 8 THEN t.sum_elec ELSE null END) AS month8_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 9 THEN t.sum_elec ELSE null END) AS month9_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 10 THEN t.sum_elec ELSE null END) AS month10_elec \n"
+			+" ,SUM(CASE WHEN MONTH(t.jDay) = 11 THEN t.sum_elec ELSE null END) AS month11_elec \n"
+		+" ,SUM(CASE WHEN MONTH(t.jDay) = 12 THEN t.sum_elec ELSE null END) AS month12_elec \n"
+		+" FROM basedata t \n"
+		+" GROUP BY elec_name \n";
+            
+            // 打印完整的主SQL语句
+            console.log('\n========================================');
+            console.log('=== SQL 1/3: 主查询SQL（系统采集数据） ===');
+            console.log('========================================');
+            console.log(sql);
+            console.log('========================================\n');
+            
+            // 查询维修室数据（从手写项表）
+            const weixiuSql = ""
+                + " SELECT '维修室' as elec_name \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 1 THEN sum_elec ELSE null END) AS month1_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 2 THEN sum_elec ELSE null END) AS month2_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 3 THEN sum_elec ELSE null END) AS month3_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 4 THEN sum_elec ELSE null END) AS month4_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 5 THEN sum_elec ELSE null END) AS month5_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 6 THEN sum_elec ELSE null END) AS month6_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 7 THEN sum_elec ELSE null END) AS month7_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 8 THEN sum_elec ELSE null END) AS month8_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 9 THEN sum_elec ELSE null END) AS month9_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 10 THEN sum_elec ELSE null END) AS month10_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 11 THEN sum_elec ELSE null END) AS month11_elec \n"
+                + " ,SUM(CASE WHEN MONTH(date) = 12 THEN sum_elec ELSE null END) AS month12_elec \n"
+                + " FROM data_elec_temp_input \n"
+                + " WHERE no = 50001 \n"
+                + " AND date >= '"+startdate+"' \n"
+                + " AND date <= '"+enddate+"' \n";
+            
+            // 打印维修室SQL语句
+            console.log('\n========================================');
+            console.log('=== SQL 2/3: 维修室查询SQL（人工录入数据） ===');
+            console.log('========================================');
+            console.log(weixiuSql);
+            console.log('========================================\n');
+            
+            // 获取公司总用电量 = 所有主变压器(1,12,16,17,20,26,51,52) - 冰山帕特(230003)
+            let companySql = "with company_data as ( \n"
+                + "     select DATE_FORMAT(date, '%Y-%m-%d') as jDay, \n"
+                + "            CASE WHEN no IN (1,12,16,17,20,26,51,52) THEN sum_elec ELSE 0 END as main_elec, \n"
+                + "            CASE WHEN no = 230003 THEN sum_elec ELSE 0 END as bingshan_elec \n"
+                + "     from sum_elec_group_by_day \n"
+                + "     where date <= '"+enddate+"' \n"
+                + "     AND date >= '"+startdate+"' \n"
+                + "     and no in (1,12,16,17,20,26,51,52,230003) \n";
+            
+            // 如果当前日期在查询范围内，添加今日实时数据
+            if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+                companySql += "     union all \n"
+                + "     SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+                + "            SUM(CASE WHEN `NO` IN (1,12,16,17,20,26,51,52) THEN `d_elec` ELSE 0 END) AS main_elec, \n"
+                + "            SUM(CASE WHEN `NO` = 230003 THEN `d_elec` ELSE 0 END) AS bingshan_elec \n"
+                + "     FROM ( \n"
+                + "         SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
+                + "         FROM `data_all` FORCE INDEX (date_no_KWH) \n"
+                + "         WHERE `date` >= IF(HOUR(NOW()) >= 7, \n"
+                + "                            DATE_ADD(CURDATE(), INTERVAL 7 HOUR), \n"
+                + "                            DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
+                + "             AND `NO` IN (1,12,16,17,20,26,51,52,230003) \n"
+                + "             AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+                + "         GROUP BY `NO` \n"
+                + "     ) AS company_today \n";
+            }
+            
+            companySql += " ) \n"
+                + " select (SUM(main_elec) - SUM(bingshan_elec)) as sum_elec \n"
+                + " from company_data \n";
+            
+            // 打印公司总用电量SQL语句
+            console.log('\n========================================');
+            console.log('=== SQL 3/3: 公司总用电量查询SQL（主变压器-冰山帕特） ===');
+            console.log('========================================');
+            console.log(companySql);
+            console.log('========================================\n');
+
+            // 并行执行查询
+            console.log('\n🚀 === 开始并行执行3个SQL查询 === 🚀\n');
+            const [departmentResult, weixiuResult, companyResult] = await Promise.all([
+                sendSQL(sql),
+                sendSQL(weixiuSql),
+                sendSQL(companySql)
+            ]);
+
+            // 打印查询结果
+            console.log('\n✅ === 查询完成，返回结果 === ✅\n');
+            console.log('📊 系统采集数据结果 (空压机/污水/变电所/冷热机组):', departmentResult);
+            console.log('📝 维修室数据结果 (人工录入):', weixiuResult);
+            console.log('🏢 公司总用电量结果 (主变压器-冰山帕特):', companyResult);
+            console.log('\n');
+
+            // 【修正】为每行数据计算 sum_elec（先四舍五入再累加）
+            if (departmentResult.data) {
+                departmentResult.data.forEach(row => {
+                    row.sum_elec = 0;
+                    for (let m = 1; m <= 12; m++) {
+                        const monthVal = row[`month${m}_elec`] || 0;
+                        if (monthVal > 0) {
+                            row.sum_elec += Math.round(monthVal);
+                        }
+                    }
+                });
+            }
+            
+            if (weixiuResult.data && weixiuResult.data.length > 0) {
+                weixiuResult.data[0].sum_elec = 0;
+                for (let m = 1; m <= 12; m++) {
+                    const monthVal = weixiuResult.data[0][`month${m}_elec`] || 0;
+                    if (monthVal > 0) {
+                        weixiuResult.data[0].sum_elec += Math.round(monthVal);
+                    }
+                }
+            }
+
+            // 合并数据
+            let mergedData = departmentResult.data || [];
+            
+            // 添加维修室数据
+            if (weixiuResult.data && weixiuResult.data.length > 0) {
+                mergedData.push(weixiuResult.data[0]);
+            }
+            
+            // 计算合计行
+            const totalRow = {
+                elec_name: '合计',
+                sum_elec: 0
+            };
+            
+            for (let m = 1; m <= 12; m++) {
+                let monthTotal = 0;
+                mergedData.forEach(row => {
+                    if (row[`month${m}_elec`]) {
+                        monthTotal += row[`month${m}_elec`];
+                    }
+                });
+                totalRow[`month${m}_elec`] = monthTotal > 0 ? monthTotal : null;
+                // 【修正】先四舍五入再累加
+                if (monthTotal > 0) {
+                    totalRow.sum_elec += Math.round(monthTotal);
+                }
+            }
+            
+            mergedData.push(totalRow);
+
+            return {
+                departmentData: mergedData,
+                companyTotal: companyResult.data && companyResult.data.length > 0 ? companyResult.data[0].sum_elec : 0
+            };
+        }
+
+        /**
+         * @async
+         * @function reloadData
+         * @description 用户触发数据刷新的入口函数。负责协调UI加载状态、数据获取、数据渲染的整个流程。
+         */
+        async function reloadData() {
+            const loading = layer.load(1, { shade: [0.1, '#fff'] }); // 显示加载动画
+            const year = $('#year-selector').val();
+            try {
+                globalData = await fetchAndProcessData(year); // 获取并处理数据
+                updateDashboard(globalData); // 使用新数据更新UI
+            } catch (e) {
+                console.error("Failed to load or process data", e);
+                layer.msg("数据处理失败");
+            } finally {
+                layer.close(loading); // 确保加载动画总是被关闭
+            }
+        }
+
+        /**
+         * @function updateHeaderSummaryForMonth
+         * @param {number|string} month - 要显示摘要的月份。
+         * @description 根据全局数据，计算并更新卡片头部的单月汇总信息。
+         */
+        function updateHeaderSummaryForMonth(month) {
+            if (!globalData || !globalData.departmentData) {
+                return;
+            }
+
+            const data = globalData.departmentData;
+            const companyTotal = globalData.companyTotal;
+
+            // 找到合计行数据
+            const totalRow = data.find(row => row.elec_name === '合计');
+            if (!totalRow) {
+                return;
+            }
+
+            const monthElec = totalRow[`month${month}_elec`] || 0;
+            
+            if (monthElec === 0) {
+                $('#header-summary-text').html(`动力实施课<span style="color: red;">${month}</span>月份无用电数据`);
+                return;
+            }
+
+            // 计算占公司总电量的百分比
+            const percentageOfCompanyTotal = companyTotal > 0
+                ? (monthElec / companyTotal * 100).toFixed(2)
+                : '0.00';
+
+            // 使用模板字符串和toLocaleString()格式化输出 // <-- 【调整】使用 Math.round() 去掉小数点
+            const summaryHtml = `动力实施课<span style="color: red;">${month}</span>月用电电量<span style="color: red;">${Math.round(monthElec).toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>。`;
+            $('#header-summary-text').html(summaryHtml);
+        }
+
+        /**
+         * @function updateDashboard
+         * @param {object} data - 包含departmentData和companyTotal的已处理数据对象。
+         * @description 核心渲染函数。遍历数据，执行计算，并使用jQuery将结果填充到表格的各个单元格中。
+         */
+        function updateDashboard(data) {
+            $('.data-cell').not('#total_ratio').html(''); // 清空所有数据单元格，但保留合计占比
+            $('#header-summary-text').text('');
+
+            const apiData = data.departmentData;
+            
+            if (!apiData || apiData.length === 0) {
+                $('#header-summary-text').html('暂无数据');
+                return;
+            }
+
+            // 找到合计行
+            const totalRow = apiData.find(row => row.elec_name === '合计');
+            if (!totalRow) {
+                return;
+            }
+
+            // 填充合计行
+            let latestMonth = 0;
+            for (let m = 1; m <= 12; m++) {
+                const monthTotal = totalRow[`month${m}_elec`];
+                if (monthTotal != null && monthTotal > 0) {
+                    // <-- 【调整】使用 Math.round() 去掉小数点
+                    $('#total_m' + m).text(Math.round(monthTotal).toLocaleString());
+                    latestMonth = m;
+                }
+            }
+            // <-- 【调整】使用 Math.round() 去掉小数点
+            $('#total_sum').text(Math.round(totalRow.sum_elec || 0).toLocaleString());
+
+            // 填充各单元数据
+            itemConfig.forEach(item => {
+                const row = apiData.find(r => r.elec_name === item.name);
+                if (!row) {
+                    return;
+                }
+
+                for (let m = 1; m <= 12; m++) {
+                    const monthVal = row[`month${m}_elec`] || 0;
+                    const monthTotal = totalRow[`month${m}_elec`] || 0;
+                    
+                    // 【修复】先四舍五入，再计算百分比
+                    const roundedMonthVal = Math.round(monthVal);
+                    const roundedMonthTotal = Math.round(monthTotal);
+                    const monthPct = roundedMonthTotal > 0 ? (roundedMonthVal / roundedMonthTotal * 100).toFixed(2) : '0.00';
+
+                    if (roundedMonthVal > 0) {
+                        $(`#${item.key}_m${m}_val`).text(roundedMonthVal.toLocaleString());
+                        $(`#${item.key}_m${m}_pct`).text(monthPct + '%');
+                    }
+                }
+
+                // 填充总计列
+                const itemTotal = row.sum_elec || 0;
+                const totalSum = totalRow.sum_elec || 0;
+                
+                // 【修复】先四舍五入，再计算百分比
+                const roundedItemTotal = Math.round(itemTotal);
+                const roundedTotalSum = Math.round(totalSum);
+                const totalPct = roundedTotalSum > 0 ? (roundedItemTotal / roundedTotalSum * 100).toFixed(2) : '0.00';
+                
+                $(`#${item.key}_total`).text(roundedItemTotal.toLocaleString());
+                $(`#${item.key}_total_pct`).text(totalPct + '%');
+            });
+
+            // 自动更新头部摘要为最新有数据的月份
+            if (latestMonth > 0) {
+                updateHeaderSummaryForMonth(latestMonth);
+            } else {
+                $('#header-summary-text').html('暂无月度数据');
+            }
+            
+            // 初始化和更新图表
+            if (!myChart) {
+                setTimeout(() => {
+                    if (initChart()) {
+                        updateChart();
+                    }
+                }, 200);
+            } else {
+                updateChart();
+            }
+        }
+
+        /**
+         * @function setupTooltip
+         * @description 设置单元格 title 提示（鼠标悬浮显示完整内容）
+         */
+        function setupTooltip() {
+            const table = document.getElementById('data-table');
+            if (!table) return;
+            table.addEventListener('mouseover', e => {
+                const cell = e.target;
+                if (cell.tagName === 'TD' || cell.tagName === 'TH') {
+                    const text = cell.textContent.trim();
+                    // 添加 title 属性用于浮窗显示
+                    if (text) {
+                        cell.title = text;
+                    }
+                }
+            });
+        }
+
+        // --- 4. 事件监听与程序初始化 ---
+
+        // 初始化Layui组件
+        laydate.render({ elem: '#year-selector', type: 'year', value: new Date() });
+
+        // 绑定"查询"按钮点击事件
+        $('#search-btn').on('click', reloadData);
+        
+        // 绑定"导出"按钮点击事件
+        $('#export-btn').on('click', function() {
+            try {
+                const year = $('#year-selector').val() || new Date().getFullYear();
+                const filename = `动力实施课电量占比及统计_${year}.xlsx`;
+                
+                const table = document.getElementById('data-table');
+                const ws = XLSX.utils.table_to_sheet(table, {raw: true});
+
+                // 手动为28列设置宽度，wch代表字符宽度
+                ws['!cols'] = [
+                    { wch: 12 }, { wch: 12 }, // 项目 (2列)
+                    { wch: 10 }, { wch: 10 }, // 1月
+                    { wch: 10 }, { wch: 10 }, // 2月
+                    { wch: 10 }, { wch: 10 }, // 3月
+                    { wch: 10 }, { wch: 10 }, // 4月
+                    { wch: 10 }, { wch: 10 }, // 5月
+                    { wch: 10 }, { wch: 10 }, // 6月
+                    { wch: 10 }, { wch: 10 }, // 7月
+                    { wch: 10 }, { wch: 10 }, // 8月
+                    { wch: 10 }, { wch: 10 }, // 9月
+                    { wch: 10 }, { wch: 10 }, // 10月
+                    { wch: 10 }, { wch: 10 }, // 11月
+                    { wch: 10 }, { wch: 10 }, // 12月
+                    { wch: 15 },             // 合计
+                    { wch: 12 }              // 占比
+                ];
+
+                // 处理数字格式化：将带千分符的字符串转换为数字，百分比转换为小数
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cell_address = XLSX.utils.encode_cell({c: C, r: R});
+                        const cell = ws[cell_address];
+                        if (!cell || typeof cell.v !== 'string') {
+                            continue;
+                        }
+                        
+                        // 处理百分比
+                        if (cell.v.endsWith('%')) {
+                            const numericValue = parseFloat(cell.v.replace(/[,%]/g, '')) / 100.0;
+                            if (!isNaN(numericValue)) {
+                                cell.t = 'n';
+                                cell.v = numericValue;
+                                cell.z = '0.00%';
+                            }
+                        }
+                        // 处理带千分符的数字
+                        else if (/^[\d,]+$/.test(cell.v)) {
+                            const numericValue = parseFloat(cell.v.replace(/,/g, ''));
+                            if (!isNaN(numericValue)) {
+                                cell.t = 'n';
+                                cell.v = numericValue;
+                                cell.z = '#,##0'; // 设置数字格式，保持千分符显示但Excel识别为数字
+                            }
+                        }
+                    }
+                }
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                XLSX.writeFile(wb, filename);
+                layer.msg('导出成功');
+
+            } catch (e) {
+                console.error(e);
+                layer.msg('导出失败，请检查控制台错误。');
+            }
+        });
+
+        // 使用事件委托为表格绑定交互事件，提高性能
+        const table = $('#data-table');
+        
+        // 点击月份列，更新头部摘要和图表
+        table.on('click', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                updateHeaderSummaryForMonth(month);
+                updatePieChartForMonth(month);
+                showLineChartTooltipForMonth(month);
+            }
+        });
+
+        // 鼠标悬浮于月份列，高亮整列
+        table.on('mouseover', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                table.find('.col-hover').removeClass('col-hover');
+                table.find(`[data-month="${month}"]`).addClass('col-hover');
+            }
+        });
+
+         // 鼠标移出表格，取消所有高亮
+        table.on('mouseleave', function() {
+            table.find('.col-hover').removeClass('col-hover');
+        });
+
+        // 鼠标悬停显示完整内容（使用Layui的tips）
+        let currentTipsIndex = null;
+        
+        table.on('mouseenter', 'td, th', function() {
+            const $this = $(this);
+            const text = $this.text().trim();
+            
+            // 检查是否有文本溢出（内容宽度大于显示宽度）
+            if (this.scrollWidth > this.clientWidth && text) {
+                currentTipsIndex = layer.tips(text, this, {
+                    tips: [1, '#3c8ce7'],
+                    time: 0, // 不自动关闭
+                    area: 'auto'
+                });
+            }
+        });
+
+        // 鼠标移出关闭提示
+        table.on('mouseleave', 'td, th', function() {
+            if (currentTipsIndex) {
+                layer.close(currentTipsIndex);
+                currentTipsIndex = null;
+            }
+        });
+
+        // --- 5. 初始化执行 ---
+        generateDynamicContent(); // 首次加载时，构建UI骨架
+        setupTooltip();           // <-- 【新增】设置单元格 title 提示
+        
+        // <-- 【新增】页面加载完成后自动触发一次查询
+        setTimeout(function() {
+            reloadData();         // 800ms后自动查询
+        }, 800);
+    });
+	</script>
+</body>
+</html>

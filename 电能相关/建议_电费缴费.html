@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电费申报分析</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* 自定义滚动条样式 - 深蓝科技风 */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 38, 108, 0.8);
+            border: 1px solid rgba(42, 109, 200, 0.3);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #2a6dc8 0%, #1e4e89 100%);
+            border: 1px solid rgba(42, 109, 200, 0.5);
+            border-radius: 6px;
+            box-shadow: inset 0 0 3px rgba(0, 242, 255, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #3a7dd8 0%, #2e5e99 100%);
+            box-shadow: inset 0 0 5px rgba(0, 242, 255, 0.4);
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, #1a5db8 0%, #0e3e79 100%);
+        }
+
+        /* Firefox 滚动条样式 */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #2a6dc8 rgba(15, 38, 108, 0.8);
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 0 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        
+        .date-group { display: flex; align-items: center; gap: 10px; }
+        .date-group label { color: #b9d3f4; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid #2a6dc8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+        }
+
+        /* ========== 中间对比画面核心样式 ========== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+        }
+
+        /* 变电所容器 */
+        .station-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1e4e89 0%, #0f266c 70%);
+            border: 1px solid #2a6dc8;
+            border-radius: 8px;
+            position: relative;
+            padding: 20px;
+            min-height: 400px;
+            flex-shrink: 0;
+        }
+
+        /* 装饰用背景线 */
+        .station-container::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(42, 109, 200, 0.1) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(42, 109, 200, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        .compare-board {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+        }
+
+        /* 侧边金额卡片 */
+        .side-card {
+            width: 260px;
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(29, 56, 111, 0.6);
+            border: 2px solid #2a6dc8;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        /* 按需卡片样式 - 亮蓝色（混合白色提高亮度） */
+        .side-card.card-demand {
+            border-color: #5ba3ff;
+            box-shadow: 0 0 20px rgba(91, 163, 255, 0.5);
+        }
+
+        .side-card.card-demand.active {
+            border-color: #6bb3ff;
+            box-shadow: 0 0 30px rgba(107, 179, 255, 0.7);
+        }
+
+        /* 按容卡片样式 - 橘黄色 */
+        .side-card.card-capacity {
+            border-color: #ffb800;
+            box-shadow: 0 0 20px rgba(255, 184, 0, 0.3);
+        }
+
+        .side-card.card-capacity.active {
+            border-color: #ffb800;
+            box-shadow: 0 0 30px rgba(255, 184, 0, 0.5);
+        }
+
+        .amount { font-size: 42px; font-weight: bold; font-family: "DIN Condensed", "Arial"; margin-bottom: 15px; }
+        .label-flag {
+            display: inline-block;
+            padding: 8px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            margin-bottom: 10px;
+        }
+        .bg-grey { background: #555; }
+        .bg-red { background: #d9434e; }
+        .bg-green { background: #92d050; }
+
+        /* 中间参数区 */
+        .center-params {
+            width: 300px;
+            text-align: center;
+        }
+
+        .month-tag { font-size: 22px; color: #fff7ca; margin-bottom: 20px; font-weight: bold; white-space: nowrap; }
+        
+        .param-item { margin: 15px 0; }
+        .param-value { font-size: 28px; font-weight: bold; color: #5ba3ff; text-shadow: 0 0 10px rgba(91, 163, 255, 0.6), 0 0 20px rgba(255, 255, 255, 0.3); }
+        .param-unit { font-size: 14px; color: #8eb1de; margin-left: 5px; }
+        .param-label { font-size: 14px; color: #b9d3f4; margin-top: 5px; }
+
+        .vs-glow {
+            font-size: 48px;
+            font-weight: 900;
+            font-style: italic;
+            background: linear-gradient(#fff, #2a6dc8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+            filter: drop-shadow(0 0 10px rgba(42, 109, 200, 0.8));
+        }
+
+        /* 底部节省横幅 */
+        .saving-result {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: rgba(146, 208, 80, 0.15);
+            border: 1px solid #92d050;
+            border-radius: 50px;
+            color: #92d050;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1;
+        }
+
+        .saving-result b { font-size: 24px; }
+        .saving-result .underline-amount { text-decoration: underline; }
+        
+        /* 刷新时间显示 */
+        .refresh-time {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 11px;
+            color: rgba(142, 177, 222, 0.5);
+            z-index: 10;
+        }
+    </style>
+
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+    <script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script type="text/javascript" src="../js/decimal.js"></script>
+    <script type="text/javascript" src="../js/utils/decimal-formatter.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        }).extend({
+            excel: 'excel'
+        });
+    </script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="date-group">
+                <label>统计月份</label>
+                <input type="text" id="month-picker" value="" readonly>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 一号与二号变电所容器 -->
+            <div class="station-container">
+                <div class="compare-board">
+                    <div class="side-card card-demand" id="card-demand-1">
+                        <div class="amount" id="amount-demand-1" style="color: #5ba3ff; text-shadow: 0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2);">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-grey">按需</div>
+                        <div style="font-size:12px; color:#8eb1de; margin-top:10px;">按实际最大需量计费</div>
+                    </div>
+
+                    <div class="center-params">
+                        <div class="month-tag" id="month-tag-1">一号与二号变电所</div>
+                        
+                        <div class="param-item">
+                            <div class="param-value" id="demand-value-1">0 <span class="param-unit">kW</span></div>
+                            <div class="param-label">预测最大需量</div>
+                        </div>
+
+                        <div class="vs-glow">VS</div>
+
+                        <div class="param-item">
+                            <div class="param-value" style="color: #ffb800;">7600.0 <span class="param-unit">kVA</span></div>
+                            <div class="param-label">变压器容量</div>
+                        </div>
+                    </div>
+
+                    <div class="side-card card-capacity active" id="card-capacity-1">
+                        <div class="amount" id="amount-capacity-1" style="color: #ffb800;">174,800<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-red">按容</div>
+                        <div style="font-size:12px; color:#fff7ca; margin-top:10px;">按固定合同容量计费</div>
+                    </div>
+                </div>
+
+                <div class="saving-result" id="saving-result-1">
+                    <i class="layui-icon layui-icon-tips" style="font-size: 24px;"></i>
+                    <span id="saving-text-1">推荐使用按容方案，预计每月可节省电费 <b id="saving-amount-1">0</b> 元</span>
+                </div>
+            </div>
+
+            <!-- 三号变电所容器 -->
+            <div class="station-container">
+                <div class="compare-board">
+                    <div class="side-card card-demand" id="card-demand-3">
+                        <div class="amount" id="amount-demand-3" style="color: #5ba3ff; text-shadow: 0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2);">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-grey">按需</div>
+                        <div style="font-size:12px; color:#8eb1de; margin-top:10px;">按实际最大需量计费</div>
+                    </div>
+
+                    <div class="center-params">
+                        <div class="month-tag" id="month-tag-3">三号变电所</div>
+                        
+                        <div class="param-item">
+                            <div class="param-value" id="demand-value-3">0 <span class="param-unit">kW</span></div>
+                            <div class="param-label">预测最大需量</div>
+                        </div>
+
+                        <div class="vs-glow">VS</div>
+
+                        <div class="param-item">
+                            <div class="param-value" style="color: #ffb800;">4100.0 <span class="param-unit">kVA</span></div>
+                            <div class="param-label">变压器容量</div>
+                        </div>
+                    </div>
+
+                    <div class="side-card card-capacity active" id="card-capacity-3">
+                        <div class="amount" id="amount-capacity-3" style="color: #ffb800;">94,300<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-red">按容</div>
+                        <div style="font-size:12px; color:#fff7ca; margin-top:10px;">按固定合同容量计费</div>
+                    </div>
+                </div>
+
+                <div class="saving-result" id="saving-result-3">
+                    <i class="layui-icon layui-icon-tips" style="font-size: 24px;"></i>
+                    <span id="saving-text-3">推荐使用按容方案，预计每月可节省电费 <b id="saving-amount-3">0</b> 元</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 刷新时间显示 -->
+        <div class="refresh-time" id="refresh-time">最后刷新: --</div>
+    </div>
+
+    <script type="text/javascript">
+        layui.use(['laydate', 'jquery'], function() {
+            var laydate = layui.laydate;
+            var $ = layui.$;
+
+            // 获取当前年月
+            var today = new Date();
+            var currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+            $('#month-picker').val(currentMonth);
+
+            // SQL查询函数
+            async function sendSQL(strsql) {
+                const sql = strsql;
+                console.info(sql);
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ sql })
+                });
+
+                const data = await res.json();
+                return data;
+            }
+
+            // 查询最大需量
+            async function queryMaxDemand(selectedMonth) {
+                try {
+                    // 解析选中的月份
+                    const [year, month] = selectedMonth.split('-');
+                    const startDate = `${year}-${month}-01 00:00:00`;
+                    
+                    // 计算月份的最后一天
+                    const nextMonth = new Date(year, month, 1);
+                    const lastDay = new Date(nextMonth - 1);
+                    const endDate = `${year}-${month}-${String(lastDay.getDate()).padStart(2, '0')} 23:59:59`;
+                    
+                    // 判断是否包含今天
+                    const today = new Date();
+                    const selectedDate = new Date(year, month - 1, 1);
+                    const includeToday = (selectedDate.getFullYear() === today.getFullYear() && 
+                                         selectedDate.getMonth() === today.getMonth());
+                    
+                    // 查询历史数据
+                    const historySql = `SELECT date, no, P_ABC_MAX FROM extreme_value_record_a WHERE NO in('100001','300001') AND date BETWEEN "${startDate}" AND "${endDate}"`;
+                    const historyData = await sendSQL(historySql);
+                    
+                    let maxDemand100001 = 0;
+                    let maxDemand300001 = 0;
+                    
+                    // 处理历史数据
+                    if (historyData && historyData.data && historyData.data.length > 0) {
+                        console.log('历史数据:', historyData.data);
+                        historyData.data.forEach(row => {
+                            const no = String(row.no || row.NO || '');
+                            const demand = parseFloat(row.P_ABC_MAX || 0);
+                            
+                            console.log('处理行:', no, demand);
+                            
+                            if (no === '100001' && demand > maxDemand100001) {
+                                maxDemand100001 = demand;
+                            } else if (no === '300001' && demand > maxDemand300001) {
+                                maxDemand300001 = demand;
+                            }
+                        });
+                    }
+                    
+                    console.log('历史数据最大需量 - 100001:', maxDemand100001, '300001:', maxDemand300001);
+                    
+                    // 如果包含今天，查询今日数据
+                    if (includeToday) {
+                        const todayStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')} 07:00:00`;
+                        const todaySql = `SELECT no, MAX(P_ABC_MAX) as P_ABC_MAX FROM data_all WHERE NO in('100001','300001') AND date > "${todayStart}" GROUP BY NO`;
+                        const todayData = await sendSQL(todaySql);
+                        
+                        if (todayData && todayData.data && todayData.data.length > 0) {
+                            console.log('今日数据:', todayData.data);
+                            todayData.data.forEach(row => {
+                                const no = String(row.no || row.NO || '');
+                                const demand = parseFloat(row.P_ABC_MAX || 0);
+                                
+                                console.log('处理今日行:', no, demand);
+                                
+                                if (no === '100001' && demand > maxDemand100001) {
+                                    maxDemand100001 = demand;
+                                } else if (no === '300001' && demand > maxDemand300001) {
+                                    maxDemand300001 = demand;
+                                }
+                            });
+                        }
+                    }
+                    
+                    console.log('最终最大需量 - 100001:', maxDemand100001, '300001:', maxDemand300001);
+                    
+                    return {
+                        '100001': maxDemand100001,
+                        '300001': maxDemand300001
+                    };
+                    
+                } catch (error) {
+                    console.error('查询最大需量失败:', error);
+                    return {
+                        '100001': 0,
+                        '300001': 0
+                    };
+                }
+            }
+
+            // 更新建议文字
+            function updateRecommendation(stationId, yearMonth, stationName) {
+                // 获取两个方案的金额（移除千分位逗号和"元"字）
+                var demandAmount = parseFloat($('#amount-demand-' + stationId).text().replace(/[,元]/g, '').trim());
+                var capacityAmount = parseFloat($('#amount-capacity-' + stationId).text().replace(/[,元]/g, '').trim());
+                
+                var recommendedScheme = '';
+                var savingAmount = 0;
+                
+                // 获取标签元素
+                var demandFlag = $('#card-demand-' + stationId).find('.label-flag');
+                var capacityFlag = $('#card-capacity-' + stationId).find('.label-flag');
+                
+                // 判断哪个方案更优（金额更低的）
+                var schemeColor = '';
+                if (capacityAmount < demandAmount) {
+                    recommendedScheme = '按容';
+                    savingAmount = demandAmount - capacityAmount;
+                    schemeColor = '#ffb800'; // 橘黄色
+                    // 确保active类在按容卡片上
+                    $('#card-demand-' + stationId).removeClass('active');
+                    $('#card-capacity-' + stationId).addClass('active');
+                    // 设置标签颜色：按容便宜（绿色），按需贵（红色）
+                    demandFlag.removeClass('bg-grey bg-green').addClass('bg-red');
+                    capacityFlag.removeClass('bg-red bg-grey').addClass('bg-green');
+                } else if (demandAmount < capacityAmount) {
+                    recommendedScheme = '按需';
+                    savingAmount = capacityAmount - demandAmount;
+                    schemeColor = '#5ba3ff'; // 亮蓝色（混合白色提高亮度）
+                    // 确保active类在按需卡片上
+                    $('#card-capacity-' + stationId).removeClass('active');
+                    $('#card-demand-' + stationId).addClass('active');
+                    // 设置标签颜色：按需便宜（绿色），按容贵（红色）
+                    demandFlag.removeClass('bg-grey bg-red').addClass('bg-green');
+                    capacityFlag.removeClass('bg-red bg-grey').addClass('bg-red');
+                } else {
+                    recommendedScheme = '按需或按容';
+                    savingAmount = 0;
+                    schemeColor = '#b9d3f4'; // 灰色
+                    // 费用相同，都显示灰色
+                    demandFlag.removeClass('bg-red bg-green').addClass('bg-grey');
+                    capacityFlag.removeClass('bg-red bg-green').addClass('bg-grey');
+                }
+                
+                // 更新建议文字，方案名称颜色与对应卡片颜色一致
+                if (savingAmount > 0) {
+                    $('#saving-text-' + stationId).html('<b style="color: #b9d3f4;">' + stationName + '</b>推荐使用<b style="color: ' + schemeColor + '; margin: 0 5px;">' + recommendedScheme + '</b>方案，' + yearMonth + '可节省电费 <b class="underline-amount" id="saving-amount-' + stationId + '">' + savingAmount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '</b> 元');
+                } else {
+                    $('#saving-text-' + stationId).html('<b style="color: #b9d3f4;">' + stationName + '</b>两种方案费用相同，可选择任意一种方案');
+                }
+            }
+
+            // 更新页面数据
+            async function updatePageData() {
+                const selectedMonth = $('#month-picker').val();
+                const [year, month] = selectedMonth.split('-');
+                const yearMonthText = year + '年' + month + '月';
+                
+                // 更新月份标签 - 显示具体年月
+                $('#month-tag-1').text(yearMonthText + ' 一号与二号变电所');
+                $('#month-tag-3').text(yearMonthText + ' 三号变电所');
+                
+                // 查询最大需量
+                const demandData = await queryMaxDemand(selectedMonth);
+                
+                // 更新一号与二号变电所（100001）
+                const demand100001 = demandData['100001'];
+                const price100001 = demand100001 * 36.8;
+                $('#demand-value-1').html(demand100001.toFixed(1) + ' <span class="param-unit">kW</span>');
+                $('#amount-demand-1').html(price100001.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '<span style="font-size:16px; margin-left:5px;">元</span>').css({
+                    'color': '#5ba3ff',
+                    'text-shadow': '0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2)'
+                });
+                $('#amount-capacity-1').css('color', '#ffb800'); // 确保按容金额为橘黄色
+                updateRecommendation('1', yearMonthText, '一号与二号变电所');
+                
+                // 更新三号变电所（300001）
+                const demand300001 = demandData['300001'];
+                const price300001 = demand300001 * 36.8;
+                $('#demand-value-3').html(demand300001.toFixed(1) + ' <span class="param-unit">kW</span>');
+                $('#amount-demand-3').html(price300001.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '<span style="font-size:16px; margin-left:5px;">元</span>').css({
+                    'color': '#5ba3ff',
+                    'text-shadow': '0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2)'
+                });
+                $('#amount-capacity-3').css('color', '#ffb800'); // 确保按容金额为橘黄色
+                updateRecommendation('3', yearMonthText, '三号变电所');
+                
+                // 更新刷新时间
+                const now = new Date();
+                const timeStr = now.getFullYear() + '-' + 
+                               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(now.getDate()).padStart(2, '0') + ' ' + 
+                               String(now.getHours()).padStart(2, '0') + ':' + 
+                               String(now.getMinutes()).padStart(2, '0') + ':' + 
+                               String(now.getSeconds()).padStart(2, '0');
+                $('#refresh-time').text('最后刷新: ' + timeStr);
+            }
+
+            // 日期选择初始化
+            laydate.render({
+                elem: '#month-picker',
+                type: 'month',
+                theme: '#1e88e5',
+                done: function(value, date) {
+                    // 月份改变时更新数据
+                    updatePageData();
+                }
+            });
+            
+            // 初始化时更新数据
+            updatePageData();
+            
+            // 设置3分钟自动刷新（180000毫秒）
+            setInterval(function() {
+                updatePageData();
+            }, 180000);
+        });
+    </script>
+</body>
+</html>

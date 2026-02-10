@@ -1,0 +1,596 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>变压器温度及风扇明细报表</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">日期类型：</label>
+							<div class="layui-input-inline">
+								<select id = "interest" name="interest" lay-filter="interest">
+									<option value="day" selected>单日</option>
+									<option value="diy" >自定义</option>
+								</select>
+							</div>
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid" style="display: none;" >-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变电所：</label>
+								<div class="layui-input-inline" style = "margin-right : 15px">
+									<select id = "substation" name="substation" lay-filter="substation">
+										<option value="1" selected>一号变电所</option>
+										<option value="2">二号变电所</option>
+										<option value="3">三号变电所</option>
+									</select>
+								</div>
+	
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变压器选择：</label>
+								<div class="layui-input-inline" style = "margin-right : 20px">
+									<select id = "sreachNo" name="sreachNo" lay-filter="sreachNo">
+										<option value="1_1" selected>1#变压器</option>
+										<option value="1_2" >2#变压器</option>
+									</select>
+								</div>
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>-->
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">变压器温度及风扇数据记录</h2>
+								<div  class="all_unit">
+									<label >温度单位:</label> <span data-v-1520c17f="">℃</span>
+								</div>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var dateValue = "day";
+		
+		
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 加载日期
+		var datetest =  laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		
+		// 变电所选择联动逻辑
+		form.on('select(substation)', function(data){
+			updateMeterOptions(data.value);
+		});
+
+		// 更新变压器选择选项的函数
+		function updateMeterOptions(substationId) {
+			var meterSelect = document.getElementById('sreachNo');
+			meterSelect.innerHTML = ''; // 清空现有选项
+
+			var options = '';
+
+			if (substationId === '1') {
+				// 只显示一号变电所的变压器
+				options = `
+					<option value="1_1" selected>1#变压器</option>
+					<option value="1_2">2#变压器</option>
+				`;
+			} else if (substationId === '2') {
+				// 只显示二号变电所的变压器
+				options = `
+				<option value="2_1" selected>1#变压器</option>
+				<option value="2_2">2#变压器</option>
+				<option value="2_3">3#变压器</option>
+				<option value="2_4">4#变压器</option>
+				`;
+			} else if (substationId === '3') {
+				// 只显示三号变电所的变压器
+				options = `
+					<option value="3_1" selected>1#变压器</option>
+					<option value="3_2">2#变压器</option>
+				`;
+			}
+
+			meterSelect.innerHTML = options;
+			form.render('select'); // 重新渲染下拉框
+		}
+		
+		
+		form.on('select(interest)', function(data){
+			debugger;
+			if(dateValue != data.value){
+				dateValue = data.value;
+				if(dateValue == "day"){//如果是单天日期查询形式
+					$("#ID-laydate-rangeLinked .layui-form-mid").hide();
+					$("#ID-laydate-end-date-1").parent().hide();
+					//$('#layui-laydate4').remove();
+					laydate.render({
+						type:"datetime",
+						elem: '#ID-laydate-rangeLinked',
+						range:false
+					});
+					laydate.render({
+						type:"date",
+						elem: '#ID-laydate-start-date-1',
+						value: new Date(), // 设置初始日期
+					});
+					/*laydate.render({
+						type:"date",
+						elem: '#ID-laydate-rangeLinked',
+						range: [],
+						rangeLinked: false, // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+					});*/
+				}else{//如果是自定义日期查询形式
+					$("#ID-laydate-rangeLinked .layui-form-mid").show();
+					$("#ID-laydate-end-date-1").parent().show();
+					let date = new Date();
+					date.setDate(date.getDate() - 7);
+					date.setHours(7, 0, 0, 0);
+					laydate.render({
+						type:"datetime",
+						elem: '#ID-laydate-start-date-1',
+						value: date, // 设置初始日期
+					});
+					laydate.render({
+						type:"datetime",
+						elem: '#ID-laydate-end-date-1',
+						value: new Date(), // 设置初始日期
+					});
+					laydate.render({
+						type:"datetime",
+						elem: '#ID-laydate-rangeLinked',
+						range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+						rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+					});
+				}
+			}
+		});
+		
+		
+		table.render({
+			elem: '#test',
+			cols: [[ // 表头配置项
+				{field: 'date',title: '时间',width: 170,align:"center"}, // 日期
+				{field: 'temperature1', title: '温度1', align:"center" }, // 温度
+				{field: 'temperature2', title: '温度2', align:"center" }, // 温度
+				{field: 'temperature3', title: '温度3', align:"center" }, // 温度
+				{field: 'fan', title: '风扇', align:"center" }, // 风扇
+
+			]],
+			data: [],
+			height: $("#table_form").height()-1,
+			//skin: 'line', // 表格风格
+			even: true,
+			//page: true, // 是否显示分页
+			//limits: [5, 10, 15],
+			//limit: 5 // 每页默认显示的数量
+		});
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果
+				var startdate ;
+				var enddate;
+				startdate = $("#ID-laydate-start-date-1")[0].value;
+				if(dateValue == "diy"){
+					enddate = $("#ID-laydate-end-date-1")[0].value;
+					//开始时间和结束时间比对
+					if( new Date(enddate).getTime() - new Date(startdate).getTime() > 7 * 86400000){
+						layer.msg("开始时间和结束时间的间隔不能超过七天");
+						return;
+					}
+				}
+				
+				
+				var sql = " select DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as date,V_A,V_B,V_C,A_A,A_B,A_C,V_AB,V_BC,V_AC,Q_ABC,P_ABC,S_ABC,COS,Hz from data_all FORCE INDEX (date_no_KWH) ";
+				
+				if(dateValue == "day"){
+					sql+=" where date>= DATE_FORMAT('"+startdate+"', '%Y-%m-%d 07:00:00') and date < DATE_FORMAT(DATE_ADD('"+startdate+"',INTERVAL 24 HOUR), '%Y-%m-%d 07:00:00')  "
+				}else{
+					sql+=" where date>='"+startdate+"' and date<'"+enddate+"' ";
+				}
+				sql += " and no = "+$("#sreachNo").val()+" " 
+				+" order by id desc ";
+				console.info(sql);
+				const data = await sendSQL(sql);
+				console.info(data);
+				
+				table.render({
+					elem: '#test',
+					cols: [[ // 表头配置项
+						{field: 'date',title: '时间',width: 170,align:"center"}, // 日期
+						{field: 'temperature1', title: '温度1', align:"center" }, // 温度
+						{field: 'temperature2', title: '温度2', align:"center" }, // 温度
+						{field: 'temperature3', title: '温度3', align:"center" }, // 温度
+						{field: 'fan', title: '风扇', align:"center" }, // 风扇
+					]],
+					data: data.data,
+					//skin: 'line', // 表格风格
+					even: true,
+					height: $("#table_form").height()-1,
+					//page: true, // 是否显示分页
+					//limits: [5, 10, 15],
+					//limit: 5 // 每页默认显示的数量
+				});
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		$('#export').on('click', async function() {
+			debugger;
+			try {
+				
+				var cols = table.getOptions('test').cols;
+				console.info(cols);
+				var dataArr = [];
+				//先动态添加表头
+				var colsData = {
+					date:"时间"
+					,temperature1:"温度1"
+					,temperature2:"温度2"
+					,temperature3:"温度3"
+					,fan:"风扇"
+				};
+				dataArr.push(colsData);
+				
+				var data = table.getData('test'); console.log(data);
+				
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				
+				for(let i=0;i<data.length;i++){
+					dataArr.push(data[i]);
+				}
+				console.info(dataArr);
+				/*excel.exportExcel({
+					sheet1: dataArr
+				}, '测试导出.xlsx', 'xlsx');*/
+				
+				// 生成配置的辅助函数，返回结果作为扩展功能的配置参数传入即可
+				// 1. 复杂表头合并[B1,C1,D1][E1,F1]
+				/*var mergeConf = excel.makeMergeConfig([
+					['A1', 'A2'],
+				])*/
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig({
+					'A': 130,
+					'O': 70,
+					//'D': 130,
+					//'E':130,
+					
+				}, 70);
+				// 3. 第1行行高40，第二行行高30，默认20
+				/*var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20);*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					
+					return newCell;
+				})
+			excel.exportExcel({
+				sheet1: dataArr
+			}, '变压器温度及风扇明细报表_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							//'!merges': mergeConf
+							'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				});
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

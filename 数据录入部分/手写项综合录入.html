@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手写项综合录入</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script src="../js/layui.js"></script>
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-btn-normal { background-color: #1e88e5 !important; }
+        .layui-btn-warm { background-color: #ffb800 !important; }
+        .layui-bg-green { background-color: #67c23a !important; }
+        .layui-bg-orange { background-color: #fa8c16 !important; }
+
+        /* 内容区域 */
+        .content-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            overflow: auto;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: transparent;
+            padding: 0;
+        }
+
+        /* 部门卡片样式 */
+        .department-card {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .department-header {
+            background: #29498e;
+            padding: 10px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a6dc8;
+        }
+
+        .department-header:hover {
+            background: #324fa0;
+        }
+
+        .department-header i {
+            transition: transform 0.3s;
+        }
+
+        .department-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        /* 部门填写状态提示 */
+        .dept-status {
+            margin-left: auto;
+            margin-right: 10px;
+            font-size: 13px;
+            font-weight: normal;
+            padding: 4px 12px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .dept-status.incomplete {
+            color: #ff6b6b;
+        }
+
+        .dept-status.complete {
+            color: #67c23a;
+        }
+
+        .department-body {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+        }
+
+        .department-body.hidden {
+            display: none;
+        }
+
+        /* 输入项样式 - 统一为污水处理风格 */
+        .input-item {
+            background: rgba(40, 80, 167, 0.3);
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        /* 已填写数据的卡片 - 浅绿色叠加 */
+        .input-item.has-data {
+            background-color: rgba(103, 194, 58, 0.15);
+            border-color: rgba(103, 194, 58, 0.5);
+        }
+
+        /* 未填写数据的卡片 - 暗红色叠加 */
+        .input-item.no-data {
+            background-color: rgba(245, 108, 108, 0.15);
+            border-color: rgba(245, 108, 108, 0.4);
+        }
+
+        .input-item-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff7ca;
+            margin-bottom: 12px;
+            padding: 0 0 8px 0;
+            border-bottom: 1px solid #2a6dc8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        .input-item-title-text {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .input-item-title-text span:not(.status-indicator) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .input-item .layui-form-item {
+            margin-bottom: 8px;
+        }
+
+        .input-item .layui-form-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .input-item form {
+            margin-top: 0;
+        }
+
+        .input-item .layui-form-label {
+            color: #b9d3f4;
+            width: 100px;
+            padding: 9px 10px 9px 0;
+            font-weight: bold;
+        }
+
+        .input-item .layui-input {
+            background-color: rgba(40, 80, 167, 0.6);
+            border: 1px solid #2a6dc8;
+            color: #fff;
+            height: 36px;
+            padding: 8px 12px;
+        }
+
+        .input-item .layui-input:focus {
+            border-color: #409eff;
+            outline: none;
+            background: rgba(40, 80, 167, 0.8);
+        }
+
+        .input-item .layui-input::placeholder {
+            color: rgba(185, 211, 244, 0.5);
+        }
+
+        /* 隐藏数字输入框的上下箭头 */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        /* 按钮样式 - 描边风格 */
+        .save-btn {
+            background: transparent !important;
+            border: 1px solid #1e88e5 !important;
+            color: #1e88e5 !important;
+            height: 26px;
+            line-height: 24px;
+            padding: 0 12px;
+            font-size: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            min-width: 70px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background: rgba(30, 136, 229, 0.1) !important;
+            border-color: #42a5f5 !important;
+            color: #42a5f5 !important;
+        }
+        
+        .save-btn i {
+            font-size: 12px;
+            margin: 0;
+        }
+
+        /* 滚动条样式 */
+        .content-area::-webkit-scrollbar,
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .content-area::-webkit-scrollbar-thumb,
+        .main-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+            border-radius: 6px;
+            border: 1px solid #1d386f;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .content-area::-webkit-scrollbar-thumb:hover,
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .content-area::-webkit-scrollbar-track,
+        .main-content::-webkit-scrollbar-track {
+            background: linear-gradient(90deg, #0f266c 0%, #18589b 50%, #1d386f 100%);
+            border-radius: 6px;
+            border: 1px solid #0a1d4a;
+        }
+        
+        .content-area::-webkit-scrollbar-corner,
+        .main-content::-webkit-scrollbar-corner {
+            background-color: #1d386f;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-saved {
+            background-color: #67c23a;
+        }
+
+        .status-unsaved {
+            background-color: #f56c6c;
+        }
+
+        .status-empty {
+            background-color: #909399;
+        }
+
+        /* 提示信息 */
+        .info-tip {
+            background: rgba(30, 136, 229, 0.2);
+            border-left: 3px solid #1e88e5;
+            padding: 10px 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            color: #b9d3f4;
+            font-size: 12px;
+        }
+
+        /* 修复 layui 弹窗样式 - 确保文字可见 */
+        .layui-layer-content {
+            color: #333 !important;
+        }
+        
+        .layui-layer-prompt input {
+            color: #333 !important;
+        }
+        
+        .layui-layer-msg {
+            color: #333 !important;
+        }
+        
+        /* 确认框文字可见 */
+        .layui-layer-dialog .layui-layer-content {
+            color: #333 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="date-group">
+                    <label>选择月份</label>
+                    <input type="text" id="month-selector" readonly>
+                </div>
+                <button type="button" id="load-btn" class="layui-btn layui-btn-sm layui-btn-normal">
+                    <i class="layui-icon layui-icon-search"></i> 加载数据
+                </button>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title">现场数据录入</span>
+            </div>
+            <div class="toolbar-right">
+                <span id="status-text" style="color: #b9d3f4; font-size: 13px;">请选择月份后加载数据</span>
+                <button type="button" id="save-all-btn" class="layui-btn layui-btn-sm layui-bg-green">
+                    <i class="layui-icon layui-icon-ok"></i> 保存全部
+                </button>
+                <button type="button" id="clear-all-btn" class="layui-btn layui-btn-sm layui-bg-orange">
+                    <i class="layui-icon layui-icon-delete"></i> 清空全部
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="info-tip">
+                <i class="layui-icon layui-icon-tips"></i> 
+                请选择月份后加载数据，填写完成后点击各项目的"保存"按钮或"保存全部"按钮提交数据。绿色边框表示已填写，红色边框表示未填写。
+            </div>
+            <div class="main-content" id="main-content">
+                <!-- 动态生成的部门卡片将插入这里 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        layui.use(['form', 'laydate', 'layer'], function() {
+            const form = layui.form;
+            const laydate = layui.laydate;
+            const layer = layui.layer;
+            const $ = layui.$;
+
+            // 部门配置数据
+            const departmentConfig = [
+                {
+                    dept: '工厂级',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 10000, name: '工厂总用电量' },
+                        { no: 70004, name: '水单价', hasElec: false, hasProduction: true, productionLabel: '单价(元)' },
+                        { no: 70005, name: '一二号变电所电费单价', hasElec: false, hasProduction: true, productionLabel: '单价(元)', specialTable: 'elec_unit_price', specialField: 'unit_price1_2' },
+                        { no: 70006, name: '三号变电所电费单价', hasElec: false, hasProduction: true, productionLabel: '单价(元)', specialTable: 'elec_unit_price', specialField: 'unit_price3' }
+                    ]
+                },
+                {
+                    dept: '机加工课',
+                    hasProduction: true, // 有产量
+                    items: [
+                        { no: 10001, name: '十字环' },
+                        { no: 10002, name: 'B支撑' },
+                        { no: 10003, name: 'B定' },
+                        { no: 10004, name: 'B动' },
+                        { no: 10005, name: 'C定' },
+                        { no: 10006, name: 'C动' },
+                        { no: 10007, name: 'C支撑' },
+                        { no: 10008, name: '新壳体' }
+                    ]
+                },
+                {
+                    dept: '电机课',
+                    hasProduction: true, // 有产量
+                    items: [
+                        { no: 20001, name: '定转子单元' },
+                        { no: 20002, name: '浸漆单元' },
+                        { no: 20003, name: '绕线A单元' },
+                        { no: 20004, name: '绕线B单元' }
+                    ]
+                },
+                {
+                    dept: '组装一课',
+                    hasProduction: true, // 有产量
+                    items: [
+                        { no: 30001, name: 'C组装' },
+                        { no: 30002, name: 'CS' },
+                        { no: 30003, name: 'TIG' },
+                        { no: 30004, name: '成品' },
+                        { no: 30005, name: '清洗' },
+                        { no: 30006, name: '磷化' }
+                    ]
+                },
+                {
+                    dept: '组装二课',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 40001, name: '电泳整流柜' }
+                    ]
+                },
+                {
+                    dept: '动力设施课',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 50001, name: '维修室' }
+                    ]
+                },
+                {
+                    dept: '开发本部',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 60001, name: '开发本部委托品质本部实验' }
+                    ]
+                },
+                {
+                    dept: '经营企划本部',
+                    hasProduction: false, // 特殊处理
+                    items: [
+                        { no: 70001, name: '会客室', hasElec: true, hasProduction: false },
+                        { no: 70002, name: '食堂用水', hasElec: true, hasProduction: false, elecLabel: '用水量(吨)' },
+                        { no: 70003, name: '食堂就餐人数', hasElec: false, hasProduction: true, productionLabel: '就餐人数' }
+                    ]
+                },
+                {
+                    dept: '品质本部',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 80001, name: '委托实验室（大马力性能）' },
+                        { no: 80002, name: '委托实验室（耐久）' }
+                    ]
+                },
+                {
+                    dept: '营业本部',
+                    hasProduction: false, // 无产量
+                    items: [
+                        { no: 90001, name: '电机二楼库区（ISP）' },
+                        { no: 90002, name: '大棚照明（ISP）' },
+                        { no: 90003, name: '委托焓差实验室营业本部' }
+                    ]
+                }
+            ];
+
+            // 当前选择的月份
+            let currentMonth = null;
+            let loadedData = {};
+
+            // 初始化月份选择器
+            laydate.render({
+                elem: '#month-selector',
+                type: 'month',
+                value: new Date(),
+                done: function(value) {
+                    currentMonth = value + '-01'; // 格式：YYYY-MM-01
+                    $('#status-text').text('已选择月份：' + value + '，点击"加载数据"');
+                }
+            });
+
+            // 生成部门卡片HTML
+            function generateDepartmentCards() {
+                const container = $('#main-content');
+                container.empty();
+
+                departmentConfig.forEach((dept, deptIndex) => {
+                    const totalItems = dept.items.length;
+                    const deptHtml = `
+                        <div class="department-card" data-dept-index="${deptIndex}">
+                            <div class="department-header">
+                                <span>${dept.dept}</span>
+                                <span class="dept-status incomplete" data-dept-index="${deptIndex}">
+                                    未填写：${totalItems}项
+                                </span>
+                                <i class="layui-icon layui-icon-down"></i>
+                            </div>
+                            <div class="department-body">
+                                ${dept.items.map((item, itemIndex) => {
+                                    // 确定是否显示电量和产量字段
+                                    const hasElec = item.hasElec !== undefined ? item.hasElec : true;
+                                    const hasProduction = item.hasProduction !== undefined ? item.hasProduction : dept.hasProduction;
+                                    const productionLabel = item.productionLabel || '产量';
+                                    const elecLabel = item.elecLabel || '电量(kWh)'; // 自定义电量字段标签
+                                    
+                                    return `
+                                        <div class="input-item" data-no="${item.no}" data-dept-index="${deptIndex}">
+                                            <div class="input-item-title">
+                                                <div class="input-item-title-text">
+                                                    <span class="status-indicator status-empty"></span>
+                                                    ${item.name}
+                                                </div>
+                                                <button type="button" 
+                                                        class="layui-btn layui-btn-sm save-btn" 
+                                                        data-no="${item.no}">
+                                                    <i class="layui-icon layui-icon-ok"></i> 保存
+                                                </button>
+                                            </div>
+                                            <form class="layui-form" lay-filter="item-form-${item.no}">
+                                                ${hasElec ? `
+                                                <div class="layui-form-item">
+                                                    <label class="layui-form-label">${elecLabel}</label>
+                                                    <div class="layui-input-block">
+                                                        <input type="number" 
+                                                               step="0.01" 
+                                                               name="sum_elec" 
+                                                               placeholder="请输入${elecLabel}" 
+                                                               class="layui-input"
+                                                               data-no="${item.no}">
+                                                    </div>
+                                                </div>
+                                                ` : ''}
+                                                ${hasProduction ? `
+                                                <div class="layui-form-item">
+                                                    <label class="layui-form-label">${productionLabel}</label>
+                                                    <div class="layui-input-block">
+                                                        <input type="number" 
+                                                               step="0.01" 
+                                                               name="production" 
+                                                               placeholder="请输入${productionLabel}" 
+                                                               class="layui-input"
+                                                               data-no="${item.no}">
+                                                    </div>
+                                                </div>
+                                                ` : ''}
+                                            </form>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                    container.append(deptHtml);
+                });
+
+                // 渲染表单
+                form.render();
+
+                // 绑定部门折叠事件
+                $('.department-header').on('click', function() {
+                    const $this = $(this);
+                    const $body = $this.next('.department-body');
+                    $this.toggleClass('collapsed');
+                    $body.toggleClass('hidden');
+                });
+
+                // 绑定保存按钮事件
+                $('.save-btn').on('click', function() {
+                    const no = $(this).data('no');
+                    saveItem(no);
+                });
+            }
+
+            // 加载数据
+            async function loadData() {
+                if (!currentMonth) {
+                    layer.msg('请先选择月份');
+                    return;
+                }
+
+                const loading = layer.msg('加载中...', {
+                    icon: 16,
+                    shade: [0.3, '#000'],
+                    time: 0,
+                    shadeClose: false
+                });
+                try {
+                    // 获取月份字符串（格式：YYYY-MM）
+                    const monthStr = currentMonth.substring(0, 7);
+                    
+                    // 加载常规数据
+                    const sql = `
+                        SELECT no, sum_elec, production 
+                        FROM data_elec_temp_input 
+                        WHERE DATE_FORMAT(date, '%Y-%m-01') = '${currentMonth}'
+                    `;
+                    
+                    const result = await sendSQL(sql);
+                    loadedData = {};
+                    
+                    if (result.data && result.data.length > 0) {
+                        result.data.forEach(row => {
+                            loadedData[row.no] = {
+                                sum_elec: row.sum_elec,
+                                production: row.production
+                            };
+                        });
+                    }
+
+                    // 加载电费单价数据
+                    const priceSql = `
+                        SELECT unit_price1_2, unit_price3 
+                        FROM elec_unit_price 
+                        WHERE use_date = '${monthStr}'
+                    `;
+                    
+                    const priceResult = await sendSQL(priceSql);
+                    if (priceResult.data && priceResult.data.length > 0) {
+                        const priceRow = priceResult.data[0];
+                        // 将电费单价数据存储到对应的 no
+                        if (priceRow.unit_price1_2 !== null && priceRow.unit_price1_2 !== undefined) {
+                            loadedData[70005] = {
+                                sum_elec: null,
+                                production: priceRow.unit_price1_2
+                            };
+                        }
+                        if (priceRow.unit_price3 !== null && priceRow.unit_price3 !== undefined) {
+                            loadedData[70006] = {
+                                sum_elec: null,
+                                production: priceRow.unit_price3
+                            };
+                        }
+                    }
+
+                    // 填充数据到表单
+                    fillFormData();
+                    
+                    const totalCount = Object.keys(loadedData).length;
+                    $('#status-text').text(`已加载 ${totalCount} 条数据`);
+                    layer.msg('数据加载成功', { icon: 1 });
+                } catch (err) {
+                    console.error('加载数据失败：', err);
+                    layer.msg('数据加载失败', { icon: 2 });
+                } finally {
+                    layer.close(loading);
+                }
+            }
+
+            // 填充表单数据
+            function fillFormData() {
+                $('.input-item').each(function() {
+                    const $item = $(this);
+                    const no = $item.data('no');
+                    const data = loadedData[no];
+                    const $btn = $item.find('.save-btn');
+
+                    if (data) {
+                        $item.find('input[name="sum_elec"]').val(data.sum_elec || '');
+                        $item.find('input[name="production"]').val(data.production || '');
+                        updateStatus($item, 'saved');
+                        // 已填写数据，添加绿色背景
+                        $item.removeClass('no-data').addClass('has-data');
+                        // 按钮显示"修改"
+                        $btn.html('<i class="layui-icon layui-icon-edit"></i> 修改');
+                    } else {
+                        $item.find('input[name="sum_elec"]').val('');
+                        $item.find('input[name="production"]').val('');
+                        updateStatus($item, 'empty');
+                        // 未填写数据，添加红色背景
+                        $item.removeClass('has-data').addClass('no-data');
+                        // 按钮显示"保存"
+                        $btn.html('<i class="layui-icon layui-icon-ok"></i> 保存');
+                    }
+                });
+                
+                // 更新所有部门的状态
+                updateAllDepartmentStatus();
+            }
+
+            // 更新状态指示器
+            function updateStatus($item, status) {
+                const $indicator = $item.find('.status-indicator');
+                $indicator.removeClass('status-saved status-unsaved status-empty');
+                $indicator.addClass(`status-${status}`);
+            }
+
+            // 更新部门填写状态
+            function updateDepartmentStatus(deptIndex) {
+                const $deptCard = $(`.department-card[data-dept-index="${deptIndex}"]`);
+                const $items = $deptCard.find('.input-item');
+                const totalItems = $items.length;
+                let filledCount = 0;
+
+                $items.each(function() {
+                    const $item = $(this);
+                    if ($item.hasClass('has-data')) {
+                        filledCount++;
+                    }
+                });
+
+                const $statusSpan = $(`.dept-status[data-dept-index="${deptIndex}"]`);
+                const unfilledCount = totalItems - filledCount;
+
+                if (unfilledCount === 0) {
+                    // 全部填写完成 - 显示绿色
+                    $statusSpan.removeClass('incomplete').addClass('complete');
+                    $statusSpan.text('已填写');
+                } else {
+                    // 还有未填写的 - 显示红色
+                    $statusSpan.removeClass('complete').addClass('incomplete');
+                    $statusSpan.text(`未填写：${unfilledCount}项`);
+                }
+            }
+
+            // 更新所有部门状态
+            function updateAllDepartmentStatus() {
+                departmentConfig.forEach((dept, index) => {
+                    updateDepartmentStatus(index);
+                });
+            }
+
+            // 保存单个项目
+            async function saveItem(no) {
+                if (!currentMonth) {
+                    layer.msg('请先选择月份');
+                    return;
+                }
+
+                const $item = $(`.input-item[data-no="${no}"]`);
+                const sumElec = $item.find('input[name="sum_elec"]').val();
+                const production = $item.find('input[name="production"]').val();
+
+                if (!sumElec && !production) {
+                    layer.msg('请至少填写一项数据', { 
+                        icon: 0,
+                        time: 2000,
+                        skin: 'layui-layer-molv'
+                    });
+                    return;
+                }
+
+                const loading = layer.msg('正在保存...', {
+                    icon: 16,
+                    shade: [0.3, '#000'],
+                    time: 0,
+                    shadeClose: false
+                });
+                try {
+                    // 检查是否是电费单价字段（特殊处理）
+                    const itemConfig = departmentConfig.flatMap(d => d.items).find(item => item.no === no);
+                    if (itemConfig && itemConfig.specialTable === 'elec_unit_price') {
+                        // 保存到 elec_unit_price 表
+                        const monthStr = currentMonth.substring(0, 7);
+                        const checkSql = `
+                            SELECT id, unit_price1_2, unit_price3 FROM elec_unit_price 
+                            WHERE use_date = '${monthStr}'
+                        `;
+                        
+                        const checkResult = await sendSQL(checkSql);
+                        
+                        let sql;
+                        if (checkResult.data && checkResult.data.length > 0) {
+                            // 更新现有数据 - 需要同时更新两个字段，保留另一个字段的值
+                            const currentRow = checkResult.data[0];
+                            const value1_2 = itemConfig.specialField === 'unit_price1_2' ? (production || 'NULL') : (currentRow.unit_price1_2 || 'NULL');
+                            const value3 = itemConfig.specialField === 'unit_price3' ? (production || 'NULL') : (currentRow.unit_price3 || 'NULL');
+                            
+                            sql = `
+                                UPDATE elec_unit_price 
+                                SET unit_price1_2 = ${value1_2}, 
+                                    unit_price3 = ${value3},
+                                    update_date = NOW()
+                                WHERE use_date = '${monthStr}'
+                            `;
+                        } else {
+                            // 插入新数据 - 需要同时处理两个字段
+                            const otherNo = itemConfig.specialField === 'unit_price1_2' ? 70006 : 70005;
+                            const otherValue = loadedData[otherNo] ? loadedData[otherNo].production : null;
+                            
+                            sql = `
+                                INSERT INTO elec_unit_price (unit_price1_2, unit_price3, use_date, creation_date)
+                                VALUES (
+                                    ${itemConfig.specialField === 'unit_price1_2' ? (production || 'NULL') : (otherValue || 'NULL')},
+                                    ${itemConfig.specialField === 'unit_price3' ? (production || 'NULL') : (otherValue || 'NULL')},
+                                    '${monthStr}',
+                                    NOW()
+                                )
+                            `;
+                        }
+                        
+                        await sendSQL(sql);
+                    } else {
+                        // 保存到 data_elec_temp_input 表（常规处理）
+                        const checkSql = `
+                            SELECT id FROM data_elec_temp_input 
+                            WHERE no = ${no} 
+                            AND DATE_FORMAT(date, '%Y-%m-01') = '${currentMonth}'
+                        `;
+                        
+                        const checkResult = await sendSQL(checkSql);
+                        
+                        let sql;
+                        if (checkResult.data && checkResult.data.length > 0) {
+                            // 更新现有数据
+                            sql = `
+                                UPDATE data_elec_temp_input 
+                                SET sum_elec = ${sumElec || 'NULL'}, 
+                                    production = ${production || 'NULL'}
+                                WHERE no = ${no} 
+                                AND DATE_FORMAT(date, '%Y-%m-01') = '${currentMonth}'
+                            `;
+                        } else {
+                            // 插入新数据
+                            sql = `
+                                INSERT INTO data_elec_temp_input (date, no, sum_elec, production)
+                                VALUES ('${currentMonth}', ${no}, ${sumElec || 'NULL'}, ${production || 'NULL'})
+                            `;
+                        }
+
+                        await sendSQL(sql);
+                    }
+                    
+                    // 更新本地数据
+                    loadedData[no] = {
+                        sum_elec: sumElec || null,
+                        production: production || null
+                    };
+                    
+                    updateStatus($item, 'saved');
+                    // 添加绿色背景表示已填写
+                    $item.removeClass('no-data').addClass('has-data');
+                    // 更新按钮文字为"修改"
+                    $item.find('.save-btn').html('<i class="layui-icon layui-icon-edit"></i> 修改');
+                    
+                    // 更新该部门的状态
+                    const deptIndex = $item.data('dept-index');
+                    updateDepartmentStatus(deptIndex);
+                    
+                    layer.msg('保存成功', { icon: 1 });
+                } catch (err) {
+                    console.error('保存失败：', err);
+                    layer.msg('保存失败');
+                    updateStatus($item, 'unsaved');
+                } finally {
+                    layer.close(loading);
+                }
+            }
+
+            // 保存全部
+            async function saveAll() {
+                if (!currentMonth) {
+                    layer.msg('请先选择月份');
+                    return;
+                }
+
+                const loading = layer.msg('批量保存中...', {
+                    icon: 16,
+                    shade: [0.5, '#000'],
+                    time: 0,
+                    shadeClose: false
+                });
+                let successCount = 0;
+                let failCount = 0;
+
+                try {
+                    const promises = [];
+                    $('.input-item').each(function() {
+                        const $item = $(this);
+                        const no = $item.data('no');
+                        const sumElec = $item.find('input[name="sum_elec"]').val();
+                        const production = $item.find('input[name="production"]').val();
+
+                        if (sumElec || production) {
+                            promises.push(
+                                saveItemSilent(no, sumElec, production)
+                                    .then(() => {
+                                        successCount++;
+                                        updateStatus($item, 'saved');
+                                        $item.removeClass('no-data').addClass('has-data');
+                                        // 更新按钮文字为"修改"
+                                        $item.find('.save-btn').html('<i class="layui-icon layui-icon-edit"></i> 修改');
+                                    })
+                                    .catch(() => {
+                                        failCount++;
+                                        updateStatus($item, 'unsaved');
+                                    })
+                            );
+                        }
+                    });
+
+                    await Promise.all(promises);
+                    
+                    // 更新所有部门的状态
+                    updateAllDepartmentStatus();
+                    
+                    layer.msg(`保存完成：成功 ${successCount} 项，失败 ${failCount} 项`, { icon: 1, time: 3000 });
+                    $('#status-text').text(`最后保存：成功 ${successCount} 项，失败 ${failCount} 项`);
+                } catch (err) {
+                    console.error('批量保存失败：', err);
+                    layer.msg('批量保存出现错误');
+                } finally {
+                    layer.close(loading);
+                }
+            }
+
+            // 静默保存（不显示消息）
+            async function saveItemSilent(no, sumElec, production) {
+                // 检查是否是电费单价字段（特殊处理）
+                const itemConfig = departmentConfig.flatMap(d => d.items).find(item => item.no === no);
+                if (itemConfig && itemConfig.specialTable === 'elec_unit_price') {
+                    // 保存到 elec_unit_price 表
+                    const monthStr = currentMonth.substring(0, 7);
+                    const checkSql = `
+                        SELECT id FROM elec_unit_price 
+                        WHERE use_date = '${monthStr}'
+                    `;
+                    
+                    const checkResult = await sendSQL(checkSql);
+                    
+                    let sql;
+                    if (checkResult.data && checkResult.data.length > 0) {
+                        // 更新现有数据 - 需要同时更新两个字段
+                        const updateField = itemConfig.specialField;
+                        // 先获取当前记录的值
+                        const currentSql = `SELECT unit_price1_2, unit_price3 FROM elec_unit_price WHERE use_date = '${monthStr}'`;
+                        const currentResult = await sendSQL(currentSql);
+                        const currentRow = currentResult.data && currentResult.data.length > 0 ? currentResult.data[0] : null;
+                        
+                        if (currentRow) {
+                            const value1_2 = itemConfig.specialField === 'unit_price1_2' ? (production || 'NULL') : (currentRow.unit_price1_2 || 'NULL');
+                            const value3 = itemConfig.specialField === 'unit_price3' ? (production || 'NULL') : (currentRow.unit_price3 || 'NULL');
+                            
+                            sql = `
+                                UPDATE elec_unit_price 
+                                SET unit_price1_2 = ${value1_2}, 
+                                    unit_price3 = ${value3},
+                                    update_date = NOW()
+                                WHERE use_date = '${monthStr}'
+                            `;
+                        } else {
+                            sql = `
+                                UPDATE elec_unit_price 
+                                SET ${updateField} = ${production || 'NULL'}, 
+                                    update_date = NOW()
+                                WHERE use_date = '${monthStr}'
+                            `;
+                        }
+                    } else {
+                        // 插入新数据 - 需要同时处理两个字段
+                        const otherField = itemConfig.specialField === 'unit_price1_2' ? 'unit_price3' : 'unit_price1_2';
+                        const otherNo = itemConfig.specialField === 'unit_price1_2' ? 70006 : 70005;
+                        const otherValue = loadedData[otherNo] ? loadedData[otherNo].production : null;
+                        
+                        sql = `
+                            INSERT INTO elec_unit_price (unit_price1_2, unit_price3, use_date, creation_date)
+                            VALUES (
+                                ${itemConfig.specialField === 'unit_price1_2' ? (production || 'NULL') : (otherValue || 'NULL')},
+                                ${itemConfig.specialField === 'unit_price3' ? (production || 'NULL') : (otherValue || 'NULL')},
+                                '${monthStr}',
+                                NOW()
+                            )
+                        `;
+                    }
+                    
+                    await sendSQL(sql);
+                } else {
+                    // 保存到 data_elec_temp_input 表（常规处理）
+                    const checkSql = `
+                        SELECT id FROM data_elec_temp_input 
+                        WHERE no = ${no} 
+                        AND DATE_FORMAT(date, '%Y-%m-01') = '${currentMonth}'
+                    `;
+                    
+                    const checkResult = await sendSQL(checkSql);
+                    
+                    let sql;
+                    if (checkResult.data && checkResult.data.length > 0) {
+                        sql = `
+                            UPDATE data_elec_temp_input 
+                            SET sum_elec = ${sumElec || 'NULL'}, 
+                                production = ${production || 'NULL'}
+                            WHERE no = ${no} 
+                            AND DATE_FORMAT(date, '%Y-%m-01') = '${currentMonth}'
+                        `;
+                    } else {
+                        sql = `
+                            INSERT INTO data_elec_temp_input (date, no, sum_elec, production)
+                            VALUES ('${currentMonth}', ${no}, ${sumElec || 'NULL'}, ${production || 'NULL'})
+                        `;
+                    }
+
+                    await sendSQL(sql);
+                }
+                
+                loadedData[no] = {
+                    sum_elec: sumElec || null,
+                    production: production || null
+                };
+            }
+
+            // 清空全部
+            function clearAll() {
+                layer.confirm('确定要清空所有输入的数据吗？', {
+                    icon: 3,
+                    title: '确认清空'
+                }, function(index) {
+                    $('input[type="number"]').val('');
+                    $('.status-indicator').removeClass('status-saved status-unsaved').addClass('status-empty');
+                    // 清空后，所有卡片都显示为未填写状态（红色背景）
+                    $('.input-item').removeClass('has-data').addClass('no-data');
+                    // 恢复按钮文字为"保存"
+                    $('.save-btn').html('<i class="layui-icon layui-icon-ok"></i> 保存');
+                    
+                    // 更新所有部门的状态
+                    updateAllDepartmentStatus();
+                    
+                    layer.close(index);
+                    layer.msg('已清空所有数据');
+                });
+            }
+
+            // SQL查询函数
+            async function sendSQL(sql) {
+                console.info('执行SQL：', sql);
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ sql })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+
+                const data = await res.json();
+                return data;
+            }
+
+            // 绑定按钮事件
+            $('#load-btn').on('click', loadData);
+            $('#save-all-btn').on('click', saveAll);
+            $('#clear-all-btn').on('click', clearAll);
+
+            // 初始化页面
+            generateDepartmentCards();
+
+            // 自动设置当前月份并加载数据
+            setTimeout(() => {
+                const now = new Date();
+                const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                $('#month-selector').val(currentMonthStr);
+                currentMonth = currentMonthStr + '-01';
+                loadData();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

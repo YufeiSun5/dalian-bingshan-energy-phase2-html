@@ -1,0 +1,319 @@
+/* ===========================================
+   污水处理液位监控系统 - 专用样式表
+
+   该样式表专门用于液位指示器显示，只包含：
+   1. 基础背景样式
+   2. 液位指示器样式
+
+   确保页面只有两层：背景层和液位指示器层
+   =========================================== */
+
+/* ===========================================
+   根元素 - 固定字体大小，不随页面缩放
+   =========================================== */
+html {
+	font-size: 16px; /* 固定字体大小，不随页面缩放 */
+}
+
+/* ===========================================
+   基础背景样式 - 第一层
+   =========================================== */
+body {
+	height: 100%;
+	font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	margin: 0;
+	padding: 0;
+	background: #395998; /* 深蓝色背景 */
+}
+
+/* ===========================================
+   主内容区域 - 第二层容器
+   改为固定530x360尺寸的子页面模式
+   预留10px给滚动条边距，确保540x370容器内无滚动条
+   =========================================== */
+.main-content {
+	height: 360px; /* 固定高度360px，预留10px */
+	width: 530px;  /* 固定宽度530px，预留10px */
+	position: relative;
+	overflow: hidden; /* 防止内容溢出 */
+}
+
+.page-container {
+	display: block; /* 直接显示页面 */
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+/* ===========================================
+   内容区域布局 - 简化结构，确保居中
+   =========================================== */
+.content-box {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	background: transparent;
+	display: flex;
+	align-items: center;              /* 垂直居中，消除上方空白 */
+	justify-content: center;
+}
+
+.content {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;              /* 垂直居中 */
+	justify-content: stretch;         /* 拉伸填满 */
+}
+
+.report {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	align-items: center;              /* 垂直居中 */
+	justify-content: stretch;         /* 拉伸填满 */
+}
+
+/* 报表头部 - 标题区域（已隐藏） */
+.report-head {
+	display: none;
+}
+
+/* 报表内容区域 */
+.report-content {
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	align-items: center;              /* 垂直居中 */
+	justify-content: stretch;         /* 拉伸填满 */
+}
+
+/* ===========================================
+   液位指示器样式 - 第二层核心内容
+   适配530x360小窗口尺寸，进一步紧凑
+   =========================================== */
+.liquid-level-container {
+	display: flex;
+	align-items: flex-end;            /* 内部柱子底部对齐 */
+	justify-content: space-evenly;     /* 均匀分布，保持间距 */
+	gap: 6px;                         /* 进一步缩小柱子间距，防止溢出 */
+	padding: 8px;                     /* 进一步减小padding，节省空间 */
+	box-sizing: border-box;
+	flex-wrap: nowrap;                /* 禁止换行 */
+	width: 100%;                      /* 填满宽度 */
+	height: 100%;                     /* 填满高度 */
+	margin: 0;                        /* 无外边距 */
+}
+
+/* 单个液位柱 */
+.liquid-column {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;                         /* 缩小柱子和标签间距，适配小窗口 */
+	flex: 1 1 0;                      /* 平均分配宽度，所有柱子宽度一致 */
+	min-width: 0;                     /* 允许缩小 */
+	max-width: 100%;                  /* 最大不超过容器 */
+	height: 100%;                     /* 填满高度 */
+	justify-content: flex-end;       /* 底部对齐 */
+}
+
+/* 柱子标签（下方文字） */
+.column-label {
+	color: #fff;
+	font-size: 12px;                   /* 缩小字体，适配540x370小窗口 */
+	font-weight: 600;
+	text-align: center;
+	line-height: 1.1;
+	margin-top: 4px;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+	height: 35px;                     /* 减小标签高度，节省空间 */
+	flex-shrink: 0;                   /* 标签高度不变 */
+	white-space: nowrap;              /* 标签文字不换行 */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 节中的文字标签 */
+.section-label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	font-size: 14px;                  /* 缩小字体，适配540x370小窗口 */
+	font-weight: 600;
+	color: #3e3e3e;
+	transition: color 0.3s ease;
+	white-space: nowrap;              /* 文字不换行 */
+}
+
+/* 激活状态下的文字显示 */
+.section.active .section-label {
+	color: #fff;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* 竹节容器 */
+.sections-container {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;                         /* 缩小竹节间距，适配小窗口 */
+	width: 100%;                      /* 填满父容器宽度 */
+	max-width: 100%;                  /* 最大不超过父容器 */
+	position: relative;
+	padding: 4px;                     /* 减小padding，节省空间 */
+	border: 1px solid rgba(74, 144, 226, 0.6);
+	border-radius: 6px;               /* 减小圆角，适配小窗口 */
+	box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.15),
+	            0 1px 4px rgba(74, 144, 226, 0.2);
+	background: rgba(30, 60, 120, 0.1);
+	box-sizing: border-box;
+	flex-shrink: 0;                   /* 不允许缩小 */
+}
+
+/* 固定360px高度适配计算 */
+/* 基础高度：360px - 标签区域(35px) - 容器padding(16px) - gap(4px) = 305px可用高度 */
+/* 按4节最大高度比例分配 */
+
+.sections-container[data-sections="4"] {
+	height: calc(305px * 4 / 4); /* 4节柱子：305px */
+}
+
+.sections-container[data-sections="3"] {
+	height: calc(305px * 3 / 4); /* 3节柱子：228px */
+}
+
+.sections-container[data-sections="2"] {
+	height: calc(305px * 2 / 4); /* 2节柱子：152px */
+}
+
+/* 单个竹节 - 自适应高度，根据容器高度动态计算 */
+.section {
+	width: 100%;
+	flex: 1 1 0;                      /* 平均分配容器内的可用空间 */
+	min-height: 10px;                 /* 减小最小高度，适配小窗口 */
+	background: linear-gradient(180deg,
+		rgba(139, 69, 19, 0.6) 0%,    /* 竹节本色：深褐色 */
+		rgba(160, 82, 45, 0.5) 50%,
+		rgba(139, 69, 19, 0.6) 100%
+	);
+	border: 1px solid rgba(101, 67, 33, 0.8); /* 减小边框，适配小窗口 */
+	border-radius: 3px;               /* 减小圆角，适配小窗口 */
+	position: relative;
+	box-shadow:
+		inset 0 1px 3px rgba(0, 0, 0, 0.3), /* 减小阴影 */
+		0 1px 3px rgba(0, 0, 0, 0.2);
+	transition: all 0.5s ease;
+	overflow: hidden;
+}
+
+/* 竹节顶部和底部的环纹效果 */
+.section::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;                      /* 减小环纹高度，适配小窗口 */
+	background: linear-gradient(180deg,
+		rgba(101, 67, 33, 0.6) 0%,
+		transparent 100%
+	);
+}
+
+.section::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 3px;                      /* 减小环纹高度，适配小窗口 */
+	background: linear-gradient(0deg,
+		rgba(101, 67, 33, 0.6) 0%,
+		transparent 100%
+	);
+}
+
+/* 激活状态（显示液位-绿色） */
+.section.active {
+	background: linear-gradient(180deg,
+		rgba(0, 255, 127, 0.9) 0%,    /* 亮绿色 */
+		rgba(0, 200, 100, 0.85) 50%,
+		rgba(0, 255, 127, 0.9) 100%
+	);
+	border-color: rgba(0, 180, 90, 1);
+	box-shadow:
+		inset 0 2px 8px rgba(255, 255, 255, 0.3),
+		0 0 15px rgba(0, 255, 127, 0.6),
+		0 2px 8px rgba(0, 0, 0, 0.3);
+	animation: liquid-glow 2s ease-in-out infinite;
+}
+
+/* 红色警告液位样式 */
+.section.active.warning {
+	background: linear-gradient(180deg,
+		rgba(255, 50, 50, 0.9) 0%,     /* 亮红色 */
+		rgba(220, 20, 20, 0.85) 50%,
+		rgba(255, 50, 50, 0.9) 100%
+	);
+	border-color: rgba(200, 0, 0, 1);
+	box-shadow:
+		inset 0 2px 8px rgba(255, 255, 255, 0.3),
+		0 0 15px rgba(255, 50, 50, 0.8),
+		0 2px 8px rgba(0, 0, 0, 0.3);
+	animation: warning-glow 1.5s ease-in-out infinite;
+}
+
+/* 红色警告呼吸动画 */
+@keyframes warning-glow {
+	0%, 100% {
+		box-shadow:
+			inset 0 2px 8px rgba(255, 255, 255, 0.3),
+			0 0 15px rgba(255, 50, 50, 0.8),
+			0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+	50% {
+		box-shadow:
+			inset 0 2px 8px rgba(255, 255, 255, 0.4),
+			0 0 30px rgba(255, 50, 50, 1.0),
+			0 2px 10px rgba(0, 0, 0, 0.3);
+	}
+}
+
+/* 发光呼吸动画 */
+@keyframes liquid-glow {
+	0%, 100% {
+		box-shadow:
+			inset 0 2px 8px rgba(255, 255, 255, 0.3),
+			0 0 15px rgba(0, 255, 127, 0.6),
+			0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+	50% {
+		box-shadow:
+			inset 0 2px 8px rgba(255, 255, 255, 0.4),
+			0 0 25px rgba(0, 255, 127, 0.8),
+			0 2px 10px rgba(0, 0, 0, 0.3);
+	}
+}
+
+/* ===========================================
+   响应式设计 - 使用rem单位自动缩放
+   =========================================== */
+/* rem单位会自动根据html的font-size进行缩放 */
+/* 由于html使用clamp()，字体大小会根据视窗宽度自动调整 */

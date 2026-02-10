@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组装二课区电量计量位置及电量统计</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script src="../js/xlsx.full.min.js"></script>
+    <style>
+        /* --- 全局与基础样式 --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background-color: #0f266c;
+            color: #d0d2e0;
+            overflow: hidden; /* 防止页面本身出现滚动条 */
+        }
+
+        /* --- 主要布局容器 --- */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        /* --- 卡片通用样式 --- */
+        .card-block {
+            background-color: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* --- 筛选栏 (核心改动) --- */
+        .filter-bar {
+            flex-shrink: 0;
+            flex-direction: row;           /* <-- 改动: 确保水平布局 */
+            justify-content: space-between; /* <-- 改动: 实现左、中、右分布 */
+            align-items: center;           /* <-- 改动: 实现垂直居中 */
+            padding: 0 15px;               /* <-- 改动: 调整内边距适应新布局 */
+        }
+
+        /* --- 顶部居中大标题样式 (核心改动) --- */
+        .top-bar-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 2px;
+        }
+
+        .filter-bar .layui-form-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+            margin-top: 5px;
+        }
+
+        .filter-bar .layui-form-label {
+            color: #d0d2e0;
+            padding: 10px 10px;
+            width: auto;
+        }
+        .filter-bar .layui-input {
+            background-color: rgba(40, 80, 167, 1);
+            border-color: transparent;
+            color: #fff;
+        }
+        .filter-bar .layui-input::placeholder {
+            color: #bbb;
+        }
+        .filter-bar .layui-btn {
+            margin-left: 10px;
+        }
+        .filter-bar .layui-bg-orange {
+            background-color: #fa8c16;
+            border-color: #fa8c16;
+        }
+
+        /* --- 主要内容区域 --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .main-content .card-block {
+            height: 100%;
+        }
+
+        /* --- 卡片头部样式 (已修改) --- */
+        .card-header {
+            background-color: #29498e;
+            color: #fff;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a6dc8;
+            font-size: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* <-- 改动: 让左右两部分自动分开 */
+            gap: 20px;
+        }
+
+        .header-summary {
+            font-size: 17px;
+            font-weight: normal;
+            color: #fff7ca;
+        }
+        .header-unit {
+            font-size: 14px;
+            font-weight: normal;
+            color: #b9d3f4;
+            flex-shrink: 0;
+        }
+
+        /* --- 表格区域特定样式 --- */
+        .table-container {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 10px;
+            position: relative; 
+            scrollbar-width: thin;
+            scrollbar-color: #2a6dc8 #18589b;
+        }
+        
+        /* >>>>>>>>>>>>>>>>>>>>>>> 核心边框颜色修改区域 <<<<<<<<<<<<<<<<<<<<<<<<< */
+        /* Layui 表格的整体视图边框 */
+        .layui-table-view {
+            border: 1px solid #2a3199 !important; /* 统一外层边框颜色 */
+        }
+
+        /* Layui 表格内部的各个组件边框 (th, td, fixed parts, etc.) */
+        .layui-table-view .layui-table, /* table 元素本身 */
+        .layui-table-view .layui-table-header, /* 表头容器 */
+        .layui-table-view .layui-table-body,   /* 表体容器 */
+        .layui-table-view .layui-table-fixed,  /* 固定列容器 */
+        .layui-table-view .layui-table-fixed-l, /* 左固定列 */
+        .layui-table-view .layui-table-fixed-r, /* 右固定列 */
+        .layui-table-view .layui-table-total,  /* 合计行 */
+        .layui-table-view .layui-table-page,   /* 分页器 */
+        .layui-table-view .layui-table-tool,   /* 工具栏 */
+        .layui-table-view .layui-table-col-set, /* 列设置按钮 */
+        .layui-table-view .layui-table-grid-down { /* 下拉菜单 */
+            border-color: #2a3199 !important; /* 统一边框颜色 */
+        }
+        
+        /* Layui 表格中的所有 td 和 th 单元格 */
+        .layui-table-view .layui-table th,
+        .layui-table-view .layui-table td {
+            border: 1px solid #3c8ce7 !important; /* 强制所有单元格的边框为蓝色 */
+            background-color: #1e4e89 !important; /* 保持单元格背景色 */
+            color: #ffffff;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            padding: 1px 5px; /* 调整 padding 以使单元格更紧凑 */
+            font-size: 11px;
+            min-width: 60px;
+            transition: background-color 0.2s ease-in-out;
+            /* 强制文本换行，并移除省略号 */
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
+
+        /* >>>>>>>>>>>>>>>>>>>>>>> 表头背景色修改区域 <<<<<<<<<<<<<<<<<<<<<<<<< */
+        /* 强制覆盖 Layui 表头背景色 - 这会影响所有表头（包括固定列） */
+        .layui-table-box .layui-table-header > .layui-table tr th {
+            background-color: #0c6ed3 !important; /* 你想要的表头背景色，例如深蓝色 */
+            color: #ffffff !important; /* 确保文字颜色仍然可见 */
+        }
+
+        /* 如果需要为固定列表头设置不同的背景色，或者确保其独立性 */
+        .layui-table-box .layui-table-header > .layui-table tr th.layui-table-sticky-left {
+            background-color: #004488 !important; /* 例如，固定列表头用更深的蓝色 */
+        }
+        /* <<<<<<<<<<<<<<<<<<<<<<< 表头背景色修改区域结束 >>>>>>>>>>>>>>>>>>>>>>> */
+
+        /* 确保固定列的背景色在hover时不被边框颜色覆盖 */
+        .layui-table-box .layui-table-fixed-left table tbody tr td.layui-table-sticky-left,
+        .layui-table-box .layui-table-fixed-right table tbody tr td.layui-table-sticky-right {
+             background-color: #18589b !important; /* 保持固定列的原始背景色 */
+        }
+
+        /* --- 高亮样式定义 --- */
+        /* 鼠标悬浮时的临时高亮 (行和列都会用这个颜色) */
+        .layui-table-hover {
+            background-color: rgb(112, 167, 255) !important; 
+        }
+
+        /* --- 自定义行颜色及其高亮叠加效果 --- */
+        /* 自定义行颜色 */
+        .layui-table-body .layui-bg-orange, .layui-table-fixed .layui-bg-orange {
+            background-color: #ff4500 !important; /* OrangeRed */
+            color: #ffffff !important;
+        }
+        .layui-table-body .layui-bg-yellow, .layui-table-fixed .layui-bg-yellow {
+            background-color: #ffff00 !important; /* Yellow */
+            color: #000000 !important;
+        }
+
+        /* 鼠标悬浮在橙色行上的单元格 */
+        .layui-table-body tr.layui-bg-orange > td.layui-table-hover,
+        .layui-table-fixed-left .layui-table-body tr.layui-bg-orange > td.layui-table-hover {
+            background-color: #ff4500 !important; /* 保持橙色 */
+        }
+        /* 鼠标悬浮在黄色行上的单元格 */
+        .layui-table-body tr.layui-bg-yellow > td.layui-table-hover,
+        .layui-table-fixed-left .layui-table-body tr.layui-bg-yellow > td.layui-table-hover {
+            background-color: #ffff00 !important; /* 保持黄色 */
+            color: #000000 !important;
+        }
+
+        /* 确保列高亮可以覆盖行的自定义背景色，当应用 layui-table-hover 时 */
+        .layui-table-body tr > td.layui-table-hover,
+        .layui-table-fixed-left .layui-table-body tr > td.layui-table-hover {
+            background-color: rgb(112, 167, 255) !important; /* 列悬浮颜色优先 */
+            color: #ffffff !important; /* 确保文字颜色 */
+        }
+
+        /* 为了确保自定义行颜色在高亮状态下文本颜色依然可见，需要更具体的规则 */
+        .layui-table-body tr.layui-bg-yellow > td.layui-table-hover {
+            color: #000000 !important; /* 黄色背景下文字保持黑色 */
+        }
+        .layui-table-fixed-left .layui-table-body tr.layui-bg-yellow > td.layui-table-hover {
+             color: #000000 !important;
+        }
+
+
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #2a6dc8;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background-color: #18589b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="card-block filter-bar">
+        <div class="layui-form" lay-filter="filter-form-left">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">年份</label>
+                    <div class="layui-input-inline">
+                        <input type="text" id="year-selector" class="layui-input" placeholder="请选择年份">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-bar-title">组装二课区电量计量位置及电量统计</div>
+
+        <div class="layui-form" lay-filter="filter-form-right">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <button id="search-btn" class="layui-btn">
+                        <i class="layui-icon layui-icon-search"></i>
+                        <span>查询</span>
+                    </button>
+                    <button id="export-btn" class="layui-btn layui-bg-orange">
+                        <span>导出</span>
+                        <i class="layui-icon layui-icon-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="card-block">
+            <div class="card-header">
+                <div class="header-summary">
+                    <span id="header-summary-text"></span>
+                </div>
+                <div class="header-unit">
+                    <span>电能单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="data-table" lay-filter="data-table-filter" class="layui-table layui-table-sm"></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/layui.js"></script>
+<script>
+layui.use(['laydate', 'form', 'layer', 'table'], function(){
+    const laydate = layui.laydate;
+    const form = layui.form;
+    const layer = layui.layer;
+    const table = layui.table;
+    const $ = layui.jquery;
+    let globalData;
+    let currentTableData = [];
+
+    // ===================================================================================
+    // ===                           核心配置区域 START                             ===
+    // ===================================================================================
+    const itemConfig = [
+        { supplier: '三号所2#变', area: '新成品', position: '新成品GCS柜', key: 'zz2_row1', no: [1] },
+        { supplier: '三号所2#变', area: '新成品', position: '新成品热水炉', key: 'zz2_row2', no: [2] },
+        { supplier: '三号所2#变', area: '新组装', position: '25马力组装凸焊机', key: 'zz2_row3', no: [3] },
+        { supplier: '三号所2#变', area: '新组装', position: '25马力组装1#柜', key: 'zz2_row4', no: [4] },
+        { supplier: '三号所2#变', area: '新组装', position: '25马力组装2#柜', key: 'zz2_row5', no: [5] },
+        { supplier: '', area: '新成品', position: '电泳整流柜', key: 'zz2_row6', no: [6] },
+        { supplier: '', area: '新成品', position: '检测线（新成品01）', key: 'zz2_row7', no: [7] },
+        { supplier: '', area: '新成品', position: '成品下线（新成品02）', key: 'zz2_row8', no: [8] },
+        { supplier: '', area: '新成品', position: '氢检（新成品03）', key: 'zz2_row9', no: [9] },
+        { supplier: '', area: '新成品', position: '前处理+电泳（新成品04）', key: 'zz2_row10', no: [10,11] },
+        { supplier: '', area: '新成品', position: '固化炉（新成品05）', key: 'zz2_row11', no: [11] },
+        { supplier: '', area: '新成品', position: '传送链（新成品06）', key: 'zz2_row12', no: [12] },
+        { supplier: '', area: '新成品', position: '新成品07', key: 'zz2_row13', no: [13] }
+    ];
+    // ===================================================================================
+    // ===                            核心配置区域 END                              ===
+    // ===================================================================================
+
+    // Layui Table 列配置
+    const tableCols = [
+        [
+            { field: 'supplier', title: '供电位置', fixed: 'left', width: 150, align: 'center', className: 'layui-table-sticky-left'},
+            { field: 'area', title: '对应单元', fixed: 'left', width: 200, align: 'center', className: 'layui-table-sticky-left'},
+            { field: 'position', title: '用电位置', fixed: 'left', width: 200, align: 'center', className: 'layui-table-sticky-left'},
+            { field: 'month1', title: '1月份', width: 90, align: 'center', templet: formatTableCell, data_month: 1 },
+            { field: 'month2', title: '2月份', width: 90, align: 'center', templet: formatTableCell, data_month: 2 },
+            { field: 'month3', title: '3月份', width: 90, align: 'center', templet: formatTableCell, data_month: 3 },
+            { field: 'month4', title: '4月份', width: 90, align: 'center', templet: formatTableCell, data_month: 4 },
+            { field: 'month5', title: '5月份', width: 90, align: 'center', templet: formatTableCell, data_month: 5 },
+            { field: 'month6', title: '6月份', width: 90, align: 'center', templet: formatTableCell, data_month: 6 },
+            { field: 'month7', title: '7月份', width: 90, align: 'center', templet: formatTableCell, data_month: 7 },
+            { field: 'month8', title: '8月份', width: 90, align: 'center', templet: formatTableCell, data_month: 8 },
+            { field: 'month9', title: '9月份', width: 90, align: 'center', templet: formatTableCell, data_month: 9 },
+            { field: 'month10', title: '10月份', width: 90, align: 'center', templet: formatTableCell, data_month: 10 },
+            { field: 'month11', title: '11月份', width: 90, align: 'center', templet: formatTableCell, data_month: 11 },
+            { field: 'month12', title: '12月份', width: 90, align: 'center', templet: formatTableCell, data_month: 12 }
+        ]
+    ];
+
+    function formatTableCell(d) {
+        const value = d[this.field]; 
+        return value !== undefined && value !== null && value !== '' ? value.toLocaleString() : '';
+    }
+
+    async function sendSQL(strsql) {
+        try {
+            const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ sql: strsql })
+            });
+            if (!res.ok) {
+                layer.msg(`数据加载失败: ${res.statusText}`);
+                return { data: [] };
+            }
+            return await res.json();
+        } catch (err) {
+            console.error('sendSQL Error:', err);
+            layer.msg('数据加载失败，请检查网络或联系管理员。');
+            return { data: [] };
+        }
+    }
+
+    async function fetchAndProcessData(year) {
+        const caseStatements = itemConfig.map(item => {
+            if (Array.isArray(item.no) && item.no.length > 0) {
+                const noList = item.no.join(',');
+                return `SUM(CASE WHEN sub.no IN (${noList}) THEN sub.total_elec ELSE 0 END) AS ${item.key}_elec`;
+            }
+            return `0 AS ${item.key}_elec`; 
+        }).join(',\n                      ');
+
+        const departmentSql = `
+            SELECT
+                sub.month,
+                ${caseStatements}
+            FROM (
+                SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                FROM sum_elec_group_by_day
+                WHERE YEAR(\`date\`) = ${year}
+                GROUP BY no, MONTH(\`date\`)
+            ) AS sub
+            GROUP BY sub.month
+            ORDER BY sub.month;
+        `.trim();
+        
+        const companyTotalSql = `
+            SELECT
+                MONTH(\`date\`) AS month,
+                SUM(sum_elec) AS company_total_elec
+            FROM sum_elec_group_by_day
+            WHERE YEAR(\`date\`) = ${year}
+            GROUP BY MONTH(\`date\`);
+        `.trim();
+
+        const [departmentApiResult, companyTotalApiResult] = await Promise.all([
+            sendSQL(departmentSql),
+            sendSQL(companyTotalSql)
+        ]);
+
+        const rawData = departmentApiResult.data || [];
+        const processedData = {};
+        itemConfig.forEach(item => {
+            processedData[item.key] = {};
+        });
+
+        rawData.forEach(row => {
+            const month = row.month;
+            itemConfig.forEach(item => {
+                const elecValue = row[`${item.key}_elec`];
+                if (elecValue !== undefined) {
+                    processedData[item.key][month] = elecValue;
+                }
+            });
+        });
+        
+        const companyTotals = {};
+        (companyTotalApiResult.data || []).forEach(row => {
+            companyTotals[row.month] = row.company_total_elec;
+        });
+        
+        return { departmentData: processedData, companyTotals: companyTotals };
+    }
+
+    async function reloadData() {
+        const loading = layer.load(1, { shade: [0.1, '#fff'] });
+        const year = $('#year-selector').val();
+        try {
+            globalData = await fetchAndProcessData(year);
+            updateDashboard(globalData);
+        } catch (e) {
+            console.error("Failed to load or process data", e);
+            layer.msg("数据处理失败");
+        } finally {
+            layer.close(loading); 
+        }
+    }
+    
+    function updateHeaderSummaryForMonth(month) {
+        if (!globalData || !globalData.departmentData || !globalData.companyTotals) {
+            $('#header-summary-text').html('无数据');
+            return;
+        }
+
+        const departmentData = globalData.departmentData;
+        const companyTotals = globalData.companyTotals;
+
+        let monthElec = 0;
+        Object.values(departmentData).forEach(itemData => {
+            monthElec += itemData[month] || 0;
+        });
+
+        if (monthElec === 0) {
+            const summaryHtml = `组装二课<span style="color: red;">${month}</span>月份无用电数据`;
+            $('#header-summary-text').html(summaryHtml);
+            return;
+        }
+
+        const companyTotalForMonth = companyTotals[month] || 0;
+        const percentageOfCompanyTotal = companyTotalForMonth > 0
+            ? (monthElec / companyTotalForMonth * 100).toFixed(2)
+            : '0.00';
+
+        const summaryHtml = `组装二课<span style="color: red;">${month}</span>月份用电电量<span style="color: red;">${monthElec.toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>`;
+        $('#header-summary-text').html(summaryHtml);
+    }
+
+    function updateDashboard(data) {
+        $('#header-summary-text').text('');
+        
+        const departmentData = data.departmentData;
+        let monthsWithData = new Set(); 
+
+        const layuiTableData = itemConfig.map(item => {
+            const row = {
+                supplier: item.supplier,
+                area: item.area,
+                position: item.position,
+                bgColor: item.bgColor
+            };
+            for (let m = 1; m <= 12; m++) {
+                const elec_val = departmentData[item.key]?.[m];
+                if (elec_val !== undefined && elec_val > 0) {
+                    row[`month${m}`] = elec_val;
+                    monthsWithData.add(m); 
+                } else {
+                    row[`month${m}`] = ''; 
+                }
+            }
+            return row;
+        });
+
+        currentTableData = layuiTableData; 
+
+        table.render({
+            elem: '#data-table',
+            cols: tableCols,
+            data: layuiTableData,
+            cellMinWidth: 80, 
+            height: 'full-200', 
+            limit: layuiTableData.length, 
+            even: false, 
+            rowEvent: function(obj){
+                if(obj.data.bgColor === 'yellow'){
+                    obj.tr.addClass('layui-bg-yellow');
+                } else if (obj.data.bgColor === 'orange'){
+                    obj.tr.addClass('layui-bg-orange');
+                }
+            },
+            done: function(res, curr, count){
+                let currentMaxMonth = 0;
+                if (monthsWithData.size > 0) {
+                    currentMaxMonth = Math.max(...Array.from(monthsWithData));
+                }
+
+                if (currentMaxMonth > 0) {
+                    updateHeaderSummaryForMonth(currentMaxMonth);
+                } else {
+                    $('#header-summary-text').html('暂无月度数据');
+                }
+            }
+        });
+    }
+
+    function clearHoverHighlights() {
+        $('.layui-table-box .layui-table td').removeClass('layui-table-hover');
+        $('.layui-table-box .layui-table th').removeClass('layui-table-hover');
+    }
+
+    function applyHighlight(rowIndex, colIndex) {
+        clearHoverHighlights();
+
+        if (rowIndex !== null) {
+            $(`.layui-table-box tbody tr[data-index="${rowIndex}"] > td`).addClass('layui-table-hover');
+        }
+
+        if (colIndex !== null) {
+            $(`.layui-table-box .layui-table-body tr td:nth-child(${colIndex + 1}), 
+               .layui-table-box .layui-table-header th:nth-child(${colIndex + 1})`).addClass('layui-table-hover');
+            
+            $(`.layui-table-fixed-l .layui-table-body tr td:nth-child(${colIndex + 1})`).addClass('layui-table-hover');
+            $(`.layui-table-fixed-r .layui-table-body tr td:nth-child(${colIndex + 1})`).addClass('layui-table-hover');
+        }
+    }
+
+    // --- 事件绑定 ---
+
+    // 初始化年份选择器
+    laydate.render({
+        elem: '#year-selector',
+        type: 'year',
+        value: new Date() // 默认值为当前年份
+    });
+
+    // 查询按钮点击事件
+    $('#search-btn').on('click', reloadData);
+
+    // 导出按钮点击事件
+    $('#export-btn').on('click', function() {
+        try {
+            const year = $('#year-selector').val() || new Date().getFullYear();
+            const filename = `组装二课区电量计量位置及电量统计_${year}.xlsx`;
+            
+            const exportData = [
+                ['供应位置', '区域', '用电位置', '1月份', '2月份', '3月份', '4月份', '5月份', '6月份', '7月份', '8月份', '9月份', '10月份', '11月份', '12月份']
+            ];
+            currentTableData.forEach(row => {
+                const rowArray = [
+                    row.supplier,
+                    row.area,
+                    row.position
+                ];
+                for (let m = 1; m <= 12; m++) {
+                    rowArray.push(row[`month${m}`]);
+                }
+                exportData.push(rowArray);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData); 
+
+            // ---【核心修改】---
+            // 手动设置每一列的宽度，单位是“字符数”
+            // 数组的顺序与您的列顺序一致
+            ws['!cols'] = [
+                { wch: 30 }, // 供应位置
+                { wch: 40 }, // 区域
+                { wch: 35 }, // 用电位置
+                { wch: 10 }, // 1月份
+                { wch: 10 }, // 2月份
+                { wch: 10 }, // 3月份
+                { wch: 10 }, // 4月份
+                { wch: 10 }, // 5月份
+                { wch: 10 }, // 6月份
+                { wch: 10 }, // 7月份
+                { wch: 10 }, // 8月份
+                { wch: 10 }, // 9月份
+                { wch: 10 }, // 10月份
+                { wch: 10 }, // 11月份
+                { wch: 10 }  // 12月份
+            ];
+            // ---【修改结束】---
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            
+            XLSX.writeFile(wb, filename);
+
+        } catch (e) {
+            console.error(e);
+            layer.msg('导出失败，请检查控制台错误。');
+        }
+    });
+
+    // 使用事件委托将所有事件绑定到静态父容器 .table-container
+    const $tableContainer = $('.table-container');
+
+    // 鼠标悬浮事件 (高亮)
+    $tableContainer.on('mouseover', '.layui-table-body td, .layui-table-header th', function() {
+        const $hoveredCell = $(this);
+        const colIndex = $hoveredCell.index();
+        
+        let rowIndex = null;
+        if ($hoveredCell.is('td')) {
+            rowIndex = $hoveredCell.closest('tr').data('index');
+        }
+        
+        applyHighlight(rowIndex, colIndex);
+    });
+
+    // 鼠标移出整个表格容器的事件
+    $tableContainer.on('mouseleave', '.layui-table-box', function() {
+        // 【最终修正】仅清除高亮，不影响头部汇总信息
+        clearHoverHighlights();
+    });
+
+    // 鼠标点击事件 (更新汇总)
+    $tableContainer.on('click', '.layui-table-body td, .layui-table-header th', function() {
+        const $clickedCell = $(this);
+        const fieldName = $clickedCell.attr('data-field');
+
+        if (fieldName && fieldName.startsWith('month')) {
+            const month = parseInt(fieldName.replace('month', ''));
+            updateHeaderSummaryForMonth(month);
+        } else {
+            // 点击非月份列时，清除汇总文字
+            $('#header-summary-text').text('');
+        }
+    });
+
+    // --- 页面初始化 ---
+    reloadData(); 
+});
+</script>
+
+</body>
+</html>

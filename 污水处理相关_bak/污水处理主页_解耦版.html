@@ -1,0 +1,652 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<!-- 页面字符编码设置 -->
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<!-- 响应式设计：禁用用户缩放，设置初始缩放比例和设备宽度 -->
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>污水处理管理系统</title>
+	
+	<!-- 样式表引入 -->
+	<!-- LayUI框架样式 - 用于界面组件 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<!-- 项目自定义样式 - 包含主题色彩和布局 -->
+	<link href="css/common-styles.css" rel="stylesheet">
+	<!-- 报表模块样式 - 独立可移植 -->
+	<link href="css/report-module.css" rel="stylesheet">
+	<!-- 曲线模块样式 - 独立可移植 -->
+	<link href="css/curve-module.css" rel="stylesheet">
+	
+	<!-- JavaScript库引入 -->
+	<!-- ECharts图表库 - 用于绘制甘特图和数据可视化 -->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<!-- JavaScript与C++交互函数 - 用于调用后端接口 -->
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<!-- C++调用JavaScript函数 - 用于接收后端回调 -->
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<!-- LayUI框架核心文件 - 提供UI组件功能 -->
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<!-- 页面模块化管理文件 - 包含各功能页面的业务逻辑 -->
+	<script type="text/javascript" src="js/page-modules.js"></script>
+	<!-- 报表模块 - 独立可移植 -->
+	<script type="text/javascript" src="js/report-module.js"></script>
+	<!-- 曲线模块 - 独立可移植 -->
+	<script type="text/javascript" src="js/curve-module.js"></script>
+	
+	<script type="text/javascript">
+		// LayUI框架配置
+		layui.config({
+			base: '../js/'  // 设置扩展模块的基础路径
+		}).extend({
+			excel: 'layui_exts/excel',  // Excel导入导出扩展
+			xmSelect: "xm-select"       // 多选下拉框扩展
+		});
+	</script>
+</head>
+<body>
+	<!-- ===========================================
+	     顶部导航栏区域
+	     功能：提供不同功能页面的导航切换
+	     =========================================== -->
+	<nav class="top-nav">
+		<div class="nav-container">
+			<!-- 导航菜单列表 -->
+		<ul class="nav-menu">
+			<!-- 实时数据页面导航 - 默认激活状态 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link active" data-page="real-time-data">污水处理实时数据</a>
+			</li>
+			<!-- 污水处理报表页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="sewage-treatment-report">污水处理报表</a>
+			</li>
+			<!-- 污水处理曲线页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="sewage-treatment-curve">污水处理曲线</a>
+			</li>
+		</ul>
+		</div>
+	</nav>
+
+	<!-- ===========================================
+	     主内容区域
+	     功能：包含所有功能页面的主容器
+	     =========================================== -->
+	<div class="main-content">
+		<!-- 实时数据页面 -->
+		<div id="real-time-data-page" class="page-container active">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class="layui-form">
+								<h2 style="text-align: center; color: #fff; margin: 0;">污水处理实时数据监控</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<!-- Grid布局容器 - 2x2布局（高度比例1:1） -->
+							<div class="data-grid-container">
+								<!-- 上面一块：高1宽2 - 液位显示区 -->
+								<div class="grid-item wide-item">
+									<div class="data-card">
+										<div class="card-header">
+											<h3>液位</h3>
+										</div>
+										<div class="card-content">
+											<!-- 液位柱子容器 -->
+											<div class="liquid-level-container">
+												<!-- 第1个柱子 (4节) - 原水槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="4">
+														<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA110<br>原水槽</div>
+												</div>
+												<!-- 第2个柱子 (4节) - 调节槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="4">
+														<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA120<br>调节槽</div>
+												</div>
+												<!-- 第3个柱子 (4节) - 沉淀出水槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="4">
+														<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA260<br>沉淀出水槽</div>
+												</div>
+												<!-- 第4个柱子 (4节) - 过滤原水槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="4">
+														<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA310<br>过滤原水槽</div>
+												</div>
+												<!-- 第5个柱子 (4节) - 活性炭原水槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="4">
+														<div class="section" data-section="3"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="2"><span class="section-label">HWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">MWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA330<br>活性炭原水槽</div>
+												</div>
+												<!-- 第6个柱子 (3节) - 处理水槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="3">
+														<div class="section" data-section="2"><span class="section-label">AWL</span></div>
+														<div class="section" data-section="1"><span class="section-label">HWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA360<br>处理水槽</div>
+												</div>
+												<!-- 第7个柱子 (2节) - 污泥槽 -->
+												<div class="liquid-column">
+													<div class="sections-container" data-sections="2">
+														<div class="section" data-section="1"><span class="section-label">AWL</span></div>
+														<div class="section active" data-section="0"><span class="section-label">LWL</span></div>
+													</div>
+													<div class="column-label">LSA170<br>污泥槽</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- 下面左边一块：实时数据表 -->
+								<div class="grid-item">
+									<div class="data-card">
+										<div class="card-header">
+											<h3>实时数据监测</h3>
+										</div>
+										<div class="card-content" style="padding: 0;">
+											<table class="realtime-data-table">
+												<tbody>
+													<tr>
+														<td class="param-label">处理水量瞬时流量 (m³/h)</td>
+														<td class="param-value" id="instant-flow-value">--</td>
+													</tr>
+													<tr>
+														<td class="param-label">处理水量今日累计 (m³)</td>
+														<td class="param-value" id="daily-total-flow-value">--</td>
+													</tr>
+													<tr>
+														<td class="param-label">今日用电 (KWh)</td>
+														<td class="param-value" id="daily-electricity-value">--</td>
+													</tr>
+													<tr>
+														<td class="param-label">COD (mg/L)</td>
+														<td class="param-value" id="cod-value">--</td>
+													</tr>
+													<tr>
+														<td class="param-label">总磷 (mg/L)</td>
+														<td class="param-value" id="tp-value">--</td>
+													</tr>
+													<tr>
+														<td class="param-label">总氮 (mg/L)</td>
+														<td class="param-value" id="tn-value">--</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+
+								<!-- 下面右边一块：柱形图 -->
+								<div class="grid-item">
+									<div class="data-card">
+										<div class="card-header">
+											<h3>处理水量趋势（近30天）</h3>
+										</div>
+										<div class="card-content" style="padding: 0;">
+											<div id="water-quality-chart" style="width: 120%; height: 110%; left: -10%; top: 3%;"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 通讯状态页面 -->
+		<div id="communication-status-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">污水处理通讯状态监控</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">污水处理通讯状态功能开发中...</p>
+										<!-- 这里可以添加通讯状态监控界面 -->
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	<!-- 污水处理报表页面 -->
+	<div id="sewage-treatment-report-page" class="page-container">
+		<!-- 报表模块容器 - 独立可移植 -->
+		<div class="report-container">
+			<div class="report-main">
+				<!-- 查询表单 -->
+				<div class="report-query-form">
+					<form class="layui-form">
+						<div class="layui-form-item">
+							<!-- 日期类型 -->
+							<div class="layui-inline" style="margin-right: 25px; float: left;">
+								<label class="layui-form-label" style="width: auto;">日期类型</label>
+								<div class="layui-input-inline">
+									<select id="report-date-type" name="report-date-type" lay-filter="report-date-type">
+										<option value="day" selected>单日</option>
+										<option value="range">自定义范围</option>
+									</select>
+								</div>
+							</div>
+							
+							<!-- 日期选择 -->
+							<div class="layui-inline" style="margin-right: 20px; float: left;">
+								<label class="layui-form-label" style="width: auto;">日期选择</label>
+								<div class="layui-inline" id="report-date-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="report-start-date" class="layui-input" placeholder="开始日期">
+									</div>
+									<div class="layui-form-mid" style="display: none;">-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="report-end-date" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							
+							<!-- 按钮组 -->
+							<div class="layui-inline" style="margin-right: 0px; float: right;">
+								<button type="button" id="report-search-btn" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style="margin-left:5px">查询</span></button>
+								<button type="button" id="report-export-btn" class="layui-btn layui-bg-orange"><span style="margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+					</form>
+				</div>
+				
+				<!-- 报表内容 -->
+				<div class="report-content">
+					<h2 class="report-title">污水处理统计明细报表</h2>
+					
+					<!-- 表格 -->
+					<div class="report-table-wrapper" id="table_form">
+						<table id="report-table" class="report-table" lay-filter="report-table">
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 污水处理曲线页面 -->
+	<div id="sewage-treatment-curve-page" class="page-container">
+		<!-- 曲线模块容器 - 独立可移植 -->
+		<div class="curve-container">
+			<div class="curve-main">
+				<!-- 查询表单 -->
+				<div class="curve-query-form">
+					<form class="layui-form">
+						<div class="layui-form-item">
+							<!-- 时间选择模式 -->
+							<div class="layui-inline" style="margin-right: 25px; float: left;">
+								<label class="layui-form-label" style="width: auto;">时间选择模式</label>
+								<div class="layui-input-inline">
+									<select id="curve-time-mode" name="curve-time-mode" lay-filter="curve-time-mode">
+										<option value="day" selected>单日</option>
+										<option value="range">自定义范围</option>
+									</select>
+								</div>
+							</div>
+						
+							<!-- 日期选择 -->
+							<div class="layui-inline" style="margin-right: 20px; float: left;">
+								<label class="layui-form-label" style="width: auto;">日期选择</label>
+								<div class="layui-inline" id="curve-date-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="curve-start-date" class="layui-input" placeholder="开始日期">
+									</div>
+									<div class="layui-form-mid" style="display: none;">-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="curve-end-date" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							
+							<!-- 参数选择 -->
+							<div class="layui-inline" style="margin-right: 20px; float: left;">
+								<label class="layui-form-label" style="width: auto;">参数</label>
+								<div class="layui-input-inline" style="width: 200px;">
+									<select id="curve-param-select" name="curve-param-select" lay-filter="curve-param-select">
+										<option value="all" selected>全部</option>
+										<option value="instant-flow">处理水量瞬时流量 (m³/h)</option>
+										<option value="daily-total-flow">处理水量今日累计 (m³)</option>
+										<option value="daily-electricity">今日用电 (KWh)</option>
+										<option value="cod">COD (mg/L)</option>
+										<option value="tp">总磷 (mg/L)</option>
+										<option value="tn">总氮 (mg/L)</option>
+									</select>
+								</div>
+							</div>
+							
+							<!-- 查询按钮 -->
+							<div class="layui-inline" style="margin-right: 0px; float: right;">
+								<button type="button" id="curve-search-btn" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style="margin-left:5px">查询</span></button>
+							</div>
+						</div>
+					</form>
+				</div>
+				
+				<!-- 曲线内容 -->
+				<div class="curve-content">
+					<!-- 图表容器 -->
+					<div class="curve-chart-wrapper">
+						<div id="curve-chart"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+
+<script>
+	/* ===========================================
+	   页面管理器（PageManager）
+	   功能：管理多页面切换、模块初始化和导航状态
+	   =========================================== */
+	const PageManager = {
+		// 当前激活的页面ID（初始为空，避免showPage方法提前返回）
+		currentPage: '',
+		
+		/**
+		 * 初始化页面管理器
+		 * 绑定事件并显示默认页面
+		 */
+		init: function() {
+			this.bindEvents();
+			// 默认初始化实时数据页面
+			this.showPage('real-time-data');
+		},
+		
+		/**
+		 * 绑定页面相关事件
+		 * 主要处理导航菜单的点击事件
+		 */
+		bindEvents: function() {
+			const self = this;
+			
+			// 导航链接点击事件处理
+			$('.nav-link').on('click', function(e) {
+				e.preventDefault(); // 阻止默认链接跳转
+				const pageId = $(this).data('page'); // 获取页面ID
+				self.showPage(pageId); // 显示对应页面
+				self.updateNavigation(pageId); // 更新导航状态
+			});
+		},
+		
+		/**
+		 * 显示指定页面
+		 * @param {string} pageId - 页面ID
+		 */
+		showPage: function(pageId) {
+			console.log(`显示页面: ${pageId}, 当前页面: ${this.currentPage}`);
+			
+			// 如果已经是当前页面，则不重复操作
+			if (this.currentPage === pageId) {
+				console.log('页面已经是当前页面，跳过切换');
+				return;
+			}
+			
+			// 隐藏所有页面容器
+			$('.page-container').removeClass('active');
+			
+			// 显示选中的页面容器
+			$('#' + pageId + '-page').addClass('active');
+			console.log(`页面容器 ${pageId}-page 已激活`);
+			
+			// 重置当前模块状态（如果存在重置方法）
+			const moduleMap = {
+				'real-time-data': 'RealTimeDataModule',
+				'communication-status': 'CommunicationStatusModule',
+				'sewage-treatment-report': 'SewageTreatmentReportModule',
+				'sewage-treatment-curve': 'SewageTreatmentCurveModule'
+			};
+			
+			const moduleName = moduleMap[pageId];
+			if (moduleName && window[moduleName] && window[moduleName].reset) {
+				console.log(`重置${moduleName}模块状态`);
+				window[moduleName].reset();
+			}
+			
+			// 初始化页面对应的功能模块
+			this.initPageModule(pageId);
+			
+			// 更新当前页面记录
+			this.currentPage = pageId;
+		},
+		
+		/**
+		 * 初始化页面功能模块
+		 * 根据页面ID调用对应模块的初始化方法
+		 * @param {string} pageId - 页面ID
+		 */
+		initPageModule: function(pageId) {
+			// 确保页面切换动画完成后再初始化模块
+			setTimeout(() => {
+				console.log('正在初始化页面模块:', pageId);
+				
+				switch(pageId) {
+					case 'real-time-data':
+						// 初始化实时数据模块
+						if (window.RealTimeDataModule) {
+							window.RealTimeDataModule.init();
+						}
+						break;
+					case 'communication-status':
+						// 初始化通讯状态模块
+						if (window.CommunicationStatusModule) {
+							window.CommunicationStatusModule.init();
+						}
+						break;
+					case 'sewage-treatment-report':
+						// 初始化报表模块
+						if (window.ReportModule) {
+							window.ReportModule.init();
+						} else {
+							console.error('ReportModule模块未找到');
+						}
+						break;
+					case 'sewage-treatment-curve':
+						// 初始化曲线模块
+						if (window.CurveModule) {
+							window.CurveModule.init();
+							// 确保图表正确显示
+							setTimeout(() => {
+								if (window.CurveModule.chartInstance) {
+									window.CurveModule.chartInstance.resize();
+								}
+							}, 300);
+						} else {
+							console.error('CurveModule模块未找到');
+						}
+						break;
+				}
+			}, 200); // 增加延迟时间到200ms，确保页面切换动画完成
+		},
+		
+		/**
+		 * 更新导航栏状态
+		 * 移除所有active类，为当前页面添加active类
+		 * @param {string} pageId - 页面ID
+		 */
+		updateNavigation: function(pageId) {
+			$('.nav-link').removeClass('active'); // 移除所有导航项的激活状态
+			$('.nav-link[data-page="' + pageId + '"]').addClass('active'); // 激活当前页面导航
+		}
+	};
+
+	/* ===========================================
+	   应用程序入口
+	   初始化LayUI组件并启动页面管理器
+	   =========================================== */
+	layui.use(['form', 'laydate', 'util', 'excel', 'xmSelect', 'element'], function() {
+		// 将layui实例暴露到全局作用域，供各模块使用
+		window.layui = layui;
+		// 将jQuery实例暴露到全局作用域，供各模块使用
+		window.$ = layui.$;
+		
+		console.log('LayUI组件加载完成，准备启动页面管理器');
+		
+		// 确保所有组件都已加载完成后再启动页面管理器
+		setTimeout(() => {
+			console.log('启动页面管理器');
+			PageManager.init();
+			
+			// ============ 暴露液位控制方法 ============
+			window.setLiquidLevel = function(columnIndex, level) {
+				return window.RealTimeDataModule.setLiquidLevel(columnIndex, level);
+			};
+			
+			window.setAllLiquidLevels = function(levels) {
+				return window.RealTimeDataModule.setAllLiquidLevels(levels);
+			};
+			
+			window.getLiquidLevel = function(columnIndex) {
+				return window.RealTimeDataModule.getLiquidLevel(columnIndex);
+			};
+			
+			// ============ 暴露实时数据控制方法 ============
+			window.setInstantFlow = function(value) {
+				return window.RealTimeDataModule.setInstantFlow(value);
+			};
+			
+			window.setDailyTotalFlow = function(value) {
+				return window.RealTimeDataModule.setDailyTotalFlow(value);
+			};
+			
+			window.setCOD = function(value) {
+				return window.RealTimeDataModule.setCOD(value);
+			};
+			
+			window.setTP = function(value) {
+				return window.RealTimeDataModule.setTP(value);
+			};
+			
+			window.setTN = function(value) {
+				return window.RealTimeDataModule.setTN(value);
+			};
+			
+			window.setDailyElectricity = function(value) {
+				return window.RealTimeDataModule.setDailyElectricity(value);
+			};
+			
+			window.setAllData = function(data) {
+				return window.RealTimeDataModule.setAllData(data);
+			};
+			
+			// ============ 暴露图表控制方法 ============
+			window.updateChartData = function(dataArray) {
+				return window.RealTimeDataModule.updateChartData(dataArray);
+			};
+			
+			// ============ 暴露统一更新方法 ============
+			window.updateAllData = function(config) {
+				return window.RealTimeDataModule.updateAllData(config);
+			};
+			
+			// 打印使用说明
+			console.log('%c================== 污水处理系统控制台 ==================', 'color: #00ff00; font-size: 14px; font-weight: bold;');
+			
+			console.log('%c【液位控制方法】', 'color: #00ff00; font-size: 12px; font-weight: bold;');
+			console.log('1. 设置单个液位: setLiquidLevel(柱子索引, 液位等级)');
+			console.log('   例: setLiquidLevel(0, 3) - 设置第1个柱子显示3节液位（从下往上）');
+			console.log('   柱子索引: 0-6 (从左到右第1-7个柱子)');
+			console.log('   液位等级: 0=红色警告, 1-4=从底部开始的绿色节数, 5=空液位(不显示颜色)');
+			console.log('   例: setLiquidLevel(0, 5) - 设置第1个柱子为空液位（保持竹节原色）');
+			console.log('');
+			console.log('2. 批量设置所有液位: setAllLiquidLevels([液位数组])');
+			console.log('   例: setAllLiquidLevels([1, 2, 3, 4, 2, 3, 5]) - 按顺序设置7个柱子（最后一个为空液位）');
+			console.log('');
+			console.log('3. 获取当前液位: getLiquidLevel(柱子索引)');
+			console.log('   例: getLiquidLevel(0) - 获取第1个柱子的当前液位等级');
+			console.log('');
+			
+			console.log('%c【实时数据控制方法】', 'color: #00ebff; font-size: 12px; font-weight: bold;');
+			console.log('1. 设置处理水量瞬时流量: setInstantFlow(值)');
+			console.log('   例: setInstantFlow(85.5) - 设置为85.5 m³/h');
+			console.log('');
+			console.log('2. 设置处理水量今日累计: setDailyTotalFlow(值)');
+			console.log('   例: setDailyTotalFlow(2100) - 设置为2100 m³');
+			console.log('');
+			console.log('3. 设置COD值: setCOD(值)');
+			console.log('   例: setCOD(45.2) - 设置为45.2 mg/L');
+			console.log('');
+			console.log('4. 设置总磷值: setTP(值)');
+			console.log('   例: setTP(1.5) - 设置为1.5 mg/L');
+			console.log('');
+			console.log('5. 设置总氮值: setTN(值)');
+			console.log('   例: setTN(8.3) - 设置为8.3 mg/L');
+			console.log('');
+			console.log('6. 设置今日用电值: setDailyElectricity(值)');
+			console.log('   例: setDailyElectricity(1250.5) - 设置为1250.5 KWh');
+			console.log('');
+			console.log('7. 批量设置所有数据: setAllData({数据对象})');
+			console.log('   例: setAllData({instantFlow: 85, dailyTotalFlow: 2100, cod: 45, tp: 1.5, tn: 8.3, dailyElectricity: 1250})');
+			console.log('');
+			
+			console.log('%c【图表数据控制方法】', 'color: #ff6b9d; font-size: 12px; font-weight: bold;');
+			console.log('1. 更新图表数据: updateChartData([数据数组])');
+			console.log('   例: updateChartData([2000, 2100, 1900, 2050, 1980]) - 可传任意数量数据');
+			console.log('   说明: 数据少于30个时自动补0; 图表会显示所有数据，柱子内部显示数值');
+			console.log('');
+			
+			console.log('%c【统一更新方法】', 'color: #ff9c6e; font-size: 12px; font-weight: bold;');
+			console.log('1. 同时更新液位、实时数据和图表: updateAllData({配置对象})');
+			console.log('   例: updateAllData({');
+			console.log('      liquidLevels: [2, 3, 1, 4, 2, 3, 1],  // 可选');
+			console.log('      realtimeData: {instantFlow: 85, dailyTotalFlow: 2100, cod: 45, tp: 1.5, tn: 8.3, dailyElectricity: 1250},  // 可选');
+			console.log('      chartData: [2000, 2100, 1900, 2050]  // 可选');
+			console.log('   })');
+			console.log('   说明: 各参数都是可选的，只有指定的字段会被更新，不会相互影响');
+			console.log('');
+			
+			console.log('%c【液位柱子说明】(从左到右)', 'color: #ffb74d; font-size: 12px;');
+			console.log('0: 原水槽 (4节)   | 1: 调节槽 (4节)      | 2: 沉淀出水槽 (4节)');
+			console.log('3: 过滤原水槽 (4节) | 4: 活性炭原水槽 (4节) | 5: 处理水槽 (3节) | 6: 污泥槽 (2节)');
+		}, 500); // 延迟500ms确保所有LayUI组件完全就绪
+	});
+</script>
+
+</body>
+</html>

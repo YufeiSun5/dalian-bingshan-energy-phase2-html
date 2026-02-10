@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>污水处理统计报表</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script src="./chart-table-config.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        }).extend({
+            excel: 'excel'
+        });
+    </script>
+
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 (1:1 还原) */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        /* 切换按钮组 */
+        .time-type-group { display: flex; align-items: center; gap: 5px; }
+        .time-type-btn {
+            padding: 6px 14px;
+            border: 1px solid #2a6dc8;
+            background: transparent;
+            color: #b9d3f4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .time-type-btn:hover { background: rgba(42, 109, 200, 0.3); color: #fff; }
+        .time-type-btn.active {
+            background: #1e88e5;
+            border-color: #1e88e5;
+            color: white;
+            box-shadow: 0 0 8px rgba(30,136,229,0.5);
+        }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-btn-normal { background-color: #1e88e5 !important; }
+        .layui-bg-orange { background-color: #ffb800 !important; }
+
+        /* 内容布局 */
+        .content-area { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+        .top-section { flex: 6; display: flex; gap: 8px; min-height: 0; }
+        
+        .table-box { flex: 6; background: #1d386f; border: 1px solid #2a6dc8; border-radius: 4px; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
+        .right-charts-box { flex: 4; display: flex; flex-direction: column; gap: 8px; }
+        .right-chart-item { flex: 1; background: #102a5c; border: 1px solid #2a6dc8; border-radius: 4px; position: relative; padding: 10px; }
+        
+        .bottom-section { flex: 4; display: flex; gap: 8px; min-height: 0; }
+        .bottom-chart-item { flex: 1; background: #102a5c; border: 1px solid #2a6dc8; border-radius: 4px; position: relative; padding: 10px; }
+        .chart-container { width: 100%; height: 100%; }
+
+        /* 表格样式 */
+        .tech-table-wrapper { flex: 1; overflow: auto; }
+        .tech-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tech-table th, .tech-table td { border: 1px solid #3c8ce7; padding: 8px 5px; text-align: center; color: #fff; }
+        .tech-table thead th { background: #0c6ed3; color: #fff; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+        .tech-table tbody td { background: #1e4e89; }
+        .tech-table tbody tr:hover td { background: rgba(48, 127, 190, 0.9); }
+        
+        .cell-red-text { color: #ff4d4f !important; font-weight: bold; }
+        .cell-green-bg { background: #92d050 !important; color: #000 !important; font-weight: bold; }
+        .cell-summary-label { color: #fff; font-weight: bold; }
+        .cell-merged { vertical-align: middle; background: #1d386f; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+
+                <div class="date-group">
+                    <label>统计时间</label>
+                    <input type="text" id="date-input" readonly>
+                </div>
+                <div class="time-type-group">
+                    <button class="time-type-btn active" data-type="month">月度</button>
+                </div>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title" id="page-title">污水处理月报</span>
+            </div>
+            <div class="toolbar-right">
+                <button type="button" id="btn-to-input" class="layui-btn layui-btn-sm layui-btn-normal">
+                    <i class="layui-icon layui-icon-edit"></i> 数据录入
+                </button>
+                <button type="button" id="btn-search" class="layui-btn layui-btn-sm">
+                    <i class="layui-icon layui-icon-search"></i> 查询
+                </button>
+                <button type="button" id="btn-export" class="layui-btn layui-btn-sm layui-bg-orange">
+                    <i class="layui-icon layui-icon-export"></i> 导出
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="top-section">
+                <div class="table-box">
+                    <div class="tech-table-wrapper">
+                        <table class="tech-table" id="data-table">
+                            <thead>
+                                <tr>
+                                    <th width="15%">类别</th>
+                                    <th width="20%">名称</th>
+                                    <th width="20%">单价(不含税)</th>
+                                    <th width="20%">本月用量</th>
+                                    <th width="25%">本月费用(元)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="right-charts-box">
+                    <div class="right-chart-item"><div class="chart-container" id="chart-water-usage"></div></div>
+                    <div class="right-chart-item"><div class="chart-container" id="chart-power-usage"></div></div>
+                </div>
+            </div>
+
+            <div class="bottom-section">
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-per-unit"></div></div>
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-cost-trend"></div></div>
+                <div class="bottom-chart-item"><div class="chart-container" id="chart-sludge"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'jquery', 'excel'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        var excel = layui.excel; // layui的excel导出插件
+        
+        // ============================================
+        // 1. 变量隔离存储 (满足需求)
+        // ============================================
+        var queryStore = {
+            currentType: 'month',  // 当前模式: 'month' | 'year'
+            monthValue: new Date().getFullYear() + "-"+ ((new Date().getMonth()+1)<10?"0"+(new Date().getMonth()+1):(new Date().getMonth()+1)), // 专门存储月度选择（更新为当前月份）
+            yearValue: new Date().getFullYear()      // 专门存储年度选择
+        };
+        
+        // ============================================
+        // 2. 初始化与事件
+        // ============================================
+        
+        // 初始化图表实例
+        window.PAGE_CONFIG.initCharts();
+        // 初始加载一次数据
+        performSearch();
+
+        // 渲染日期选择器
+        function renderDateInput() {
+            // 移除旧元素以重置 laydate 实例
+            $('#date-input').remove();
+            $('.date-group').append('<input type="text" id="date-input" readonly>');
+            
+            // 根据当前模式，取不同的变量值
+            var initVal = (queryStore.currentType === 'month') 
+                          ? queryStore.monthValue 
+                          : queryStore.yearValue;
+
+            laydate.render({ 
+                elem: '#date-input', 
+                type: queryStore.currentType, // 'month' 或 'year'
+                value: initVal,
+                theme: '#1e88e5',
+                done: function(value, date){
+                    // 关键：选择后，更新对应变量，互不干扰
+                    if(queryStore.currentType === 'month') {
+                        queryStore.monthValue = value;
+                    } else {
+                        queryStore.yearValue = value;
+                    }
+                }
+            });
+            updateTitle();
+        }
+
+        function updateTitle() {
+            var text = (queryStore.currentType === 'month') ? '污水处理月报' : '污水处理年报';
+            // 可选：把日期加到标题里 $('#page-title').text(text + ' (' + $('#date-input').val() + ')');
+            $('#page-title').text(text);
+        }
+
+        // 切换按钮点击
+        $('.time-type-btn').on('click', function() {
+            var type = $(this).data('type');
+            if(type === queryStore.currentType) return;
+
+            // UI 更新
+            $('.time-type-btn').removeClass('active');
+            $(this).addClass('active');
+
+            // 逻辑更新
+            queryStore.currentType = type;
+            
+            // 重新渲染选择器（会读取 queryStore 中对应的变量）
+            renderDateInput();
+            
+            // 自动触发一次查询，或者等用户点查询按钮
+            performSearch(); 
+        });
+
+        // 查询按钮点击
+        $('#btn-search').click(function() {
+            performSearch();
+        });
+
+        // 数据录入按钮
+        $('#btn-to-input').click(function() {
+            window.location.href = '污水处理数据录入.html';
+        });
+
+        // Excel导出
+        $('#btn-export').click(function() {
+            console.log('导出按钮点击，检查layui.excel:', excel);
+            if (!excel) {
+                layer.msg('layui.excel插件未加载，请检查配置', { icon: 2 });
+                return;
+            }
+            exportTableToExcel();
+        });
+
+        // ============================================
+        // 3. 执行查询 (模拟 SQL 触发)
+        // ============================================
+        function performSearch() {
+            var type = queryStore.currentType;
+            // 只有当前模式对应的值被使用
+            var value = (type === 'month') ? queryStore.monthValue : queryStore.yearValue;
+
+            // 模拟 Loading
+            var idx = layer.load(2, { shade: 0.1 });
+
+            // 调用 Mock 数据接口
+            window.PAGE_CONFIG.fetchData(type, value).then(data => {
+                layer.close(idx);
+                // 1. 更新表格
+                renderTable(data.tableData);
+                // 2. 更新图表
+                window.PAGE_CONFIG.updateCharts(data.chartData);
+                
+                layer.msg(`已加载 [${value}] 的${type === 'month' ? '月度' : '年度'}数据`);
+            });
+        }
+
+        // 渲染表格 (HTML 生成逻辑)
+        function renderTable(data) {
+            var html = '';
+            // 药品用量 (合并行)
+            html += `
+                <tr>
+                    <td rowspan="4" class="cell-merged">药品用量</td>
+                    <td>PFS(KG)</td>
+                    <td class="cell-red-text">${data.drugs[0].price}</td>
+                    <td class="cell-red-text">${data.drugs[0].usage}</td>
+                    <td class="cell-green-bg">${data.drugs[0].cost}</td>
+                </tr>
+                <tr><td>NaOH(KG)</td><td class="cell-red-text">${data.drugs[1].price}</td><td class="cell-red-text">${data.drugs[1].usage}</td><td class="cell-green-bg">${data.drugs[1].cost}</td></tr>
+                <tr><td>阴PAM(KG)</td><td class="cell-red-text">${data.drugs[2].price}</td><td class="cell-red-text">${data.drugs[2].usage}</td><td class="cell-green-bg">${data.drugs[2].cost}</td></tr>
+                <tr><td>阳PAM(KG)</td><td class="cell-red-text">${data.drugs[3].price}</td><td class="cell-red-text">${data.drugs[3].usage}</td><td class="cell-green-bg">${data.drugs[3].cost}</td></tr>
+            `;
+            // 自来水 & 电
+            html += `
+                <tr><td>自来水量</td><td>吨</td><td class="cell-red-text">${data.water.price}</td><td class="cell-red-text">${data.water.usage}</td><td class="cell-green-bg">${data.water.cost}</td></tr>
+                <tr><td>电量</td><td>千瓦.时</td><td class="cell-red-text">${data.power.price}</td><td class="cell-red-text">${data.power.usage}</td><td class="cell-green-bg">${data.power.cost}</td></tr>
+            `;
+            // 合计
+            html += `<tr><td colspan="4" class="cell-summary-label">本月费用合计（元）</td><td class="cell-green-bg" style="font-size:15px;">${data.totalCost}</td></tr>`;
+            // 底部指标
+            html += `<tr><td colspan="4" class="cell-summary-label">污水处理量（吨）</td><td class="cell-red-text">${data.metrics.processAmount}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">每吨污水成本（元/吨）</td><td class="cell-green-bg">${data.metrics.costPerTon}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">本月压缩机成品产量（台）</td><td class="cell-red-text">${data.metrics.productAmount}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">单台污水量（吨/台）</td><td class="cell-green-bg">${data.metrics.waterPerUnit}</td></tr>`;
+            html += `<tr><td colspan="4" class="cell-summary-label">污泥产出量（吨）</td><td>${data.metrics.sludge}</td></tr>`;
+
+            $('#table-body').html(html);
+        }
+
+        // ============================================
+        // 4. Excel导出功能（使用layui插件）
+        // ============================================
+
+        // 存储当前表格数据
+        var currentTableData = null;
+
+        // 导出表格到Excel
+        function exportTableToExcel() {
+            console.log('[Excel导出] 开始导出...');
+
+            layer.load(2, { shade: 0.1 });
+
+            getCurrentTableData().then(function(tableData) {
+                try {
+                    console.log('[Excel导出] 数据获取成功:', tableData);
+                    exportToExcelWithLayui(tableData);
+                    console.log('[Excel导出] 导出成功');
+                    layer.closeAll('loading');
+                } catch (error) {
+                    console.error('[Excel导出] 导出失败:', error);
+                    console.error('[Excel导出] 错误堆栈:', error.stack);
+                    console.error('[Excel导出] 当前数据状态:', {
+                        currentType: queryStore.currentType,
+                        monthValue: queryStore.monthValue,
+                        yearValue: queryStore.yearValue,
+                        tableData: tableData
+                    });
+                    layer.closeAll('loading');
+                    layer.msg('导出失败：' + error.message + '，请查看控制台了解详情', { icon: 2 });
+                }
+            }).catch(function(error) {
+                console.error('[Excel导出] 数据获取失败:', error);
+                console.error('[Excel导出] 错误堆栈:', error.stack);
+                console.error('[Excel导出] 请求参数:', {
+                    currentType: queryStore.currentType,
+                    monthValue: queryStore.monthValue,
+                    yearValue: queryStore.yearValue
+                });
+                layer.closeAll('loading');
+                layer.msg('数据获取失败：' + error.message + '，请查看控制台了解详情', { icon: 2 });
+            });
+        }
+
+        // 获取当前表格数据
+        function getCurrentTableData() {
+            if (currentTableData) {
+                console.log('[Excel导出] 使用缓存数据');
+                return Promise.resolve(currentTableData);
+            }
+
+            console.log('[Excel导出] 获取新数据...');
+            var type = queryStore.currentType;
+            var value = (type === 'month') ? queryStore.monthValue : queryStore.yearValue;
+
+            console.log('[Excel导出] 查询参数:', { type: type, value: value });
+
+            return window.PAGE_CONFIG.fetchData(type, value).then(function(data) {
+                currentTableData = data.tableData;
+                console.log('[Excel导出] 数据缓存成功');
+                return data.tableData;
+            });
+        }
+
+        // 使用layui插件导出Excel（带样式）
+        function exportToExcelWithLayui(data) {
+            console.log('[Excel导出] 开始使用layui插件创建Excel文件...');
+
+            // 验证必要数据
+            if (!data || !data.drugs || !data.water || !data.power || !data.metrics) {
+                throw new Error('导出数据不完整，缺少必要字段');
+            }
+
+            // 准备数据数组
+            var excelData = [];
+
+            // 添加标题行
+            var title = queryStore.currentType === 'month' ? '污水处理月报' : '污水处理年报';
+            var dateValue = queryStore.currentType === 'month' ? queryStore.monthValue : queryStore.yearValue;
+            excelData.push([title + ' - ' + dateValue]);
+            excelData.push(['', '', '', '', '']); // 用空字符串代替空行，避免forEach错误
+
+            // 添加表头
+            excelData.push(['类别', '名称', '单价(不含税)', '本月用量', '本月费用(元)']);
+
+            // 药品用量数据
+            excelData.push(['药品用量', 'PFS(KG)', data.drugs[0].price, data.drugs[0].usage, data.drugs[0].cost]);
+            excelData.push(['', 'NaOH(KG)', data.drugs[1].price, data.drugs[1].usage, data.drugs[1].cost]);
+            excelData.push(['', '阴PAM(KG)', data.drugs[2].price, data.drugs[2].usage, data.drugs[2].cost]);
+            excelData.push(['', '阳PAM(KG)', data.drugs[3].price, data.drugs[3].usage, data.drugs[3].cost]);
+
+            // 自来水和电
+            excelData.push(['自来水量', '吨', data.water.price, data.water.usage, data.water.cost]);
+            excelData.push(['电量', '千瓦.时', data.power.price, data.power.usage, data.power.cost]);
+
+            // 合计行
+            excelData.push(['本月费用合计（元）', '', '', '', data.totalCost]);
+
+            // 指标行
+            excelData.push(['污水处理量（吨）', '', '', '', data.metrics.processAmount]);
+            excelData.push(['每吨污水成本（元/吨）', '', '', '', data.metrics.costPerTon]);
+            excelData.push(['本月压缩机成品产量（台）', '', '', '', data.metrics.productAmount]);
+            excelData.push(['单台污水量（吨/台）', '', '', '', data.metrics.waterPerUnit]);
+            excelData.push(['污泥产出量（吨）', '', '', '', data.metrics.sludge]);
+
+            console.log('[Excel导出] 数据数组构建完成，行数:', excelData.length);
+            console.log('[Excel导出] 数据结构预览:', excelData.slice(0, 3)); // 打印前3行用于调试
+
+            // 检查数据格式，确保每个元素都是数组
+            for (var i = 0; i < excelData.length; i++) {
+                if (!Array.isArray(excelData[i])) {
+                    console.error('[Excel导出] 数据格式错误，第', i, '行不是数组:', excelData[i]);
+                    excelData[i] = Array.isArray(excelData[i]) ? excelData[i] : [excelData[i]];
+                }
+            }
+            console.log('[Excel导出] 数据格式检查完成');
+
+            // 合并配置（修复格式）
+            try {
+                // layui的合并配置需要用标准的Excel格式
+                var mergeConf = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // 标题行 A1:E1
+                    { s: { r: 3, c: 0 }, e: { r: 6, c: 0 } },  // 药品用量 A4:A7
+					{ s: { r: 9, c: 0 }, e: { r: 9, c: 3 } },  //几个合计量
+					{ s: { r: 10, c: 0 }, e: { r: 10, c: 3 } },
+					{ s: { r: 11, c: 0 }, e: { r: 11, c: 3 } },
+					{ s: { r: 12, c: 0 }, e: { r: 12, c: 3 } },
+					{ s: { r: 13, c: 0 }, e: { r: 13, c: 3 } },
+					{ s: { r: 14, c: 0 }, e: { r: 14, c: 3 } }
+                ];
+                console.log('[Excel导出] 合并配置完成:', mergeConf);
+            } catch (mergeError) {
+                console.warn('[Excel导出] 合并配置失败，继续导出:', mergeError);
+                var mergeConf = [];
+            }
+
+            // 列宽配置（按网页比例，但放大到合适的Excel宽度）
+            try {
+                // 按照网页的比例：15%, 20%, 20%, 20%, 25%
+                // 放大到合适的Excel列宽（基于字符宽度）
+                var colConf = [
+                    { wch: 12 }, // 类别 15% -> 12字符宽度
+                    { wch: 18 }, // 名称 20% -> 18字符宽度
+                    { wch: 16 }, // 单价 20% -> 16字符宽度
+                    { wch: 16 }, // 用量 20% -> 16字符宽度
+                    { wch: 20 }  // 费用 25% -> 20字符宽度
+                ];
+                console.log('[Excel导出] 列宽配置完成:', colConf);
+            } catch (colError) {
+                console.warn('[Excel导出] 列宽配置失败，继续导出:', colError);
+                var colConf = [];
+            }
+
+            // 生成文件名
+            var fileName = title + '_' + dateValue + '.xlsx';
+            console.log('[Excel导出] 文件名:', fileName);
+
+            // 导出文件 - 使用正确的layui参数格式
+            try {
+                console.log('[Excel导出] 使用正确的layui参数格式...');
+
+                // 准备扩展配置
+                var extendOptions = {};
+                if (mergeConf.length > 0) {
+                    extendOptions['!merges'] = mergeConf;
+                }
+                if (colConf.length > 0) {
+                    extendOptions['!cols'] = colConf;
+                }
+
+                console.log('[Excel导出] 扩展配置:', extendOptions);
+				excel.setExportCellStyle(excelData, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+                // 使用正确的参数格式：数据, 文件名, 类型, 配置选项
+                if (Object.keys(extendOptions).length > 0) {
+                    excel.exportExcel(excelData, fileName, 'xlsx', {
+                        extend: {
+                            sheet1: extendOptions
+                        }
+                    });
+                } else {
+                    excel.exportExcel(excelData, fileName);
+                }
+
+                console.log('[Excel导出] layui插件导出成功');
+
+            } catch (exportError) {
+                console.error('[Excel导出] layui插件导出失败:', exportError);
+
+                // 失败时尝试最简单的导出
+                try {
+                    console.log('[Excel导出] 尝试简单导出...');
+                    excel.exportExcel(excelData, fileName);
+                    console.log('[Excel导出] 简单导出成功');
+                } catch (simpleError) {
+                    console.error('[Excel导出] 简单导出也失败:', simpleError);
+                    console.error('[Excel导出] 数据详情:', excelData);
+                    throw new Error('layui插件导出失败: ' + simpleError.message);
+                }
+            }
+        }
+
+        // 修改performSearch函数，保存当前数据
+        var originalPerformSearch = performSearch;
+        performSearch = function() {
+            var type = queryStore.currentType;
+            var value = (type === 'month') ? queryStore.monthValue : queryStore.yearValue;
+
+            var idx = layer.load(2, { shade: 0.1 });
+
+            window.PAGE_CONFIG.fetchData(type, value).then(data => {
+                layer.close(idx);
+                // 保存当前数据供导出使用
+                currentTableData = data.tableData;
+                renderTable(data.tableData);
+                window.PAGE_CONFIG.updateCharts(data.chartData);
+
+                layer.msg(`已加载 [${value}] 的${type === 'month' ? '月度' : '年度'}数据`);
+            });
+        };
+
+        // 首次运行
+        renderDateInput();
+        window.addEventListener('resize', () => window.PAGE_CONFIG.resizeCharts());
+    });
+    </script>
+</body>
+</html>

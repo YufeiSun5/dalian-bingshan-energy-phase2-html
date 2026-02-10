@@ -1,0 +1,155 @@
+/**
+ * 甘特图模块独立样式
+ * 与报表、曲线模块保持一致的风格
+ * 可移植到任何项目
+ */
+
+/* 甘特图容器 */
+.gantt-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #0f266c;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* 甘特图主体 */
+.gantt-main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 查询表单区域 */
+.gantt-query-form {
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.gantt-query-form .layui-form-item {
+    margin-bottom: 0;
+}
+
+.gantt-query-form .layui-inline {
+    margin-bottom: 0;
+}
+
+.gantt-query-form .layui-form-label {
+    color: #fff !important;
+    padding: 9px 15px 9px 0 !important;
+    background-color: transparent !important;
+}
+
+.gantt-query-form .layui-input-inline {
+    margin-bottom: 0;
+}
+
+.gantt-query-form .layui-form-mid {
+    color: #fff !important;
+}
+
+/* 甘特图内容区 */
+.gantt-content {
+    flex: 1;
+    background: #1d386f;
+    border: 1px solid #2a6dc8;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 标题 */
+.gantt-title {
+    text-align: center;
+    color: #fff;
+    font-size: 18px;
+    font-weight: normal;
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+/* 图表容器 */
+.gantt-chart-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+#gantt-chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* LayUI输入框样式 */
+.layui-input {
+    background-color: rgba(40, 80, 167, 1) !important;
+    border-color: rgba(40, 80, 167, 0) !important;
+    color: white !important;
+}
+
+.layui-input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.layui-input:hover {
+    border-color: rgba(40, 80, 167, 0) !important;
+}
+
+.layui-input:focus {
+    border-color: #409eff !important;
+    box-shadow: 0 0 0 3px rgba(40, 80, 167, 0.08) !important;
+}
+
+/* LayUI按钮样式 */
+.layui-btn {
+    background-color: #009688 !important;
+    border-color: #009688 !important;
+}
+
+.layui-btn:hover {
+    background-color: #00b3a0 !important;
+}
+
+/* LayUI下拉选择框样式 */
+.layui-form-select dl {
+    background-color: #1d386f !important;
+    border-color: #2a6dc8 !important;
+}
+
+.layui-form-select dl dd {
+    color: #fff !important;
+}
+
+.layui-form-select dl dd:hover {
+    background-color: #2a6dc8 !important;
+}
+
+.layui-form-select dl dd.layui-this {
+    background-color: #0f266c !important;
+    color: #409eff !important;
+    font-weight: 700 !important;
+}
+
+/* xm-select多选组件样式 */
+.gantt-query-form .xm-select {
+    background-color: rgba(40, 80, 167, 1) !important;
+    border-color: rgba(40, 80, 167, 0) !important;
+}
+
+.gantt-query-form .xm-select .xm-input {
+    background-color: transparent !important;
+    color: white !important;
+}
+
+.gantt-query-form .xm-select .xm-select-label {
+    background-color: #009688 !important;
+    color: white !important;
+}
+

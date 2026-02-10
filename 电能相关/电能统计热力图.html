@@ -1,0 +1,779 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能统计热力图</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">			
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">分类能耗：</label>
+							<div class="layui-input-inline">
+								<select name="interest" lay-filter="aihao">
+									<option value=""></option>
+									<option value="0">写作</option>
+									<option value="1" selected>阅读</option>
+									<option value="2">游戏</option>
+									<option value="3">音乐</option>
+									<option value="4">旅行</option>
+								</select>
+							</div>-->
+							
+							
+							<div class="layui-inline" style = "margin-right : 20px;float:left">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid">-</div>
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变电所：</label>
+							<div class="layui-input-inline" style = "margin-right : 15px">
+								<select id = "substation" name="substation" lay-filter="substation">
+									<option value="1" selected>一号变电所</option>
+									<option value="2">二号变电所</option>
+									<option value="3">三号变电所</option>
+									<option value="4">变电所之和</option>
+								</select>
+							</div>
+
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">电表选择：</label>
+							<div class="layui-input-inline" style = "margin-right : 20px">
+								<select id = "sreachNo" name="sreachNo" lay-filter="sreachNo">
+									<option value=" 51" selected name = "E51">1#变压器主开关</option>
+									<option value=" 52">2#变压器主开关</option>
+								</select>
+							</div>
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto;">分类能耗：</label>
+							<div class="layui-input-inline" style = "">
+								<select name="classification" id = 'classification' lay-filter="classification">
+									<option value="P_ABC" selected>功率</option>
+									<option value="A_B" >B项电流</option>
+								</select>
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>-->
+							</div>
+						</div>
+
+						
+						
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<div id = "chart" style = "height:100%;padding:0 10 0 10" >
+								
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	var limitConfig = {};
+	// limitConfig.E51 = {A_A_HiHiLimit:100,A_B_HiHiLimit:100,A_C_HiHiLimit:100,P_ABC_HiHiLimit:100};
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var dateValue = "month";
+		var excel = layui.excel; //导出逻辑                            
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		//var year = currentDay.getFullYear();
+		//currentDay.setHours(7, 0, 0, 0);
+
+		// 初始化日期日期
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});
+
+		var table = layui.table;
+		var $ = layui.$;
+		$('#search').on('click', async function() {
+			debugger;
+			search();
+			
+		});
+		
+		// 变电所选择联动逻辑
+		form.on('select(substation)', function(data){
+			updateMeterOptions(data.value);
+		});
+
+		// 更新电表选择选项的函数
+		function updateMeterOptions(substationId) {
+			var meterSelect = document.getElementById('sreachNo');
+			meterSelect.innerHTML = ''; // 清空现有选项
+
+			var options = '';
+
+			if (substationId === '1') {
+				// 只显示一号变电所的电表
+				options = `
+					<option value=" 51" name = "E51" selected>1#变压器主开关</option>
+					<option value=" 52" name = "E52" >2#变压器主开关</option>
+				`;
+			} else if (substationId === '2') {
+				// 只显示二号变电所的电表
+				options = `
+					<option value=" 12" name = "E12" selected>1#变压器主开关</option>
+					<option value=" 16" name = "E16" >2#变压器主开关</option>
+					<option value=" 17" name = "E17" >3#变压器主开关</option>
+					<option value=" 20" name = "E20" >4#变压器主开关</option>
+				`;
+			} else if (substationId === '3') {
+				// 只显示三号变电所的电表
+				options = `
+					<option value=" 1 " name = "E1" selected>1#变压器主开关</option>
+					<option value=" 26 " name = "E26" >2#变压器主开关</option>
+				`;
+			}else if (substationId === '4') {
+				// 只显示三号变电所的电表
+				options = `
+					<option value=" 51,52,12,16,17,20 " name = "Sum1_2" selected>一、二号变电所之和</option>
+					<option value=" 1,26 " name = "Sum3" >三号变电所之和</option>
+				`;
+			}
+
+			meterSelect.innerHTML = options;
+			form.render('select'); // 重新渲染下拉框
+		}
+		
+		
+	async function search() {
+
+            try {
+
+                // debugger; // 调试用，如果不想自动暂停可以注释掉
+
+                var startdate = $("#ID-laydate-start-date-1")[0].value;
+
+                var enddate = $("#ID-laydate-end-date-1")[0].value;
+
+                let no = $('#sreachNo').val();
+
+                let name = $('#sreachNo').find("option:selected").attr("name");
+
+                let classification = $('#classification').val();
+
+                
+
+                // 确保 limitConfig 有值（防止报错）
+
+                let max = 1000; // 默认值防止崩坏
+
+                if (limitConfig && limitConfig[name]) {
+
+                    max = limitConfig[name][classification + "_HiHiLimit"];
+
+                }
+
+                let min = 0;
+
+// =========== 懒人替换开始：高性能版 SQL (已修复空值问题) ===========
+                
+                // 1. 定义时间基准点
+                let baseTime = startdate + " 07:00:00";
+                let endBarrier = enddate + " 07:00:00"; 
+
+                // 2. 新版 SQL
+                let sql = "" 
+                +" SELECT "
+                +"    pt.time as date, "
+                +"    DATE_FORMAT(pt.time,'%H:%i') as hour, "
+                +"    DATE_FORMAT(DATE_SUB(pt.time, INTERVAL 7 HOUR ), '%m-%d') as jDay, "
+                +"    t.today_elec " 
+                +" FROM ( "
+                +"    SELECT DATE_ADD('" + baseTime + "', INTERVAL (i * 15) MINUTE) as time "
+                +"    FROM sys_ints "
+                +"    WHERE DATE_ADD('" + baseTime + "', INTERVAL (i * 15) MINUTE) <= DATE_ADD('" + endBarrier + "', INTERVAL 1 DAY) "
+                +" ) pt "
+                +" LEFT JOIN ( "
+                // ↓↓↓↓↓↓↓↓↓↓↓↓ 关键修改：加上 :00 以匹配 sys_ints 的时间格式 ↓↓↓↓↓↓↓↓↓↓↓↓
+                +"      SELECT DATE_FORMAT(date , '%Y-%m-%d %H:%i:00') as date, no, sum(" + classification + ") as today_elec "
+                +"      FROM hotspot_map_by_quarter "
+                +"      WHERE date >= DATE_FORMAT('" + startdate + "', '%Y-%m-%d 06:45:00') " 
+                +"      AND date <= DATE_ADD('" + endBarrier + "', INTERVAL 25 HOUR) "
+                +"      AND no IN ( " + no + ") "
+                +"      GROUP BY date "
+                +" ) t ON t.date = pt.time "
+                +" WHERE pt.time < DATE_ADD('" + endBarrier + "', INTERVAL 24 HOUR) "
+                +" ORDER BY pt.time ";
+                
+                // =========== 懒人替换结束 ===========
+
+
+                console.info("优化后的SQL:", sql); // 在控制台看看 SQL 是否干净
+
+                
+
+                const data = await sendSQL(sql);
+
+                console.log("接口返回数据:", data);
+
+
+
+                if (!data || !data.data) {
+
+                    console.error("数据为空或查询失败");
+
+                    return;
+
+                }
+
+
+
+                let seriesData = [];
+
+                for (let i = 0; i < data.data.length; i++) {
+
+                    // 这里的字段名 hour, jDay, today_elec 和 SQL 里的一一对应，图表一定能出
+
+                    seriesData.push([data.data[i].hour, data.data[i].jDay, data.data[i].today_elec]);
+
+                }
+
+                console.log("图表渲染数据:", seriesData);
+
+
+
+                var myChart = echarts.init(document.getElementById('chart'));
+
+
+
+                option = {
+
+                    title: {
+
+                        text: '电能统计热力图',
+
+                        textStyle: { color: '#fff' }
+
+                    },
+
+                    tooltip: {
+
+                        borderWidth: 0,
+
+                        trigger: 'axis',
+
+                        axisPointer: { type: 'cross', cross: false, lineStyle: { width: 0 }, crossStyle: { width: 0 } },
+
+                        textStyle: { fontSize: 13 },
+
+                        formatter: function(params) {
+
+                            var result = '';
+
+                            result += params[0].data[0] + '<br/>';
+
+                            for (var i = 0, l = params.length; i < l; i++) {
+
+                                result += params[i].marker + "\t" + params[i].data[1] + "\t" + params[i].data[2] + "\t" + params[i].seriesName + '<br/>';
+
+                            }
+
+                            return result;
+
+                        }
+
+                    },
+
+                    xAxis: {
+
+                        name: '',
+
+                        nameLocation: "right",
+
+                        nameGap: 30,
+
+                        data: [
+
+                            '07:00', '07:15', '07:30', '07:45', '08:00', '08:15', '08:30', '08:45',
+
+                            '09:00', '09:15', '09:30', '09:45', '10:00', '10:15', '10:30', '10:45',
+
+                            '11:00', '11:15', '11:30', '11:45', '12:00', '12:15', '12:30', '12:45',
+
+                            '13:00', '13:15', '13:30', '13:45', '14:00', '14:15', '14:30', '14:45',
+
+                            '15:00', '15:15', '15:30', '15:45', '16:00', '16:15', '16:30', '16:45',
+
+                            '17:00', '17:15', '17:30', '17:45', '18:00', '18:15', '18:30', '18:45',
+
+                            '19:00', '19:15', '19:30', '19:45', '20:00', '20:15', '20:30', '20:45',
+
+                            '21:00', '21:15', '21:30', '21:45', '22:00', '22:15', '22:30', '22:45',
+
+                            '23:00', '23:15', '23:30', '23:45', '00:00', '00:15', '00:30', '00:45',
+
+                            '01:00', '01:15', '01:30', '01:45', '02:00', '02:15', '02:30', '02:45',
+
+                            '03:00', '03:15', '03:30', '03:45', '04:00', '04:15', '04:30', '04:45',
+
+                            '05:00', '05:15', '05:30', '05:45', '06:00', '06:15', '06:30', '06:45'
+
+                        ],
+
+                        type: 'category',
+
+                        splitArea: { show: true },
+
+                        axisTick: { show: true },
+
+                        axisLine: { show: true },
+
+                    },
+
+                    yAxis: {
+
+                        name: '',
+
+                        type: 'category',
+
+                        data: '', // 这里Echarts会自动根据seriesData处理
+
+                        axisLine: { show: true },
+
+                        axisTick: { show: false },
+
+                        splitArea: { show: false },
+
+                        splitLine: { show: true, lineStyle: { color: '#ffff' } },
+
+                    },
+
+                    visualMap: {
+
+                        min: min,
+
+                        max: max,
+
+                        color: 'yellow',
+
+                        calculable: true,
+
+                        orient: 'horizontal',
+
+                        left: 'center',
+
+                        textStyle: { fontSize: 9, color: '#ffffff' },
+
+                        inRange: { color: ['green', 'green', 'yellow', 'orange', 'red', 'purple'] }
+
+                    },
+
+                    series: [{
+
+                        name: '(KW)',
+
+                        type: 'heatmap',
+
+                        data: seriesData,
+
+                        label: { normal: { show: false } },
+
+                        itemStyle: {
+
+                            borderColor: '#fff',
+
+                            borderWidth: 1,
+
+                            emphasis: { shadowBlur: 1, shadowColor: 'rgb(10, 30, 84)' }
+
+                        },
+
+                        zlevel: -1,
+
+                    }]
+
+                };
+
+
+
+                if (option && typeof option === "object") {
+
+                    myChart.setOption(option, true);
+
+                }
+
+
+
+            } catch (err) {
+
+                console.error('查询出错：', err);
+
+            }
+
+        }
+		$('#export').on('click', async function() {
+			debugger;
+			try {
+				
+				console.info(cols);
+				var dataArr = [];
+				//先动态添加表头
+				var colsData = {
+					/*day:"日期"
+					,max_water:"示数（m³）"
+					,sum_water1:"当天用水总量（m³）"*/
+				};
+				colsData["month"] = "时间";
+				colsData['sum_'+year+''] = ''+year+'使用量（kW·h）';
+				colsData['sum_'+(year-1)+''] = ''+(year-1)+'使用量（kW·h）';
+				colsData['ratio'] = '同比（%）';
+				dataArr.push(colsData);
+				
+
+				var data = table.getData('test');console.log(data);
+				
+				
+				
+				for(let i=0;i<data.length;i++){
+					dataArr.push(data[i]);
+				}
+
+
+				
+				// 生成配置的辅助函数，返回结果作为扩展功能的配置参数传入即可
+
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig({
+					'A': 80,
+					'B': 130,
+					'C': 130,
+					'D': 130,
+					//'E':130,
+					
+				}, 130);
+				// 3. 第1行行高40，第二行行高30，默认20
+				/*var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20);*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				var cols = table.getOptions('test').cols;
+				
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '电量同比分析_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				});
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

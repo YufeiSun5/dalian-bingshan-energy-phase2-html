@@ -1,0 +1,49 @@
+@font-face {
+  font-family: "iconfont"; /* Project id  */
+  src: url('iconfont.ttf?t=1749084664188') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-fuwuqiguanli:before {
+  content: "\e631";
+}
+
+.icon-shangjiantou:before {
+  content: "\e60f";
+}
+
+.icon-xiajiantou:before {
+  content: "\e610";
+}
+
+.icon-PLCguanli:before {
+  content: "\ea96";
+}
+
+.icon-power-icon:before {
+  content: "\e61a";
+}
+
+.icon-CZ_027:before {
+  content: "\e621";
+}
+
+.icon-PLCgongkong:before {
+  content: "\e632";
+}
+
+.icon-PLCxinxiguanli:before {
+  content: "\e7a1";
+}
+
+.icon-PLCguanli1:before {
+  content: "\e850";
+}
+

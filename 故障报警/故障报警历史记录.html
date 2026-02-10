@@ -1,0 +1,763 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>故障报警历史记录</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+
+	/* 滚动条样式与蓝深色 UI 统一 */
+	.content-box::-webkit-scrollbar,
+	.report-content::-webkit-scrollbar,
+	.layui-table-view::-webkit-scrollbar,
+	.layui-table-main::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	.content-box::-webkit-scrollbar-track,
+	.report-content::-webkit-scrollbar-track,
+	.layui-table-view::-webkit-scrollbar-track,
+	.layui-table-main::-webkit-scrollbar-track {
+		background: rgba(29, 56, 111, 0.6);
+		border-radius: 4px;
+	}
+	.content-box::-webkit-scrollbar-thumb,
+	.report-content::-webkit-scrollbar-thumb,
+	.layui-table-view::-webkit-scrollbar-thumb,
+	.layui-table-main::-webkit-scrollbar-thumb {
+		background: rgba(42, 109, 200, 0.8);
+		border-radius: 4px;
+	}
+	.content-box::-webkit-scrollbar-thumb:hover,
+	.report-content::-webkit-scrollbar-thumb:hover,
+	.layui-table-view::-webkit-scrollbar-thumb:hover,
+	.layui-table-main::-webkit-scrollbar-thumb:hover {
+		background: rgba(64, 158, 255, 0.9);
+	}
+	/* Firefox */
+	.content-box,
+	.report-content,
+	.layui-table-view,
+	.layui-table-main {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(42, 109, 200, 0.8) rgba(29, 56, 111, 0.6);
+	}
+
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">日期类型：</label>
+							<div class="layui-input-inline">
+								<select id = "interest" name="interest" lay-filter="interest">
+									<option value="day" selected>单日</option>
+									<option value="diy" >自定义</option>
+								</select>
+							</div>-->
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid"  >-</div>
+									<div class="layui-input-inline" >
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">变电所：</label>
+								<div class="layui-input-inline" style = "margin-right : 15px">
+									<select id = "substation" name="substation" lay-filter="substation">
+										<option value="all" selected>全部</option>
+										<option value="1">一号变电所</option>
+										<option value="2">二号变电所</option>
+										<option value="3">三号变电所</option>
+										<option value="other">其他</option>
+									</select>
+								</div>
+	
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">电表选择：</label>
+								<div class="layui-input-inline" style = "margin-right : 20px">
+									<select id = "sreachNo" name="sreachNo" disabled lay-filter="sreachNo">
+										
+									</select>
+								</div>
+								
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">具体项：</label>
+								<div class="layui-input-inline" style = "margin-right : 20px">
+									<select id = "specificItems" name="specificItems" disabled lay-filter="specificItems">
+										
+									</select>
+								</div>
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>-->
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">故障报警历史记录</h2>
+								
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var dateValue = "day";
+		
+		
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 加载日期
+		var datetest =  laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});
+		
+		// 变电所选择联动逻辑
+		form.on('select(substation)', function(data){
+			updateMeterOptions(data.value);
+		});
+
+		// 更新电表选择选项的函数
+		function updateMeterOptions(substationId) {
+			var meterSelect = document.getElementById('sreachNo');
+			meterSelect.innerHTML = ''; // 清空现有选项
+			var meterSelect1 = document.getElementById('specificItems');
+			meterSelect1.innerHTML = ''; // 清空现有选项
+			var options = '';
+			var options1 = '';
+			if (substationId === '1') {
+				// 只显示一号变电所的电表
+				options = `
+					<option value="E110001_" selected>1#变压器主开关</option>
+					<option value="E110002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房</option>
+					<option value="E110003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;宿舍二三楼照明</option>
+					<option value="E110004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;办公照明</option>
+					<option value="E110005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发消防系统</option>
+					<option value="E110006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装GCS</option>
+					<option value="E110007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机9号</option>
+					<option value="E110008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ML456</option>
+					<option value="E110009_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ML123</option>
+					<option value="E110010_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E110011_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E110012_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装31#</option>
+					<option value="E110013_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装照明</option>
+					<option value="E120001_">2#变压器主开关</option>
+					<option value="E120002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢4#</option>
+					<option value="E120006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装32#</option>
+					<option value="E120007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;空压机照明辅助</option>
+					<option value="E120009_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120010_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢1#</option>
+					<option value="E120011_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢3#</option>
+					<option value="E120012_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E120013_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装空调</option>
+					<option value="E120014_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R290风机</option>
+					<option value="E120015_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;一号所所内用电</option>
+					<option value="E120016_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;低压冷干机冷却塔及其他</option>
+					<option value="E120017_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机13#柜</option>
+					<option value="E120018_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;成品热泵</option>
+				`;
+				options1 = `
+					<option value="A相电流整合" selected>A相电流</option>
+					<option value="B相电流整合">B相电流</option>
+					<option value="C相电流整合">C相电流</option>
+					<option value="三项有功功率整合">有功功率</option>
+				`;
+				$("#sreachNo").removeAttr('disabled');
+				$("#specificItems").removeAttr('disabled');
+			} else if (substationId === '2') {
+				// 只显示二号变电所的电表
+				options = `
+					<option value="E210001_" selected>1#变压器主开关</option>
+					<option value="E210002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西</option>
+					<option value="E210003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西并</option>
+					<option value="E210004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E210005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E220001_">2#变压器主开关</option>
+					<option value="E220002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2#变机加GCS东</option>
+					<option value="E220003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E220004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新电机绕线</option>
+					<option value="E220005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子设备</option>
+					<option value="E220006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子照明</option>
+					<option value="E220007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加工34#</option>
+					<option value="E230001_">3#变压器主开关</option>
+					<option value="E230002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冷水机组、瑞星退火炉</option>
+					<option value="E230003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冰山帕特</option>
+					<option value="E230004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室</option>
+					<option value="E230005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室_1</option>
+					<option value="E230006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力2#</option>
+					<option value="E230007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力4#</option>
+					<option value="E230008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢2#</option>
+					<option value="E230009_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新碱清洗</option>
+					<option value="E230010_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新磷化</option>
+					<option value="E230011_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E240001_">4#变压器主开关</option>
+					<option value="E240002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新退火炉</option>
+					<option value="E240003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新壳体GCS柜</option>
+					<option value="E240004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;食堂电锅</option>
+					<option value="E240005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机8</option>
+					<option value="E240006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机10</option>
+					<option value="E240007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机7</option>
+					<option value="E240008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机11</option>
+				`;
+				options1 = `
+					<option value="A相电流整合" selected>A相电流</option>
+					<option value="B相电流整合">B相电流</option>
+					<option value="C相电流整合">C相电流</option>
+					<option value="三项有功功率整合">有功功率</option>
+				`;
+				$("#sreachNo").removeAttr('disabled');
+				$("#specificItems").removeAttr('disabled');
+			} else if (substationId === '3') {
+				// 只显示三号变电所的电表
+				options = `
+					<option value="E310001_" selected>1#变压器主开关</option>
+					<option value="E310002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所用电</option>
+					<option value="E310003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;污水处理</option>
+					<option value="E310006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;预留</option>
+					<option value="E310004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久实验室3#动力柜</option>
+					<option value="E310005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发中心GCS柜</option>
+					<option value="E310007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发大马力性能实验室</option>
+					<option value="E310008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久试验室2#柜</option>
+					<option value="E310009_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久1#5#柜</option>
+					<option value="E310010_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发堵转实验室左侧</option>
+					<option value="E310011_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发预留</option>
+					<option value="E310012_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E310013_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320001_">2#变压器主开关</option>
+					<option value="E320002_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320003_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320004_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房</option>
+					<option value="E320005_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新成品GCS柜</option>
+					<option value="E320006_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320007_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新成品三角库区</option>
+					<option value="E320008_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;热水炉</option>
+					<option value="E320009_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发290性能实验室</option>
+					<option value="E320010_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;焓差试验室</option>
+					<option value="E320011_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320012_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320013_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装凸焊机</option>
+					<option value="E320014_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备1</option>
+					<option value="E320015_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备2</option>
+					<option value="E320016_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320017_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力3高压柜</option>
+					<option value="E320018_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久4#、8#、9#动力柜</option>
+					<option value="E320019_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久6#动力柜</option>
+					<option value="E320020_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久7#动力柜</option>
+					<option value="E320021_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用</option>
+					<option value="E320022_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B座大办冷水机组</option>
+					<option value="E320023_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;大办-冰山1</option>
+					<option value="E320024_">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;大办-欧亚</option>
+				`;
+				options1 = `
+					<option value="A相电流整合" selected>A相电流</option>
+					<option value="B相电流整合">B相电流</option>
+					<option value="C相电流整合">C相电流</option>
+					<option value="三项有功功率整合">有功功率</option>
+				`;
+				$("#sreachNo").removeAttr('disabled');
+				$("#specificItems").removeAttr('disabled');
+			}else if(substationId === 'all'){
+				$("#sreachNo").attr('disabled', 'disabled');
+				$("#specificItems").attr('disabled', 'disabled');
+			}else if (substationId === 'other'){
+				options1 = `
+					<option value="一二号变电所功率之和" selected>一二号变电所功率之和</option>
+					<option value="三号变电所功率之和">三号变电所功率之和</option>
+					<option value="电气比">低压电气比</option>
+					<option value="高压电气比">高压电气比</option>
+					<option value="高压压力">高压压力</option>
+					<option value="露点">露点</option>
+				`;
+				$("#specificItems").removeAttr('disabled');
+			}
+
+			meterSelect.innerHTML = options;
+			meterSelect1.innerHTML = options1;
+			form.render('select'); // 重新渲染下拉框
+		}
+		
+		
+		
+		
+		
+		table.render({
+			elem: '#test',
+			cols: [[ // 表头配置项
+				{field: 'AlarmTime', title: '报警时间', align:"center" }, 			// 报警时间 月日 时分秒
+				{field: 'EventTime', title: '恢复时间', align:"center" }, 			// 恢复时间 月日 时分秒
+				{field: 'ExtendField1', title: '报警信息',width:300, align:"center" }, 			// 报警信息
+				{field: 'AlarmValue', title: '报警值', align:"center" }, 			// 报警值
+				{field: 'LimitValue', title: '限值', align:"center" }, 				// 限值
+				{field: 'EventType', title: '事件类型', align:"center" }, 			// 事件类型
+				{field: 'AlarmText', title: '报警文本', align:"center" }, 			// 报警文本
+				{field: 'ResumeValue', title: '恢复值', align:"center" }, 			// 恢复值
+				{field: 'time_DT', title: '持续时间(秒)', align:"center" }, 			// 持续时间(秒)
+			]],
+			data: [],
+			height: $("#table_form").height()-1,
+			//skin: 'line', // 表格风格
+			even: true,
+			//page: true, // 是否显示分页
+			//limits: [5, 10, 15],
+			//limit: 5 // 每页默认显示的数量
+		});
+		// 东八区：将用户选择的本地日期范围转为 UTC 日期时间，供查询数据库（库存世界时间）
+		function localDateRangeToUTC(startDateStr, endDateStr) {
+			var parseLocal = function(str) {
+				var parts = str.split('-');
+				return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+			};
+			var localStart = parseLocal(startDateStr);
+			var localEnd = parseLocal(endDateStr);
+			localEnd.setDate(localEnd.getDate() + 1); // 结束日期的次日 00:00（左闭右开）
+			return {
+				startUTC: localStart.toISOString().slice(0, 19).replace('T', ' '),
+				endUTC: localEnd.toISOString().slice(0, 19).replace('T', ' ')
+			};
+		}
+
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果（用户选择的是东八区日期）
+				var startdate = $("#ID-laydate-start-date-1")[0].value;
+				var enddate = $("#ID-laydate-end-date-1")[0].value;
+				var range = localDateRangeToUTC(startdate, enddate);
+
+				// 数据库存世界时间(UTC)，查询用 UTC 范围；显示用 CONVERT_TZ 转为东八区，时间格式为月日 时分秒
+				var sql = " select DATE_FORMAT(CONVERT_TZ(AlarmTime,'+00:00','+08:00'),'%m-%d %H:%i:%s') as AlarmTime \n"
+				+" ,DATE_FORMAT(CONVERT_TZ(EventTime,'+00:00','+08:00'),'%m-%d %H:%i:%s') as EventTime \n"
+				+" ,ExtendField1 \n"
+				+" ,ROUND(AlarmValue,2) as AlarmValue \n"
+				+" ,ROUND(LimitValue,2) as LimitValue \n"
+				+" ,EventType \n"
+				+" ,AlarmText \n"
+				+" ,ROUND(ResumeValue,2) as ResumeValue \n"
+				+" ,case when EventType = '报警恢复' then timediff(alarm.EventTime,alarm.AlarmTime) else null end as time_DT \n"
+				+" from alarm \n";
+
+				sql += " where AlarmTime>='"+range.startUTC+"' and AlarmTime <'"+range.endUTC+"'\n";
+				if($("#substation").val()=="1"||$("#substation").val()=="2"||$("#substation").val()=="3"){
+					sql+= " and TagName = '"+$("#sreachNo").val()+$("#specificItems").val()+"' \n";
+				}else if($("#substation").val()=="other"){
+					sql+= " and TagName = '"+$("#specificItems").val()+"' \n";
+				}
+				sql += " order by alarm.AlarmTime desc \n";
+				console.info(sql);
+				const data = await sendSQL(sql);
+				console.info(data);
+				
+				table.render({
+					elem: '#test',
+					cols: [[ // 表头配置项
+						{field: 'AlarmTime', title: '报警时间', align:"center" }, 			// 报警时间 月日 时分秒
+						{field: 'EventTime', title: '恢复时间', align:"center" }, 			// 恢复时间 月日 时分秒
+						{field: 'ExtendField1', title: '报警信息',width:300, align:"center" }, 			// 报警信息
+						{field: 'AlarmValue', title: '报警值', align:"center" }, 			// 报警值
+						{field: 'LimitValue', title: '限值', align:"center" }, 				// 限值
+						{field: 'EventType', title: '事件类型', align:"center" }, 			// 事件类型
+						{field: 'AlarmText', title: '报警文本', align:"center" }, 			// 报警文本
+						{field: 'ResumeValue', title: '恢复值', align:"center" }, 			// 恢复值
+						{field: 'time_DT', title: '持续时间(秒)', align:"center" }, 			// 持续时间(秒)
+					]],
+					data: data.data,
+					//skin: 'line', // 表格风格
+					even: true,
+					height: $("#table_form").height()-1,
+					//page: true, // 是否显示分页
+					//limits: [5, 10, 15],
+					//limit: 5 // 每页默认显示的数量
+				});
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		$('#export').on('click', async function() {
+			debugger;
+			try {
+				
+				var cols = table.getOptions('test').cols;
+				console.info(cols);
+				var dataArr = [];
+				//先动态添加表头
+				var colsData = {
+					AlarmTime:"报警时间"
+					,EventTime:"恢复时间"
+					,ExtendField1:"报警信息"
+					,AlarmValue:"报警值"
+					,LimitValue:"限值"
+					,EventType:"事件类型"
+					,AlarmText:"报警文本"
+					,ResumeValue:"恢复值"
+					,time_DT:"持续时间(秒)"
+				};
+				dataArr.push(colsData);
+				
+				var data = table.getData('test');                                                                                                                                                                                                                                                               
+				console.log(data);
+				
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				
+				for(let i=0;i<data.length;i++){
+					dataArr.push(data[i]);
+				}
+				console.info(dataArr);
+				/*excel.exportExcel({
+					sheet1: dataArr
+				}, '测试导出.xlsx', 'xlsx');*/
+				
+				// 生成配置的辅助函数，返回结果作为扩展功能的配置参数传入即可
+				// 1. 复杂表头合并[B1,C1,D1][E1,F1]
+				/*var mergeConf = excel.makeMergeConfig([
+					['A1', 'A2'],
+				])*/
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig({
+					'A': 70,
+					//'O': 70,
+					'D': 200,
+					//'E':130,
+					'J':100
+					
+				}, 70);
+				// 3. 第1行行高40，第二行行高30，默认20
+				/*var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20);*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '故障报警历史记录_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							//'!merges': mergeConf
+							'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				});
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

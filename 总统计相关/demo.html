@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>能源统计系统 - 技术原型Demo</title>
+  <style>
+    /* ========== 基础样式 ========== */
+    body {
+      background: #0f266c;
+      color: #fff;
+      font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    h1, h2 {
+      text-align: center;
+      margin: 8px 0;
+    }
+    
+    .section {
+      margin-bottom: 24px;
+    }
+    
+    /* ========== 表格容器样式 ========== */
+    .table-wrap {
+      border: 1px solid #3c8ce7;
+      overflow: auto;
+      max-height: calc(50% - 30px);
+      background: #102a5c;
+      margin-bottom: 10px;
+    }
+    
+    /* ========== 表格样式 ========== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    
+    th, td {
+      border: 1px solid #3c8ce7;
+      padding: 4px 3px;
+      font-size: 12px;
+      text-align: center;
+      background: #1e4e89;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    thead th {
+      background: #0c6ed3;
+      font-weight: bold;
+    }
+    
+    .left-header {
+      background: #0c6ed3;
+      font-weight: bold;
+    }
+    
+    /* ========== 行hover效果 ========== */
+    tbody tr:hover td {
+      background: rgba(48, 127, 190, 0.91);
+    }
+    
+    /* ========== 列hover效果（月份列） ========== */
+    th[data-month], td[data-month] {
+      cursor: pointer;
+    }
+    
+    .col-hover {
+      background: rgb(112, 167, 255) !important;
+    }
+    
+    /* ========== 工具栏按钮样式 ========== */
+    .toolbar {
+      text-align: center;
+      margin: 8px 0;
+    }
+    
+    button {
+      padding: 6px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      background: #3c8ce7;
+      color: #fff;
+      margin: 0 4px;
+    }
+    
+    button:hover {
+      filter: brightness(1.1);
+    }
+    
+    button.orange {
+      background: #ff9800;
+    }
+    
+    /* ========== 汇总信息样式 ========== */
+    #header-summary {
+      margin-top: 6px;
+      text-align: center;
+      font-size: 13px;
+      color: #fff7ca;
+      min-height: 18px;
+    }
+    
+    #header-summary span {
+      color: #ff4d4f;
+    }
+    
+    /* ========== 说明区域样式 ========== */
+    .info-box {
+      background: #1d386f;
+      border: 1px solid #2a6dc8;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .info-box h3 {
+      margin: 0 0 8px 0;
+      color: #4fc3f7;
+      font-size: 14px;
+    }
+    
+    .info-box ul {
+      margin: 4px 0;
+      padding-left: 20px;
+    }
+    
+    .info-box code {
+      background: #0f266c;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #ffd54f;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========= 技术说明 ========= -->
+  <div class="info-box">
+    <h3>📋 技术原型说明</h3>
+    <p>本Demo展示了能源统计系统中使用的所有前端技术（除SQL外）：</p>
+    <ul>
+      <li><code>rowspan</code> / <code>colspan</code> - 单元格上下合并 / 左右合并</li>
+      <li><code>data-month</code> - 自定义数据属性，用于列高亮和点击交互</li>
+      <li><code>addEventListener</code> - 鼠标悬停、点击事件监听</li>
+      <li><code>动态表格生成</code> - JavaScript动态创建HTML表格元素</li>
+      <li><code>空表格初始化</code> - 页面加载时先显示表格结构</li>
+      <li><code>自动触发查询</code> - 页面加载后自动填充数据</li>
+      <li><code>CSS Hover效果</code> - 行hover、列hover（月份列）</li>
+    </ul>
+    <p style="margin-top: 8px; color: #81c784;">💡 提示：打开浏览器控制台(F12)查看详细的技术说明和执行日志</p>
+  </div>
+
+  <!-- ========= 关键代码示例 ========= -->
+  <div class="info-box">
+    <h3>🔧 关键代码片段</h3>
+    <p><strong>1. 上下合并（rowspan）：</strong></p>
+    <code style="display: block; margin: 4px 0;">tdPlace.rowSpan = 3; // 合并3行</code>
+    
+    <p style="margin-top: 8px;"><strong>2. 左右合并（colspan）：</strong></p>
+    <code style="display: block; margin: 4px 0;">th.colSpan = 2; // 合并2列（电量+占比）</code>
+    
+    <p style="margin-top: 8px;"><strong>3. 自定义数据属性：</strong></p>
+    <code style="display: block; margin: 4px 0;">td.dataset.month = m; // 设置 data-month="1"</code>
+    
+    <p style="margin-top: 8px;"><strong>4. 列高亮交互：</strong></p>
+    <code style="display: block; margin: 4px 0;">table.querySelectorAll(`[data-month="${month}"]`).forEach(td => td.classList.add('col-hover'));</code>
+    
+    <p style="margin-top: 8px;"><strong>5. 百分比计算：</strong></p>
+    <code style="display: block; margin: 4px 0;">(Math.round(value * 10000 / total) / 100) + "%"</code>
+  </div>
+
+  <!-- ========= 1. 合并示例表（直观看到左右/上下合并） ========= -->
+  <div class="section">
+    <h1>1️⃣ 单元格合并技术示例</h1>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>列1</th>
+            <th>列2</th>
+            <th>列3</th>
+            <th>列4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <!-- 这个单元格占 2 行：演示 rowspan -->
+            <td rowspan="2">上下合并(2行)</td>
+            <td>第1行-列2</td>
+            <!-- 这个单元格占 2 列：演示 colspan -->
+            <td colspan="2">左右合并(2列)</td>
+          </tr>
+          <tr>
+            <!-- 这里不再写列1，因为被上面的 rowspan 占了 -->
+            <td>第2行-列2</td>
+            <td>第2行-列3</td>
+            <td>第2行-列4</td>
+          </tr>
+          <tr>
+            <td>普通单元格</td>
+            <td>普通单元格</td>
+            <td>普通单元格</td>
+            <td>普通单元格</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========= 2. 完整功能表格 ========= -->
+  <div class="section">
+    <h1>2️⃣ 完整功能表格（包含所有交互特性）</h1>
+    <div class="toolbar">
+      <button id="init-btn">重置空表格</button>
+      <button id="fill-btn">填充示例数据（模拟查询）</button>
+      <button id="clear-btn" class="orange">清空数据</button>
+    </div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">项目</th>
+            <!-- 左右合并：每个月两列 -->
+            <th colspan="2" data-month="1">1月份</th>
+            <th colspan="2" data-month="2">2月份</th>
+            <th colspan="2" data-month="3">3月份</th>
+            <th colspan="2" data-month="4">4月份</th>
+            <th colspan="2" data-month="5">5月份</th>
+            <th colspan="2" data-month="6">6月份</th>
+            <th colspan="2" data-month="7">7月份</th>
+            <th colspan="2" data-month="8">8月份</th>
+            <th colspan="2" data-month="9">9月份</th>
+            <th colspan="2" data-month="10">10月份</th>
+            <th colspan="2" data-month="11">11月份</th>
+            <th colspan="2" data-month="12">12月份</th>
+            <th>合计</th>
+            <th>占比</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- JS 生成：带 rowspan 的分类列 + 空数据格 -->
+        </tbody>
+      </table>
+    </div>
+    <div id="header-summary"></div>
+  </div>
+
+  <script>
+    // ========== 配置数据 ==========
+    const itemConfig = [
+      { group: '生产用电', key: 'kongya',  name: '空压机' },
+      { group: '生产用电', key: 'wushui',  name: '污水处理区' },
+      { group: '生产用电', key: 'biandian',name: '变电所' },
+      { group: '辅助用电', key: 'rebeng',  name: 'B座热泵' },
+      { group: '辅助用电', key: 'bangong', name: 'B座办公' }
+    ];
+
+    // 硬编码的示例数据（模拟从后端查询的数据）
+    const mockData = {
+      total: {
+        month1: 5000,
+        month2: 6000,
+        month3: 7000,
+        month4: 6500,
+        month5: 7200,
+        month6: 7800
+      },
+      items: {
+        kongya:  { month1: 2000, month2: 2500, month3: 2800, month4: 2600, month5: 2900, month6: 3100 },
+        wushui:  { month1:  800, month2:  900, month3: 1000, month4:  950, month5: 1050, month6: 1100 },
+        biandian:{ month1: 1200, month2: 1500, month3: 1700, month4: 1600, month5: 1800, month6: 2000 },
+        rebeng:  { month1:  500, month2:  600, month3:  700, month4:  650, month5:  750, month6:  800 },
+        bangong: { month1:  500, month2:  500, month3:  800, month4:  700, month5:  700, month6:  800 }
+      }
+    };
+
+    // ========= 生成空表结构：包含上下合并(rowspan) + 合计行左右合并(colspan) =========
+    function generateEmptyBody() {
+      const tbody = document.querySelector('#data-table tbody');
+      tbody.innerHTML = '';
+
+      // 1) 合计行（表头下的第一行）
+      const trTotal = document.createElement('tr');
+
+      // 合计文字：占“项目”这两列 → 左右合并 2 列
+      const tdTotalLabel = document.createElement('td');
+      tdTotalLabel.colSpan = 2;            // 左右合并项目两列
+      tdTotalLabel.className = 'left-header';
+      tdTotalLabel.textContent = '合计';
+      trTotal.appendChild(tdTotalLabel);
+
+      // 每个月只放一个单元格，但这个单元格占 2 列 → 左右合并
+      for (let m = 1; m <= 12; m++) {
+        const td = document.createElement('td');
+        td.colSpan = 2;                    // 左右合并 2 列
+        td.id = `total_m${m}`;
+        td.dataset.month = String(m);
+        trTotal.appendChild(td);
+      }
+
+      const tdSum = document.createElement('td');
+      tdSum.id = 'total_sum';
+      trTotal.appendChild(tdSum);
+
+      const tdRatio = document.createElement('td');
+      tdRatio.id = 'total_ratio';
+      tdRatio.textContent = '100%';
+      trTotal.appendChild(tdRatio);
+
+      tbody.appendChild(trTotal);
+
+      // 2) 统计每个 group 的行数，用于 rowspan（上下合并）
+      const groupCounts = {};
+      itemConfig.forEach(item => {
+        groupCounts[item.group] = (groupCounts[item.group] || 0) + 1;
+      });
+
+      const groupUsed = {}; // 记录这个 group 是否已经画过「分类」单元格
+
+      // 3) 业务行
+      itemConfig.forEach(item => {
+        const tr = document.createElement('tr');
+
+        // 上下合并：同一 group 的第一行画 td + rowspan
+        if (!groupUsed[item.group]) {
+          const tdGroup = document.createElement('td');
+          tdGroup.textContent = item.group;
+          tdGroup.rowSpan = groupCounts[item.group];   // 核心：上下合并几行
+          tdGroup.className = 'left-header';
+          tr.appendChild(tdGroup);
+          groupUsed[item.group] = true;
+        }
+
+        // 第二列：具体项目名
+        const tdName = document.createElement('td');
+        tdName.textContent = item.name;
+        tdName.className = 'left-header';
+        tr.appendChild(tdName);
+
+        // 12个月 * 2列（值 + 占比）→ 初始不填数据，空表效果
+        for (let m = 1; m <= 12; m++) {
+          const tdVal = document.createElement('td');
+          const tdPct = document.createElement('td');
+          tdVal.id = `${item.key}_m${m}_val`;
+          tdPct.id = `${item.key}_m${m}_pct`;
+          tdVal.dataset.month = String(m);
+          tdPct.dataset.month = String(m);
+          tr.appendChild(tdVal);
+          tr.appendChild(tdPct);
+        }
+
+        // 合计 / 占比
+        const tdTotal = document.createElement('td');
+        tdTotal.id = `${item.key}_total`;
+        tr.appendChild(tdTotal);
+
+        const tdTotalPct = document.createElement('td');
+        tdTotalPct.id = `${item.key}_total_pct`;
+        tr.appendChild(tdTotalPct);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ========= 用硬编码数据填充 =========
+    function fillMock() {
+      const total = mockData.total;
+      const items = mockData.items;
+
+      // 合计行
+      let totalSum = 0;
+      let latestMonth = 0;
+      for (let m = 1; m <= 12; m++) {
+        const val = total[`month${m}`] || 0;
+        if (val > 0) {
+          const td = document.getElementById(`total_m${m}`);
+          if (td) {
+            td.textContent = val.toLocaleString();
+          }
+          totalSum += val;
+          latestMonth = m;
+        }
+      }
+      const totalSumCell = document.getElementById('total_sum');
+      if (totalSumCell) {
+        totalSumCell.textContent = totalSum.toLocaleString();
+      }
+
+      // 各业务行
+      itemConfig.forEach(item => {
+        const data = items[item.key] || {};
+        let itemSum = 0;
+        for (let m = 1; m <= 12; m++) {
+          const monthVal = data[`month${m}`] || 0;
+          const monthTotal = total[`month${m}`] || 0;
+          if (monthVal > 0) {
+            itemSum += monthVal;
+            const tdVal = document.getElementById(`${item.key}_m${m}_val`);
+            const tdPct = document.getElementById(`${item.key}_m${m}_pct`);
+            if (tdVal) {
+              tdVal.textContent = monthVal.toLocaleString();
+            }
+            if (tdPct) {
+              tdPct.textContent =
+                monthTotal > 0 ? (monthVal / monthTotal * 100).toFixed(2) + '%' : '';
+            }
+          }
+        }
+        const tdTotal = document.getElementById(`${item.key}_total`);
+        const tdTotalPct = document.getElementById(`${item.key}_total_pct`);
+        if (tdTotal) {
+          tdTotal.textContent = itemSum ? itemSum.toLocaleString() : '';
+        }
+        if (tdTotalPct) {
+          tdTotalPct.textContent =
+            totalSum > 0 ? (itemSum / totalSum * 100).toFixed(2) + '%' : '';
+        }
+      });
+
+      if (latestMonth > 0) {
+        updateHeaderSummary(latestMonth);
+      } else {
+        document.getElementById('header-summary').textContent = '暂无数据';
+      }
+    }
+
+    // ========= 汇总文字 + 列高亮 =========
+    function updateHeaderSummary(month) {
+      const total = mockData.total;
+      const monthVal = total[`month${month}`] || 0;
+      const totalSum = Object.values(total).reduce((s, v) => s + (v || 0), 0);
+
+      const ratio = totalSum > 0 ? (monthVal / totalSum * 100).toFixed(2) : '0.00';
+      const dom = document.getElementById('header-summary');
+
+      if (monthVal === 0) {
+        dom.innerHTML = `动力实施课 <span>${month}</span> 月无用电数据`;
+      } else {
+        dom.innerHTML =
+          `动力实施课 <span>${month}</span> 月用电 ` +
+          `<span>${monthVal.toLocaleString()}</span> 千瓦时，` +
+          `占示例总电量 <span>${ratio}%</span>`;
+      }
+    }
+
+    function setupColumnHover() {
+      const table = document.getElementById('data-table');
+
+      table.addEventListener('mouseover', e => {
+        const cell = e.target;
+        const month = cell.dataset.month;
+        if (!month) return;
+        table.querySelectorAll('.col-hover').forEach(td => td.classList.remove('col-hover'));
+        table.querySelectorAll(`[data-month="${month}"]`).forEach(td => td.classList.add('col-hover'));
+      });
+
+      table.addEventListener('mouseleave', () => {
+        table.querySelectorAll('.col-hover').forEach(td => td.classList.remove('col-hover'));
+      });
+
+      table.addEventListener('click', e => {
+        const month = e.target.dataset.month;
+        if (!month) return;
+        updateHeaderSummary(Number(month));
+      });
+    }
+
+    // ========== 清空数据功能 ==========
+    function clearData() {
+      const tbody = document.querySelector('#data-table tbody');
+      // 只保留合计行和业务行的结构，清空数据
+      tbody.querySelectorAll('td').forEach(td => {
+        if (td.id && !td.textContent.includes('生产用电') && !td.textContent.includes('辅助用电')) {
+          td.textContent = '';
+        }
+      });
+      document.getElementById('header-summary').textContent = '数据已清空';
+    }
+
+    // ========== 初始化 ==========
+    window.addEventListener('load', () => {
+      console.log('🚀 页面加载完成，初始化Demo...');
+      
+      // 1. 生成空表（含 rowspan / colspan）
+      generateEmptyBody();
+      console.log('✅ 空表格结构已生成');
+      
+      // 2. 设置列 hover / click 效果
+      setupColumnHover();
+      console.log('✅ 列交互效果已设置');
+      
+      // 3. 绑定按钮事件
+      document.getElementById('fill-btn').addEventListener('click', () => {
+        console.log('📊 填充数据中...');
+        fillMock();
+      });
+      
+      document.getElementById('init-btn').addEventListener('click', () => {
+        console.log('🔄 重置空表格...');
+        generateEmptyBody();
+        document.getElementById('header-summary').textContent = '';
+      });
+      
+      document.getElementById('clear-btn').addEventListener('click', () => {
+        console.log('🗑️ 清空数据...');
+        clearData();
+      });
+      
+      console.log('✅ Demo初始化完成！');
+      
+      // 4. 自动触发一次填充（模拟页面加载后自动查询）
+      setTimeout(() => {
+        console.log('⏰ 自动触发数据填充...');
+        fillMock();
+      }, 500);
+    });
+    
+    // ========== 技术要点总结（控制台输出） ==========
+    console.log(`
+╔════════════════════════════════════════════════════════════════════╗
+║           能源统计系统 - 技术原型 Demo 说明                        ║
+╚════════════════════════════════════════════════════════════════════╝
+
+📌 实现的核心技术：
+
+1️⃣ HTML表格合并
+   • rowspan - 上下合并单元格（用于分类列：生产用电、辅助用电）
+   • colspan - 左右合并单元格（用于月份表头、合计行）
+
+2️⃣ 动态表格生成
+   • createElement() - 动态创建table、tr、td元素
+   • appendChild() - 添加元素到DOM
+   • innerHTML - 清空/重建表格内容
+
+3️⃣ 自定义数据属性
+   • data-month - 标记月份列，用于交互
+   • dataset.month - JavaScript读取data属性
+
+4️⃣ 事件监听
+   • mouseover - 鼠标悬停高亮整列
+   • mouseleave - 鼠标离开取消高亮
+   • click - 点击月份列更新汇总信息
+
+5️⃣ CSS交互效果
+   • :hover - 行悬停效果
+   • .col-hover - 列高亮class（通过JS动态添加/移除）
+   • !important - 确保高亮样式优先级
+
+6️⃣ 页面加载流程
+   • 先生成空表格结构（initEmptyTables）
+   • 设置事件监听（setupColumnHover）
+   • 自动触发数据填充（setTimeout + fillMock）
+
+7️⃣ 数据处理
+   • 百分比计算：(value / total * 10000) / 100
+   • 数字格式化：toLocaleString()
+   • 动态汇总：reduce()累加
+
+💡 与实际项目的关系：
+   - 本Demo是 总统计_经营企划本部电量占比及统计.html 的技术原型
+   - 实际项目在此基础上增加了：SQL查询、导出功能、日期选择器
+   - 核心表格渲染逻辑完全相同
+
+🎯 使用场景：
+   ✓ 学习和理解表格合并技术
+   ✓ 测试交互效果（hover、click）
+   ✓ 快速验证新功能原型
+   ✓ 作为其他类似页面的参考模板
+    `);
+  </script>
+</body>
+</html>

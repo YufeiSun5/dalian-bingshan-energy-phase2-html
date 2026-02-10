@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各区域用电量及占比统计</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <style>
+        /* --- 全局与基础样式 --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background-color: #0f266c;
+            color: #d0d2e0;
+            overflow: hidden; /* 防止页面本身出现滚动条 */
+        }
+
+        /* --- 主要布局容器 --- */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        /* --- 卡片通用样式 --- */
+        .card-block {
+            background-color: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+
+        }
+        
+        /* --- 筛选栏 --- */
+        /* --- 顶部筛选栏样式（替换用） --- */
+        /* 1. 把上下左右的内边距都给上，保证上下空间一致 */
+        .filter-bar {
+        background: #1d386f;
+        border: 1px solid #2a6dc8;
+        color: #fff;
+        padding: 5px 15px;      /* ← 改这里：左右各 15px，上下各 10px */
+        box-sizing: border-box;
+        }
+
+        .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;  /* ← 两端对齐 */
+
+        }
+
+
+        .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        
+        padding: 10px 10px;
+        width: auto;
+        }
+        .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1);
+        border-color: transparent;
+        color: #fff;
+        }
+        .filter-bar .layui-input::placeholder {
+        color: #bbb;
+        }
+        .filter-bar .layui-btn {
+        margin-left: 10px;
+        vertical-align: middle;
+        }
+        .filter-bar .layui-btn span {
+        margin: 0 5px;
+        }
+        .filter-bar .layui-bg-orange {
+        background-color: #fa8c16;
+        border-color: #fa8c16;
+        }
+
+
+        /* --- 主要内容区域 --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .table-block {
+            flex: 5; /* 5/8 的高度 */
+            min-height: 0;
+        }
+
+        .charts-container {
+            flex: 3; /* 3/8 的高度 */
+            display: flex;
+            gap: 15px;
+        }
+
+        /* --- 卡片头部样式 --- */
+        .card-header {
+            background-color: #29498e;
+            color: #fff;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a6dc8;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header-icon {
+            width: 5px;
+            height: 20px;
+            background-color: #5470c6;
+            margin-right: 10px;
+        }
+        
+        .main-title {
+            font-size: 16px;
+        }
+
+        .header-controls {
+            margin-left: auto;   /* ← 新增：把自己推到最右 */
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .unit-label {
+            font-size: 14px;
+            color: #b9d3f4;
+            font-weight: normal;
+        }
+
+
+        /* 让卡片顶部区域不裁剪溢出 */
+        .card-block.filter-bar {
+        overflow: visible;
+        }
+
+        /* filter-bar 本身撑满宽度 */
+        .filter-bar {
+        width: 100%;
+        padding: 10px 15px;
+        box-sizing: border-box;
+        }
+
+        /* 表单项目撑满、垂直居中 */
+        .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 0;
+        /* → 不再写 justify-content */
+        }
+
+        /* 最后一组按钮自动推到最右 */
+        .filter-bar .layui-form-item .layui-inline:last-child {
+        margin-left: auto;
+        }
+
+
+        /* --- 表格区域特定样式 --- */
+        .table-container {
+            flex-grow: 1;
+            overflow: hidden; /* 隐藏滚动条，由JS控制内容适应 */
+            padding: 10px;
+            position: relative; 
+        }
+
+        /* --- Layui 表格样式覆盖 --- */
+        .layui-table-view {
+            border: none;
+            border-right: 1px solid #2a6dc8 !important; /* 右边框修复 */
+            background-color: transparent;
+            margin: 0 !important;
+        }
+        .layui-table-header {
+            border-bottom: 1px solid #2a6dc8 !important;
+        }
+        .layui-table-header thead tr, .layui-table-header th {
+            background-color: #18589b !important;
+        }
+        .layui-table-header th {
+            color: #ffffff;
+            font-weight: 600;
+            border-color: #2a6dc8 !important;
+        }
+        .layui-table-body tr {
+            background-color: #1d386f !important;
+        }
+        .layui-table-body td, .layui-table-total tr, .layui-table-total td {
+            border-color: #2a6dc8 !important;
+            background-color: transparent !important;
+            color: #b9d3f4;
+            vertical-align: middle;
+        }
+        .layui-table-view .layui-table-cell {
+            height: 28px !important;
+            line-height: 28px !important;
+            padding: 0 2px !important; 
+            font-size: 12px;
+        }
+        .layui-table-body tr:hover, .layui-table-hover {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-body tr.clickable-row:hover {
+            background-color: #2b5597 !important;
+            cursor: pointer;
+        }
+        .layui-table-body tr.active-row {
+            background-color: #3b74c4 !important;
+        }
+        .layui-table-body tr.total-row td {
+            font-weight: bold;
+        }
+        .layui-table-body td.highlight-col {
+             background-color: #695d31 !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr td{
+            background-color: #18589b;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .layui-table-fixed-l .layui-table-body tr.total-row td,
+        .layui-table-fixed-l .layui-table-body tr.total-row:hover td {
+             background-color: #18589b;
+        }
+        .layui-table-fixed-l .layui-table-body tr.active-row td {
+            background-color: #3b74c4 !important;
+        }
+        .layui-table-fixed-l {
+            box-shadow: none;
+        }
+        .layui-table-page {
+            display: none;
+        }
+        .layui-table-body::-webkit-scrollbar {
+            width: 6px;
+            height: 6px; 
+        }
+        .table-container::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .table-container::-webkit-scrollbar-thumb,
+        .layui-table-body::-webkit-scrollbar-thumb {
+            background-color: #2a6dc8;
+            border-radius: 3px;
+        }
+        .table-container::-webkit-scrollbar-track,
+        .layui-table-body::-webkit-scrollbar-track {
+            background-color: #1d386f;
+        }
+
+        /* --- 图表区域样式 --- */
+        .chart-block {
+            flex-grow: 1;
+            min-height: 0;
+        }
+        .bar-chart-wrapper { flex: 3; }
+        .pie-chart-wrapper { flex: 2; }
+        .chart-content { flex-grow: 1; }
+        
+        @media (max-width: 992px) {
+            .charts-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="card-block">
+    <div class="layui-form filter-bar" lay-filter="filter-form">
+        <div class="layui-form-item">
+        <div class="layui-inline" style="margin-right:20px;">
+            <label class="layui-form-label">年份</label>
+            <div class="layui-input-inline">
+            <input type="text"
+                   id="year-selector"
+                   class="layui-input"
+                   placeholder="请选择年份">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <button id="search-btn" class="layui-btn">
+            <i class="layui-icon layui-icon-search"></i>
+            <span>查询</span>
+            </button>
+            <button id="export-btn" class="layui-btn layui-bg-orange">
+            <span>导出</span>
+            <i class="layui-icon layui-icon-print"></i>
+            </button>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    
+    <div class="main-content">
+        <div class="card-block table-block">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <div class="card-header-icon"></div>
+                    <span class="main-title">各区域用电量及占比统计</span>
+
+                </div>
+                <div class="header-controls">
+                    <span class="unit-label">电量单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="table-container" id="table-parent-container">
+                <table id="data-table" lay-filter="dataTableFilter"></table>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="card-block chart-block bar-chart-wrapper">
+                <div class="card-header" id="bar-chart-header"></div>
+                <div id="barChart" class="chart-content"></div>
+            </div>
+            <div class="card-block chart-block pie-chart-wrapper">
+                <div class="card-header" id="pie-chart-header"></div>
+                <div id="pieChart" class="chart-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/layui.js"></script>
+<script>
+    // 1. 配置本地扩展目录并加载 excel 模块
+    layui.config({
+        base: '../js/layui_exts/' // 指向存放 excel.js 的目录
+    }).extend({
+        excel: 'excel' // 模块名，对应 excel.js
+    });
+
+    layui.use(['table', 'laydate', 'excel', 'layer', 'form'], function(){
+        const table = layui.table;
+        const laydate = layui.laydate;
+        const excel = layui.excel;
+        const layer = layui.layer;
+        const form = layui.form;
+        const $ = layui.jquery;
+
+        let barChartInstance, pieChartInstance;
+        let globalData = {};
+        let currentActiveIdentifier = '';
+
+        // 初始化年份选择器
+        laydate.render({
+            elem: '#year-selector',
+            type: 'year',
+            value: new Date()
+        });
+
+        // --- 动态列宽生成函数 ---
+        function getAdaptiveCols() {
+            const container = $('#table-parent-container');
+            const containerWidth = container.width();
+            if (!containerWidth) {
+                return [[{ field: 'month', title: '月份', rowspan: 2, fixed: 'left', width: 80, align: 'center' }],[]];
+            }
+
+            const fixedWidth = 80;
+            const availableWidth = containerWidth - fixedWidth - 2;
+
+            // [MODIFIED] 从分类中移除 "损耗"
+            const categoryMap = { factory: '工厂', equipment: '设备', auxiliary: '辅助', dev: '开发本部', planning: '经营企划部', quality: '品质本部', sales: '营业本部', power: '动力设施课' };
+            const categories = Object.keys(categoryMap);
+            
+            let totalBaseWidth = 120; // total column
+            categories.forEach(() => {
+                totalBaseWidth += 100 + 80; 
+            });
+            
+            // 无论总基础宽度是大于还是小于可用宽度，都计算缩放比例
+            // 这样当有剩余空间时 (scale > 1)，列会被拉伸以填满
+            const scale = availableWidth / totalBaseWidth;
+
+            const finalCols = [[], []];
+
+            finalCols[0].push({ field: 'month', title: '月份', rowspan: 2, fixed: 'left', width: fixedWidth, align: 'center' });
+            for (const catKey in categoryMap) {
+                 finalCols[0].push({ title: categoryMap[catKey], colspan: 2, align: 'center' });
+            }
+            finalCols[0].push({ field: 'total', title: '公司总用电量', rowspan: 2, align: 'center', width: Math.max(Math.floor(120 * scale), 60) });
+
+            for (const catKey in categoryMap) {
+                const catName = categoryMap[catKey];
+                 finalCols[1].push({
+                    field: `${catName}_val`,
+                    title: '用电量',
+                    align: 'center',
+                    width: Math.max(Math.floor(100 * scale), 55)
+                });
+                finalCols[1].push({
+                    field: `${catName}_pct`,
+                    title: '占比',
+                    align: 'center',
+                    width: Math.max(Math.floor(80 * scale), 45)
+                });
+            }
+
+            return finalCols;
+        }
+
+        // --- 数据获取与处理 ---
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) {
+                    layer.msg(`数据加载失败: ${res.statusText}`);
+                    return { data: [] };
+                }
+                return await res.json();
+            } catch (err) {
+                console.error('sendSQL Error:', err);
+                layer.msg('数据加载失败，请检查网络或联系管理员。');
+                return { data: [] };
+            }
+        }
+
+        async function fetchAndProcessData(year) {
+            // [MODIFIED] 从SQL查询中移除 loss_elec
+            const sql = `
+                SELECT sub.month,
+                       SUM(CASE WHEN sub.no IN (1,2) THEN sub.total_elec ELSE 0 END) AS factory_elec,
+                       SUM(CASE WHEN sub.no IN (3,4) THEN sub.total_elec ELSE 0 END) AS equipment_elec,
+                       SUM(CASE WHEN sub.no IN (5,6) THEN sub.total_elec ELSE 0 END) AS auxiliary_elec,
+                       SUM(CASE WHEN sub.no IN (7,8) THEN sub.total_elec ELSE 0 END) AS dev_elec,
+                       SUM(CASE WHEN sub.no IN (9,10) THEN sub.total_elec ELSE 0 END) AS planning_elec,
+                       SUM(CASE WHEN sub.no IN (11,12) THEN sub.total_elec ELSE 0 END) AS quality_elec,
+                       SUM(CASE WHEN sub.no IN (15,16) THEN sub.total_elec ELSE 0 END) AS sales_elec,
+                       SUM(CASE WHEN sub.no IN (17,18) THEN sub.total_elec ELSE 0 END) AS power_elec
+                FROM (
+                    SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                    FROM sum_elec_group_by_day
+                    WHERE YEAR(\`date\`) = ${year}
+                    GROUP BY no, MONTH(\`date\`)
+                ) AS sub
+                GROUP BY sub.month
+                ORDER BY sub.month
+            `.trim();
+            const apiResult = await sendSQL(sql);
+            const rawData = apiResult.data || [];
+            // [MODIFIED] 从分类映射中移除 "损耗"
+            const categoryMap = { factory_elec: '工厂', equipment_elec: '设备', auxiliary_elec: '辅助', dev_elec: '开发本部', planning_elec: '经营企划部', quality_elec: '品质本部', sales_elec: '营业本部', power_elec: '动力设施课' };
+            const categories = Object.values(categoryMap);
+            
+            const monthlyData = rawData.map(item => {
+                const monthStr = `${item.month}月`;
+                const values = {};
+                for (const apiKey in categoryMap) {
+                    values[categoryMap[apiKey]] = Number(item[apiKey]) || 0;
+                }
+                return { month: monthStr, values };
+            });
+            
+            return { categories, monthlyData };
+        }
+        
+        // --- Layui 表格渲染与交互 ---
+        function transformDataForLayui(data) {
+            const { categories, monthlyData } = data;
+            const tableData = [];
+            const totals = categories.reduce((acc, cat) => ({ ...acc, [cat]: 0 }), {});
+            let grandTotal = 0;
+            
+            const dataMap = new Map(monthlyData.map(item => [item.month, item.values]));
+
+            for (let i = 1; i <= 12; i++) {
+                const monthStr = `${i}月`;
+                const row = { month: monthStr };
+                
+                if (dataMap.has(monthStr)) {
+                    row.isClickable = true;
+                    const values = dataMap.get(monthStr);
+                    const monthTotal = Object.values(values).reduce((sum, val) => sum + val, 0);
+                    categories.forEach(cat => {
+                        const value = values[cat] || 0;
+                        row[`${cat}_val`] = value.toLocaleString();
+                        row[`${cat}_pct`] = monthTotal > 0 ? `${(value / monthTotal * 100).toFixed(2)}%` : '0.00%';
+                        totals[cat] += value;
+                    });
+                    row.total = monthTotal.toLocaleString();
+                    grandTotal += monthTotal;
+                } else {
+                    row.isClickable = false;
+                    categories.forEach(cat => {
+                        row[`${cat}_val`] = '';
+                        row[`${cat}_pct`] = '';
+                    });
+                    row.total = '';
+                }
+                tableData.push(row);
+            }
+
+            const totalRow = { month: '合计', isClickable: true, isTotal: true };
+            categories.forEach(cat => {
+                const value = totals[cat];
+                totalRow[`${cat}_val`] = value.toLocaleString();
+                totalRow[`${cat}_pct`] = grandTotal > 0 ? `${(value / grandTotal * 100).toFixed(2)}%` : '0.00%';
+            });
+            totalRow.total = grandTotal.toLocaleString();
+            tableData.push(totalRow);
+
+            return tableData;
+        }
+
+        window.renderLayuiTable = function(data) {
+            const tableData = transformDataForLayui(data);
+            
+            table.render({
+                elem: '#data-table',
+                height: 'full-20',
+                cols: getAdaptiveCols(),
+                data: tableData,
+                limit: tableData.length,
+                done: function(res, curr, count){
+                    const tableBody = this.elem.next().find('.layui-table-body tbody');
+                    res.data.forEach((item, index) => {
+                        const tr = tableBody.find(`tr[data-index="${index}"]`);
+                        if(item.isClickable) tr.addClass('clickable-row');
+                        if(item.isTotal) tr.addClass('total-row');
+                        if(item.month === currentActiveIdentifier) tr.addClass('active-row');
+                        
+                        // [REMOVED] 移除对"损耗"列的高亮样式操作
+                    });
+                }
+            });
+        };
+
+        table.on('row(dataTableFilter)', function(obj){
+            if(obj.data.isClickable){
+                updateDashboard(obj.data.month);
+            }
+        });
+        
+        // --- 导出按钮点击事件 (已修正) ---
+        $('#export-btn').on('click', function() {
+            const tableData = layui.table.cache['data-table'];
+            if (!tableData || tableData.length === 0) {
+                layer.msg('没有数据可以导出');
+                return;
+            }
+
+            const selectedYear = $('#year-selector').val() || new Date().getFullYear();
+            const filename = `各区域用电量及占比统计_${selectedYear}.xlsx`;
+            
+            // [MODIFIED] 从导出分类中移除 "损耗"
+            const categories = ['工厂', '设备', '辅助', '开发本部', '经营企划部', '品质本部', '营业本部', '动力设施课'];
+            
+            // 1. 构造表头数据 (对象数组) - [MODIFIED] 移除损耗相关字段
+            const header1 = {
+                month: '月份',
+                factory_val: '工厂', factory_pct: '',
+                equipment_val: '设备', equipment_pct: '',
+                auxiliary_val: '辅助', auxiliary_pct: '',
+                dev_val: '开发本部', dev_pct: '',
+                planning_val: '经营企划部', planning_pct: '',
+                quality_val: '品质本部', quality_pct: '',
+                sales_val: '营业本部', sales_pct: '',
+                power_val: '动力设施课', power_pct: '',
+                total: '公司总用电量'
+            };
+            const header2 = {
+                month: '',
+                factory_val: '用电量', factory_pct: '占比',
+                equipment_val: '用电量', equipment_pct: '占比',
+                auxiliary_val: '用电量', auxiliary_pct: '占比',
+                dev_val: '用电量', dev_pct: '占比',
+                planning_val: '用电量', planning_pct: '占比',
+                quality_val: '用电量', quality_pct: '占比',
+                sales_val: '用电量', sales_pct: '占比',
+                power_val: '用电量', power_pct: '占比',
+                total: ''
+            };
+            
+            // 2. 构造数据体 (对象数组) - [MODIFIED] 移除损耗相关字段
+            const body = tableData.map(row => {
+                const dataRow = {};
+                dataRow.month = row.month;
+                dataRow.factory_val = row['工厂_val'];
+                dataRow.factory_pct = row['工厂_pct'];
+                dataRow.equipment_val = row['设备_val'];
+                dataRow.equipment_pct = row['设备_pct'];
+                dataRow.auxiliary_val = row['辅助_val'];
+                dataRow.auxiliary_pct = row['辅助_pct'];
+                dataRow.dev_val = row['开发本部_val'];
+                dataRow.dev_pct = row['开发本部_pct'];
+                dataRow.planning_val = row['经营企划部_val'];
+                dataRow.planning_pct = row['经营企划部_pct'];
+                dataRow.quality_val = row['品质本部_val'];
+                dataRow.quality_pct = row['品质本部_pct'];
+                dataRow.sales_val = row['营业本部_val'];
+                dataRow.sales_pct = row['营业本部_pct'];
+                dataRow.power_val = row['动力设施课_val'];
+                dataRow.power_pct = row['动力设施课_pct'];
+                dataRow.total = row.total;
+                return dataRow;
+            });
+
+            const exportData = [header1, header2, ...body];
+
+            // 3. 构造合并配置 - [MODIFIED] 调整合并范围以适应移除的列
+            const mergeConf = excel.makeMergeConfig([
+                ['A1', 'A2'], ['B1', 'C1'], ['D1', 'E1'], ['F1', 'G1'], ['H1', 'I1'],
+                ['J1', 'K1'], ['L1', 'M1'], ['N1', 'O1'], ['P1', 'Q1'], 
+                ['R1', 'R2'] // 总计列的新位置
+            ]);
+
+            // 4. 构造列宽配置 - [MODIFIED] 调整列宽配置以适应移除的列
+            const colConf = excel.makeColConfig({
+                'A': 100, 'B': 100, 'C': 80, 'D': 100, 'E': 80, 'F': 100, 'G': 80,
+                'H': 100, 'I': 80, 'J': 100, 'K': 80, 'L': 100, 'M': 80, 'N': 100,
+                'O': 80, 'P': 100, 'Q': 80, 'R': 120 // 总计列的新位置
+            }, 80);
+
+            // 5. 导出
+            excel.exportExcel(exportData, filename, 'xlsx', {
+                extend: {
+                    '!merges': mergeConf,
+                    '!cols': colConf
+                }
+            });
+        });
+
+        // --- ECharts 图表更新 ---
+        function updateCharts(identifier, values, allCategories) {
+            const isTotal = identifier === '合计';
+            const barTitle = `各区域${identifier}${isTotal ? '用电量' : '份'}`;
+            const pieTitle = `${identifier}${isTotal ? '用电' : '份各区域用电'}占比`;
+            document.getElementById('bar-chart-header').innerHTML = `<div class="card-header-title"><div class="card-header-icon"></div><span>${barTitle}</span></div>`;
+            document.getElementById('pie-chart-header').innerHTML = `<div class="card-header-title"><div class="card-header-icon"></div><span>${pieTitle}</span></div>`;
+            
+            // 此处代码已有过滤逻辑，无需修改
+            const chartCategories = allCategories.filter(cat => cat !== '损耗');
+            
+            const colors = ['#5470c6', '#ee6666', '#91cc75', '#fac858', '#73c0de', '#3ba272', '#fc8452', '#9a60b4'];
+            const barChartData = chartCategories.map((cat, i) => ({ value: values[cat] || 0, itemStyle: { color: colors[i % colors.length] } }));
+            const pieChartData = chartCategories.map(cat => ({ name: cat, value: values[cat] || 0 }));
+            const richStyles = {};
+            chartCategories.forEach((cat, i) => { richStyles[`c${i}`] = { backgroundColor: colors[i % colors.length], height: 10, width: 10, borderRadius: 3, lineHeight: 10 }; });
+            const barOption = { backgroundColor: 'transparent', tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, legend: { show: false }, grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true }, xAxis: [{ type: 'category', data: chartCategories, axisLabel: { color: '#ccc', interval: 0, rotate: 0, formatter: (v, i) => `{c${i}|}  ${v}`, rich: richStyles }, axisTick: { alignWithLabel: true } }], yAxis: [{ type: 'value', name: '电量单位 (千瓦时)', nameTextStyle: { color: '#ccc', padding: [0, 0, 0, 80] }, axisLabel: { color: '#ccc' }, splitLine: { lineStyle: { type: 'dashed', color: 'rgba(255,255,255,0.1)' } } }], series: [{ name: '用电量', type: 'bar', barWidth: '50%', data: barChartData, label: { show: true, position: 'top', color: '#fff', formatter: '{c}', fontSize: 10 } }] };
+            const pieOption = { backgroundColor: 'transparent', tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' }, legend: { orient: 'horizontal', bottom: '0', left: 'center', data: chartCategories, textStyle: { color: '#ccc' }, type: 'scroll' }, series: [{ name: '用电占比', type: 'pie', radius: '65%', center: ['50%', '48%'], data: pieChartData, color: colors, itemStyle: { borderWidth: 0, borderColor: 'transparent' }, emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }, label: { formatter: '{d}%', color: 'rgba(255, 255, 255, 0.9)', position: 'outside' }, labelLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.5)' } } }] };
+            barChartInstance.setOption(barOption, true);
+            pieChartInstance.setOption(pieOption, true);
+        }
+        
+        function updateDashboard(activeIdentifier) {
+            currentActiveIdentifier = activeIdentifier;
+            const tableContainer = document.querySelector('#table-parent-container');
+            if (tableContainer) {
+                const tableBody = tableContainer.querySelector('.layui-table-body tbody');
+                if(tableBody) {
+                    const allClickableRows = tableBody.querySelectorAll('tr');
+                     allClickableRows.forEach((row, index) => {
+                         const rowData = layui.table.cache['data-table'][index];
+                         if(rowData && rowData.month === activeIdentifier) {
+                             row.classList.add('active-row');
+                         } else {
+                             row.classList.remove('active-row');
+                         }
+                     });
+                }
+            }
+
+            if (activeIdentifier === '合计') {
+                const totalValues = globalData.monthlyData.reduce((acc, entry) => {
+                    for (const cat in entry.values) acc[cat] = (acc[cat] || 0) + entry.values[cat];
+                    return acc;
+                }, {});
+                updateCharts('合计', totalValues, globalData.categories);
+            } else {
+                const chartDataEntry = globalData.monthlyData.find(d => d.month === activeIdentifier);
+                if (chartDataEntry) {
+                    updateCharts(chartDataEntry.month, chartDataEntry.values, globalData.categories);
+                } else {
+                    updateCharts(activeIdentifier, {}, globalData.categories);
+                }
+            }
+        }
+
+        // --- 初始化与事件绑定 ---
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        async function reloadData() {
+            
+            const searchBtn = document.getElementById('search-btn');
+            
+            searchBtn.classList.add('layui-btn-disabled');
+
+            try {
+                const selectedYear = document.getElementById('year-selector').value || new Date().getFullYear();
+                globalData = await fetchAndProcessData(selectedYear);
+                
+                let latestMonth = '合计';
+                if (globalData.monthlyData && globalData.monthlyData.length > 0) {
+                    latestMonth = globalData.monthlyData[globalData.monthlyData.length - 1].month;
+                }
+                currentActiveIdentifier = latestMonth;
+                if(window.renderLayuiTable) window.renderLayuiTable(globalData);
+                updateDashboard(latestMonth);
+            } catch (error) {
+                console.error("Failed to reload data:", error);
+            } finally {
+                
+                searchBtn.classList.remove('layui-btn-disabled');
+            }
+        }
+
+        // --- 主程序入口 ---
+        function init() {
+            barChartInstance = echarts.init(document.getElementById('barChart'), 'dark');
+            pieChartInstance = echarts.init(document.getElementById('pieChart'), 'dark');
+            
+            
+            document.getElementById('search-btn').addEventListener('click', reloadData);
+            
+            reloadData();
+
+            const handleResize = debounce(() => {
+                if (barChartInstance && pieChartInstance) {
+                    barChartInstance.resize();
+                    pieChartInstance.resize();
+                }
+                if(layui && layui.table && globalData.categories){
+                    // 重新渲染表格以应用新的列宽
+                    renderLayuiTable(globalData);
+                }
+            }, 250);
+            window.addEventListener('resize', handleResize);
+        }
+
+        init();
+    });
+</script>
+
+</body>
+</html>

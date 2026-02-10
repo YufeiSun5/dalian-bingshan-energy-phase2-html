@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电表分配工具 - Meter Assignment Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 30px;
+            text-align: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .header h1 {
+            font-size: 26px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 460px;
+            border-right: 1px solid #e8eaed;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 80px;
+            background: linear-gradient(180deg, #f8f9fc 0%, #ffffff 100%);
+            flex-shrink: 0;
+        }
+
+        .right-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            padding-bottom: 80px;
+            background: #fafbfc;
+        }
+        
+        .control-bar {
+            background: #ffffff;
+            padding: 14px 30px;
+            border-bottom: 1px solid #e8eaed;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .control-bar label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        .control-bar select {
+            padding: 8px 16px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 200px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: #374151;
+        }
+        
+        .control-bar select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+        }
+        
+        .control-bar select:hover {
+            border-color: #667eea;
+            background: #fafbff;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .meter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .meter-item {
+            background: #ffffff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: move;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .meter-item:hover {
+            transform: translateY(-2px);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            background: #fafbff;
+        }
+
+        .meter-item.dragging {
+            opacity: 0.6;
+            transform: rotate(3deg) scale(0.98);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .meter-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .meter-no {
+            font-weight: 500;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+
+        .meter-symbol {
+            color: #9ca3af;
+            font-size: 10px;
+            margin-left: 4px;
+            font-weight: 400;
+        }
+
+        .meter-name {
+            color: #1f2937;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .meter-place {
+            color: #4b5563;
+            font-size: 12px;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+        }
+
+        .meter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 4px;
+        }
+
+        .meter-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 9px;
+            padding: 3px 7px;
+            border-radius: 10px;
+            white-space: nowrap;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 7px 14px;
+            background: white;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .filter-tab:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-tab .count {
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        .group-section {
+            margin-bottom: 20px;
+        }
+
+        .group-header {
+            font-weight: 700;
+            color: #1f2937;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border: 1.5px solid #e5e7eb;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .group-count {
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+            background: #f3f4f6;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        .department {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1.5px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+        
+        .department:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .dept-header {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 18px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+            letter-spacing: 0.3px;
+        }
+
+        .category {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border-left: 3px solid #667eea;
+            border: 1.5px solid #e5e7eb;
+            border-left: 3px solid #667eea;
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .category-title::before {
+            content: '📁';
+            font-size: 14px;
+        }
+
+        .unit, .equipment {
+            background: #ffffff;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+            min-height: 70px;
+            transition: all 0.2s ease;
+        }
+
+        .unit:hover, .equipment:hover {
+            border-color: #667eea;
+            background: #fafbff;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+        }
+
+        .unit.drag-over, .equipment.drag-over {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e3f2fd 100%);
+            border-style: solid;
+            border-width: 2px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: scale(1.01);
+        }
+
+        .unit-title, .equipment-title {
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .unit-title::before {
+            content: '📍';
+            font-size: 12px;
+        }
+        
+        .equipment-title::before {
+            content: '⚙️';
+            font-size: 12px;
+        }
+
+        .assigned-meters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .assigned-meter {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .assigned-meter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .remove-btn {
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .action-bar {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 
+                0 6px 24px rgba(102, 126, 234, 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                bottom: -100px;
+                opacity: 0;
+            }
+            to {
+                bottom: 10px;
+                opacity: 1;
+            }
+        }
+        
+        .action-bar:hover {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 
+                0 8px 32px rgba(102, 126, 234, 0.2),
+                0 4px 12px rgba(0, 0, 0, 0.15),
+                inset 0 1px 1px rgba(255, 255, 255, 0.9);
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(108, 117, 125, 0.9);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(90, 98, 104, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 11px 16px 11px 40px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 25px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            background: white url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>') no-repeat 14px center;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
+            background-color: #fafbff;
+        }
+        
+        .search-box input::placeholder {
+            color: #9ca3af;
+        }
+
+        .empty-state {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 12px;
+            text-align: center;
+            padding: 12px;
+            font-weight: 500;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 电表分配工具</h1>
+            <p>拖拽左侧电表到右侧对应的部门/分类/单元中，完成后点击"生成更新代码"</p>
+        </div>
+
+        <div class="control-bar">
+            <label for="deptSelect">🏢 选择部门：</label>
+            <select id="deptSelect" onchange="filterDepartment()">
+                <option value="all">全部部门</option>
+            </select>
+            <span style="margin-left: auto; color: #666; font-size: 14px;" id="statsInfo">
+                <span id="meterCount">0</span> 个电表 | <span id="assignedCount">0</span> 个已分配
+            </span>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧：所有电表列表 -->
+            <div class="left-panel">
+                <div class="section-title">📋 可用电表列表</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索电表 (no/symbol/名称)...">
+                </div>
+                <div class="filter-tabs" id="filterTabs"></div>
+                <div id="meterList"></div>
+            </div>
+
+            <!-- 右侧：部门组织结构 -->
+            <div class="right-panel">
+                <div class="section-title">🏢 部门组织结构</div>
+                <div id="departmentTree"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button class="btn btn-secondary" onclick="resetAll()" title="清空所有分配">
+            🔄 重置
+        </button>
+        <button class="btn btn-secondary" onclick="loadConfig()" title="重新加载配置">
+            📂 重载
+        </button>
+        <button class="btn btn-primary" onclick="saveConfig()" title="保存配置文件">
+            💾 保存
+        </button>
+    </div>
+
+    <script src="js/utils/energy-data.js"></script>
+    <script src="js/utils/energy-manager.js"></script>
+    <script>
+        // 全局状态
+        let assignedMeters = {}; // 记录每个位置分配的电表
+        let allMeters = [];
+        let currentDepartment = 'all'; // 当前选中的部门
+        let currentFilter = 'all'; // 当前选中的过滤器
+        let meterGroups = {}; // 电表所属的分组信息
+
+        // 初始化
+        function init() {
+            try {
+                energyManager.loadData();
+                allMeters = energyManager.getAllMeters();
+                buildMeterGroups();
+                loadExistingAssignments();
+                populateDepartmentSelect();
+                renderFilterTabs();
+                renderMeterList();
+                renderDepartmentTree();
+                updateStats();
+            } catch (error) {
+                alert('加载数据失败: ' + error.message);
+            }
+        }
+        
+        // 构建电表分组信息
+        function buildMeterGroups() {
+            // 按变电所分组
+            allMeters.forEach(meter => {
+                if (!meterGroups[meter.symbol]) {
+                    meterGroups[meter.symbol] = [];
+                }
+                meterGroups[meter.symbol].push(meter.place);
+            });
+            
+            // 从已分配中提取部门信息
+            const departments = energyManager.getAllDepartments();
+            for (let deptName in departments) {
+                const dept = departments[deptName];
+                for (let catName in dept.categories) {
+                    const category = dept.categories[catName];
+                    
+                    const collectSymbols = (symbols) => {
+                        if (symbols && symbols.length > 0) {
+                            symbols.forEach(symbol => {
+                                if (!meterGroups[symbol]) {
+                                    meterGroups[symbol] = [];
+                                }
+                                const groupName = `${deptName}`;
+                                if (!meterGroups[symbol].includes(groupName)) {
+                                    meterGroups[symbol].push(groupName);
+                                }
+                            });
+                        }
+                    };
+                    
+                    if (category.units) {
+                        for (let unitName in category.units) {
+                            collectSymbols(category.units[unitName].symbols);
+                        }
+                    }
+                    
+                    if (category.equipments) {
+                        for (let eqName in category.equipments) {
+                            collectSymbols(category.equipments[eqName].symbols);
+                        }
+                    }
+                    
+                    collectSymbols(category.symbols);
+                }
+            }
+        }
+        
+        // 渲染过滤标签
+        function renderFilterTabs() {
+            const container = document.getElementById('filterTabs');
+            const places = ['all', ...new Set(allMeters.map(m => m.place))];
+            
+            const counts = {};
+            places.forEach(place => {
+                if (place === 'all') {
+                    counts[place] = allMeters.length;
+                } else {
+                    counts[place] = allMeters.filter(m => m.place === place).length;
+                }
+            });
+            
+            container.innerHTML = places.map(place => {
+                const displayName = place === 'all' ? '全部' : place;
+                return `<div class="filter-tab ${place === currentFilter ? 'active' : ''}" 
+                             onclick="setFilter('${place}')">
+                    ${displayName}<span class="count">(${counts[place]})</span>
+                </div>`;
+            }).join('');
+        }
+        
+        // 设置过滤器
+        function setFilter(filter) {
+            currentFilter = filter;
+            renderFilterTabs();
+            renderMeterList();
+        }
+        
+        // 填充部门下拉列表
+        function populateDepartmentSelect() {
+            const select = document.getElementById('deptSelect');
+            const departments = energyManager.getAllDepartments();
+            
+            for (let deptName in departments) {
+                const option = document.createElement('option');
+                option.value = deptName;
+                option.textContent = deptName;
+                select.appendChild(option);
+            }
+        }
+        
+        // 部门过滤
+        function filterDepartment() {
+            const select = document.getElementById('deptSelect');
+            currentDepartment = select.value;
+            renderDepartmentTree();
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            const totalMeters = allMeters.length;
+            let assignedCount = 0;
+            
+            for (let key in assignedMeters) {
+                assignedCount += assignedMeters[key].length;
+            }
+            
+            document.getElementById('meterCount').textContent = totalMeters;
+            document.getElementById('assignedCount').textContent = assignedCount;
+        }
+
+        // 加载现有分配（从JSON数据中）
+        function loadExistingAssignments() {
+            const departments = energyManager.getAllDepartments();
+            
+            for (let deptName in departments) {
+                const dept = departments[deptName];
+                for (let catName in dept.categories) {
+                    const category = dept.categories[catName];
+                    
+                    // 处理units
+                    if (category.units) {
+                        for (let unitName in category.units) {
+                            const unit = category.units[unitName];
+                            if (unit.symbols && unit.symbols.length > 0) {
+                                const key = `${deptName}|${catName}|unit|${unitName}`;
+                                assignedMeters[key] = unit.symbols.map(symbol => {
+                                    const meter = energyManager.getMeterBySymbol(symbol);
+                                    return meter ? meter.no : null;
+                                }).filter(no => no !== null);
+                            }
+                        }
+                    }
+                    
+                    // 处理equipments
+                    if (category.equipments) {
+                        for (let eqName in category.equipments) {
+                            const equipment = category.equipments[eqName];
+                            if (equipment.symbols && equipment.symbols.length > 0) {
+                                const key = `${deptName}|${catName}|equipment|${eqName}`;
+                                assignedMeters[key] = equipment.symbols.map(symbol => {
+                                    const meter = energyManager.getMeterBySymbol(symbol);
+                                    return meter ? meter.no : null;
+                                }).filter(no => no !== null);
+                            }
+                        }
+                    }
+                    
+                    // 处理category直接的symbols
+                    if (category.symbols && category.symbols.length > 0) {
+                        const key = `${deptName}|${catName}|category`;
+                        assignedMeters[key] = category.symbols.map(symbol => {
+                            const meter = energyManager.getMeterBySymbol(symbol);
+                            return meter ? meter.no : null;
+                        }).filter(no => no !== null);
+                    }
+                }
+            }
+        }
+
+        // 渲染电表列表
+        function renderMeterList(searchFilter = '') {
+            const container = document.getElementById('meterList');
+            
+            // 应用搜索和地点过滤
+            let filtered = allMeters.filter(m => {
+                // 地点过滤
+                if (currentFilter !== 'all' && m.place !== currentFilter) {
+                    return false;
+                }
+                
+                // 搜索过滤
+                if (!searchFilter) return true;
+                const searchStr = searchFilter.toLowerCase();
+                return m.no.toString().includes(searchStr) ||
+                       m.symbol.toLowerCase().includes(searchStr) ||
+                       m.name.toLowerCase().includes(searchStr) ||
+                       m.place.toLowerCase().includes(searchStr);
+            });
+
+            // 按place分组
+            const grouped = {};
+            filtered.forEach(meter => {
+                if (!grouped[meter.place]) {
+                    grouped[meter.place] = [];
+                }
+                grouped[meter.place].push(meter);
+            });
+
+            let html = '';
+            for (let place in grouped) {
+                const meters = grouped[place];
+                html += `<div class="group-section">
+                    <div class="group-header">
+                        ${place}
+                        <span class="group-count">${meters.length} 个</span>
+                    </div>
+                    <div class="meter-grid">`;
+                
+                meters.forEach(meter => {
+                    const groups = meterGroups[meter.symbol] || [];
+                    const deptGroups = groups.filter(g => g !== meter.place);
+                    
+                    html += `<div class="meter-item" draggable="true" data-no="${meter.no}" title="${meter.name}">
+                        <div>
+                            <span class="meter-no">No.${meter.no}</span>
+                            <span class="meter-symbol">${meter.symbol}</span>
+                        </div>
+                        <div class="meter-name" title="${meter.name}">${meter.name}</div>
+                        <div class="meter-place" title="${meter.place}">📍 ${meter.place}</div>`;
+                    
+                    if (deptGroups.length > 0) {
+                        html += `<div class="meter-tags">`;
+                        deptGroups.forEach(group => {
+                            html += `<span class="meter-tag" title="${group}">${group}</span>`;
+                        });
+                        html += `</div>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+
+            container.innerHTML = html;
+
+            // 添加拖拽事件
+            container.querySelectorAll('.meter-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        // 渲染部门树
+        function renderDepartmentTree() {
+            const container = document.getElementById('departmentTree');
+            const departments = energyManager.getAllDepartments();
+            let html = '';
+
+            for (let deptName in departments) {
+                // 根据当前选中的部门过滤
+                if (currentDepartment !== 'all' && deptName !== currentDepartment) {
+                    continue;
+                }
+                
+                const dept = departments[deptName];
+                html += `<div class="department">
+                    <div class="dept-header">${deptName}</div>`;
+
+                for (let catName in dept.categories) {
+                    const category = dept.categories[catName];
+                    html += `<div class="category">
+                        <div class="category-title">${catName}</div>`;
+
+                    // 渲染units
+                    if (category.units) {
+                        for (let unitName in category.units) {
+                            const key = `${deptName}|${catName}|unit|${unitName}`;
+                            html += renderDropZone(key, unitName, 'unit');
+                        }
+                    }
+
+                    // 渲染equipments
+                    if (category.equipments) {
+                        for (let eqName in category.equipments) {
+                            const key = `${deptName}|${catName}|equipment|${eqName}`;
+                            html += renderDropZone(key, eqName, 'equipment');
+                        }
+                    }
+
+                    // 如果category直接有symbols（如电机课辅助用电）
+                    if (!category.units && !category.equipments) {
+                        const key = `${deptName}|${catName}|category`;
+                        html += renderDropZone(key, '直接分配', 'unit');  // 使用unit类型以便添加事件
+                    }
+
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+
+            // 添加拖放事件
+            container.querySelectorAll('.unit, .equipment').forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('dragleave', handleDragLeave);
+                zone.addEventListener('drop', handleDrop);
+            });
+        }
+
+        // 渲染放置区域
+        function renderDropZone(key, title, type) {
+            const assigned = assignedMeters[key] || [];
+            const assignedHtml = assigned.length > 0
+                ? assigned.map(no => {
+                    const meter = energyManager.getMeterByNo(no);
+                    return `<span class="assigned-meter">
+                        No.${no} ${meter ? meter.symbol : ''} - ${meter ? meter.name : ''}
+                        <button class="remove-btn" onclick="removeMeter('${key}', ${no})">×</button>
+                    </span>`;
+                }).join('')
+                : '<div class="empty-state">拖拽电表到这里</div>';
+
+            return `<div class="${type}" data-key="${key}">
+                <div class="${type}-title">📌 ${title}</div>
+                <div class="assigned-meters">${assignedHtml}</div>
+            </div>`;
+        }
+
+        // 拖拽处理
+        let draggedNo = null;
+
+        function handleDragStart(e) {
+            draggedNo = parseInt(e.target.dataset.no);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const key = e.currentTarget.dataset.key;
+            if (!assignedMeters[key]) {
+                assignedMeters[key] = [];
+            }
+            
+            // 避免重复添加
+            if (!assignedMeters[key].includes(draggedNo)) {
+                assignedMeters[key].push(draggedNo);
+                renderDepartmentTree();
+                updateStats();
+                updateMeterGroups();
+            }
+        }
+
+        // 移除电表
+        function removeMeter(key, no) {
+            if (assignedMeters[key]) {
+                assignedMeters[key] = assignedMeters[key].filter(n => n !== no);
+                renderDepartmentTree();
+                updateStats();
+                updateMeterGroups();
+            }
+        }
+
+        // 搜索功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                renderMeterList(e.target.value);
+            });
+        });
+
+        // 重置所有
+        function resetAll() {
+            if (confirm('确定要清空所有分配吗？')) {
+                assignedMeters = {};
+                renderDepartmentTree();
+                updateStats();
+                updateMeterGroups();
+            }
+        }
+
+        // 保存配置文件
+        async function saveConfig() {
+            const departments = energyManager.getAllDepartments();
+            
+            // 更新 energyManager 中的数据
+            for (let deptName in departments) {
+                const dept = departments[deptName];
+                for (let catName in dept.categories) {
+                    const category = dept.categories[catName];
+                    
+                    // 更新units
+                    if (category.units) {
+                        for (let unitName in category.units) {
+                            const key = `${deptName}|${catName}|unit|${unitName}`;
+                            const nos = assignedMeters[key] || [];
+                            const symbols = nos.map(no => {
+                                const meter = energyManager.getMeterByNo(no);
+                                return meter ? meter.symbol : null;
+                            }).filter(s => s !== null);
+                            category.units[unitName].symbols = symbols;
+                        }
+                    }
+                    
+                    // 更新equipments
+                    if (category.equipments) {
+                        for (let eqName in category.equipments) {
+                            const key = `${deptName}|${catName}|equipment|${eqName}`;
+                            const nos = assignedMeters[key] || [];
+                            const symbols = nos.map(no => {
+                                const meter = energyManager.getMeterByNo(no);
+                                return meter ? meter.symbol : null;
+                            }).filter(s => s !== null);
+                            category.equipments[eqName].symbols = symbols;
+                        }
+                    }
+                    
+                    // 更新category直接的symbols
+                    if (!category.units && !category.equipments) {
+                        const key = `${deptName}|${catName}|category`;
+                        const nos = assignedMeters[key] || [];
+                        const symbols = nos.map(no => {
+                            const meter = energyManager.getMeterByNo(no);
+                            return meter ? meter.symbol : null;
+                        }).filter(s => s !== null);
+                        category.symbols = symbols;
+                    }
+                }
+            }
+            
+            // 尝试复制到剪贴板
+            const copied = await energyManager.copyToClipboard();
+            
+            // 同时下载文件
+            energyManager.downloadConfig('energy-data.js');
+            
+            if (copied) {
+                alert('✅ 配置已保存！\n\n📋 已复制到剪贴板\n💾 已下载文件: energy-data.js\n\n请替换 js/utils/energy-data.js 文件，然后刷新页面！');
+            } else {
+                alert('✅ 配置已保存！\n\n💾 已下载文件: energy-data.js\n\n请替换 js/utils/energy-data.js 文件，然后刷新页面！');
+            }
+        }
+
+        // 重新加载配置
+        function loadConfig() {
+            location.reload();
+        }
+        
+        // 更新电表分组信息（在拖拽后调用）
+        function updateMeterGroups() {
+            buildMeterGroups();
+            renderMeterList(document.getElementById('searchInput').value);
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电费申报分析</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <style>
+        /* ========== 全局样式 (保持深蓝科技风) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* 自定义滚动条样式 - 深蓝科技风 */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 38, 108, 0.8);
+            border: 1px solid rgba(42, 109, 200, 0.3);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #2a6dc8 0%, #1e4e89 100%);
+            border: 1px solid rgba(42, 109, 200, 0.5);
+            border-radius: 6px;
+            box-shadow: inset 0 0 3px rgba(0, 242, 255, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #3a7dd8 0%, #2e5e99 100%);
+            box-shadow: inset 0 0 5px rgba(0, 242, 255, 0.4);
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, #1a5db8 0%, #0e3e79 100%);
+        }
+
+        /* Firefox 滚动条样式 */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #2a6dc8 rgba(15, 38, 108, 0.8);
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 0 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .toolbar-title { font-size: 20px; font-weight: bold; color: #fff7ca; letter-spacing: 2px; }
+        
+        .date-group { display: flex; align-items: center; gap: 10px; }
+        .date-group label { color: #b9d3f4; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid #2a6dc8;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+        }
+
+        /* ========== 中间对比画面核心样式 ========== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            overflow-x: auto;
+            min-height: 0;
+        }
+
+        /* 变电所容器 */
+        .station-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1e4e89 0%, #0f266c 70%);
+            border: 1px solid #2a6dc8;
+            border-radius: 8px;
+            position: relative;
+            padding: 20px;
+            min-height: 500px;
+            height: auto;
+            flex-shrink: 0;
+            flex-grow: 0;
+        }
+
+        /* 装饰用背景线 */
+        .station-container::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(42, 109, 200, 0.1) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(42, 109, 200, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        .compare-board {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            flex-shrink: 0;
+            min-width: fit-content;
+        }
+
+        /* 侧边金额卡片 */
+        .side-card {
+            width: 260px;
+            min-width: 260px;
+            padding: 30px 20px;
+            background: rgba(29, 56, 111, 0.6);
+            border: 2px solid #2a6dc8;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        /* 卡片右侧：电价和费用详情 */
+        .card-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .card-left, .card-right {
+            flex: 1;
+        }
+        
+        .price-item {
+            margin: 6px 0;
+            font-size: 12px;
+            color: #b9d3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .price-label {
+            color: #8eb1de;
+        }
+        
+        .price-value {
+            font-weight: bold;
+            color: #fff7ca;
+        }
+        
+        .cost-item {
+            margin: 6px 0;
+            font-size: 13px;
+            color: #b9d3f4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .cost-label {
+            color: #8eb1de;
+        }
+        
+        .cost-value {
+            font-weight: bold;
+            color: #5ba3ff;
+        }
+
+        /* 按需卡片样式 - 亮蓝色（混合白色提高亮度） */
+        .side-card.card-demand {
+            border-color: #5ba3ff;
+            box-shadow: 0 0 20px rgba(91, 163, 255, 0.5);
+        }
+
+        .side-card.card-demand.active {
+            border-color: #6bb3ff;
+            box-shadow: 0 0 30px rgba(107, 179, 255, 0.7);
+        }
+
+        /* 按容卡片样式 - 橘黄色 */
+        .side-card.card-capacity {
+            border-color: #ffb800;
+            box-shadow: 0 0 20px rgba(255, 184, 0, 0.3);
+        }
+
+        .side-card.card-capacity.active {
+            border-color: #ffb800;
+            box-shadow: 0 0 30px rgba(255, 184, 0, 0.5);
+        }
+
+        .amount { font-size: 42px; font-weight: bold; font-family: "DIN Condensed", "Arial"; margin-bottom: 15px; }
+        .label-flag {
+            display: inline-block;
+            padding: 8px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            margin-bottom: 10px;
+        }
+        .bg-grey { background: #555; }
+        .bg-red { background: #d9434e; }
+        .bg-green { background: #92d050; }
+
+        /* 中间参数区 */
+        .center-params {
+            width: 300px;
+            min-width: 300px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .month-tag { 
+            font-size: 14px; 
+            color: #fff7ca; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            white-space: nowrap;
+            text-shadow: 0 0 6px rgba(255, 247, 202, 0.5);
+        }
+        
+        .param-item { 
+            margin: 6px 0; 
+        }
+        
+        .scheme-title {
+            font-size: 12px;
+            color: #fff7ca;
+            margin-bottom: 6px;
+            font-weight: bold;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(42, 109, 200, 0.5);
+            text-shadow: 0 0 5px rgba(255, 247, 202, 0.3);
+        }
+        
+        /* 尖峰平谷方案卡片网格 */
+        .fpgj-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-top: 6px;
+        }
+        
+        .fpgj-card {
+            background: rgba(42, 109, 200, 0.15);
+            border: 1px solid rgba(91, 163, 255, 0.4);
+            border-radius: 4px;
+            padding: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .fpgj-card:hover {
+            background: rgba(42, 109, 200, 0.25);
+            border-color: rgba(91, 163, 255, 0.6);
+            box-shadow: 0 0 10px rgba(91, 163, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .fpgj-card-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .fpgj-type-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .badge-j { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: #fff; box-shadow: 0 0 5px rgba(255, 107, 107, 0.3); }
+        .badge-f { background: linear-gradient(135deg, #ffa940 0%, #ff9520 100%); color: #fff; box-shadow: 0 0 5px rgba(255, 169, 64, 0.3); }
+        .badge-p { background: linear-gradient(135deg, #5ba3ff 0%, #4a8fe7 100%); color: #fff; box-shadow: 0 0 5px rgba(91, 163, 255, 0.3); }
+        .badge-g { background: linear-gradient(135deg, #52c41a 0%, #49a817 100%); color: #fff; box-shadow: 0 0 5px rgba(82, 196, 26, 0.3); }
+        
+        .fpgj-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .fpgj-data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .fpgj-label {
+            font-size: 9px;
+            color: #8eb1de;
+        }
+        
+        .fpgj-value {
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff7ca;
+            text-shadow: 0 0 4px rgba(255, 247, 202, 0.3);
+        }
+        
+        .fpgj-value-highlight {
+            font-size: 12px;
+            font-weight: bold;
+            color: #5ba3ff;
+            text-shadow: 0 0 5px rgba(91, 163, 255, 0.5);
+        }
+        
+        /* 综合电价方案卡片 */
+        .comprehensive-scheme {
+            background: rgba(255, 184, 0, 0.1);
+            border: 1px solid rgba(255, 184, 0, 0.4);
+            border-radius: 5px;
+            padding: 8px;
+            margin-top: 6px;
+        }
+        
+        .comprehensive-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 5px;
+        }
+        
+        .comprehensive-item {
+            text-align: center;
+        }
+        
+        .comprehensive-label {
+            font-size: 9px;
+            color: #8eb1de;
+            margin-bottom: 4px;
+        }
+        
+        .comprehensive-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #5ba3ff;
+            text-shadow: 0 0 6px rgba(91, 163, 255, 0.6);
+        }
+        
+        .comprehensive-value-price {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffb800;
+            text-shadow: 0 0 6px rgba(255, 184, 0, 0.6);
+        }
+        
+        .comprehensive-value-cost {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 0 0 6px rgba(255, 107, 107, 0.6);
+        }
+
+        .vs-glow {
+            font-size: 24px;
+            font-weight: 900;
+            font-style: italic;
+            background: linear-gradient(#fff, #2a6dc8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 6px 0;
+            filter: drop-shadow(0 0 5px rgba(42, 109, 200, 0.8));
+        }
+
+        /* 底部节省横幅 */
+        .saving-result {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: rgba(146, 208, 80, 0.15);
+            border: 1px solid #92d050;
+            border-radius: 50px;
+            color: #92d050;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1;
+        }
+
+        .saving-result b { font-size: 24px; }
+        .saving-result .underline-amount { text-decoration: underline; }
+        
+        /* 刷新时间显示 */
+        .refresh-time {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 11px;
+            color: rgba(142, 177, 222, 0.5);
+            z-index: 10;
+        }
+    </style>
+
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+    <script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script type="text/javascript" src="../js/decimal.js"></script>
+    <script type="text/javascript" src="../js/utils/decimal-formatter.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        }).extend({
+            excel: 'excel'
+        });
+    </script>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="date-group">
+                <label>统计月份</label>
+                <input type="text" id="month-picker" value="" readonly>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 一号与二号变电所容器 -->
+            <div class="station-container">
+                <div class="compare-board">
+                    <div class="side-card card-demand" id="card-fpgj-1">
+                        <div class="amount" id="amount-fpgj-1" style="color: #5ba3ff; text-shadow: 0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2);">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-grey">尖峰平谷</div>
+                    </div>
+
+                    <div class="center-params">
+                        <div class="month-tag" id="month-tag-1">一号与二号变电所</div>
+                        
+                        <!-- 尖峰平谷方案 -->
+                        <div class="param-item">
+                            <div class="scheme-title">尖峰平谷方案</div>
+                            <div class="fpgj-grid">
+                                <!-- 尖时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-j">尖</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-j-center-1">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-j-1">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-j-1">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 峰时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-f">峰</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-f-center-1">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-f-1">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-f-1">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 平时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-p">平</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-p-center-1">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-p-1">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-p-1">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 谷时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-g">谷</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-g-center-1">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-g-1">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-g-1">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vs-glow">VS</div>
+
+                        <!-- 综合电价方案 -->
+                        <div class="param-item">
+                            <div class="scheme-title">综合电价方案</div>
+                            <div class="comprehensive-scheme">
+                                <div class="comprehensive-grid">
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">总电量</div>
+                                        <div class="comprehensive-value" id="use-sum-1">0</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">kWh</div>
+                                    </div>
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">综合电价</div>
+                                        <div class="comprehensive-value-price" id="unit-price-all-center-1">4.0000</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">元/kWh</div>
+                                    </div>
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">总电费</div>
+                                        <div class="comprehensive-value-cost" id="cost-all-sum-1">0</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">元</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="side-card card-capacity active" id="card-all-1">
+                        <div class="amount" id="amount-all-1" style="color: #ffb800;">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-red">综合电价</div>
+                    </div>
+                </div>
+
+                <div class="saving-result" id="saving-result-1">
+                    <i class="layui-icon layui-icon-tips" style="font-size: 24px;"></i>
+                    <span id="saving-text-1">推荐使用尖峰平谷方案，预计每月可节省电费 <b id="saving-amount-1">0</b> 元</span>
+                </div>
+            </div>
+
+            <!-- 三号变电所容器 -->
+            <div class="station-container">
+                <div class="compare-board">
+                    <div class="side-card card-demand" id="card-fpgj-3">
+                        <div class="amount" id="amount-fpgj-3" style="color: #5ba3ff; text-shadow: 0 0 8px rgba(91, 163, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.2);">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-grey">尖峰平谷</div>
+                    </div>
+
+                    <div class="center-params">
+                        <div class="month-tag" id="month-tag-3">三号变电所</div>
+                        
+                        <!-- 尖峰平谷方案 -->
+                        <div class="param-item">
+                            <div class="scheme-title">尖峰平谷方案</div>
+                            <div class="fpgj-grid">
+                                <!-- 尖时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-j">尖</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-j-center-3">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-j-3">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-j-3">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 峰时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-f">峰</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-f-center-3">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-f-3">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-f-3">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 平时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-p">平</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-p-center-3">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-p-3">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-p-3">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 谷时段卡片 -->
+                                <div class="fpgj-card">
+                                    <div class="fpgj-card-header">
+                                        <div class="fpgj-type-badge badge-g">谷</div>
+                                        <div style="flex: 1;">
+                                            <div class="fpgj-label">电价 (元/kWh)</div>
+                                            <div class="fpgj-value-highlight" id="price-g-center-3">0.0000</div>
+                                        </div>
+                                    </div>
+                                    <div class="fpgj-card-body">
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电量</span>
+                                            <span class="fpgj-value" id="use-g-3">0</span>
+                                        </div>
+                                        <div class="fpgj-data-row">
+                                            <span class="fpgj-label">电费</span>
+                                            <span class="fpgj-value" id="cost-g-3">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vs-glow">VS</div>
+
+                        <!-- 综合电价方案 -->
+                        <div class="param-item">
+                            <div class="scheme-title">综合电价方案</div>
+                            <div class="comprehensive-scheme">
+                                <div class="comprehensive-grid">
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">总电量</div>
+                                        <div class="comprehensive-value" id="use-sum-3">0</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">kWh</div>
+                                    </div>
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">综合电价</div>
+                                        <div class="comprehensive-value-price" id="unit-price-all-center-3">40.0000</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">元/kWh</div>
+                                    </div>
+                                    <div class="comprehensive-item">
+                                        <div class="comprehensive-label">总电费</div>
+                                        <div class="comprehensive-value-cost" id="cost-all-sum-3">0</div>
+                                        <div class="fpgj-label" style="margin-top: 3px;">元</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="side-card card-capacity active" id="card-all-3">
+                        <div class="amount" id="amount-all-3" style="color: #ffb800;">0<span style="font-size:16px; margin-left:5px;">元</span></div>
+                        <div class="label-flag bg-red">综合电价</div>
+                    </div>
+                </div>
+
+                <div class="saving-result" id="saving-result-3">
+                    <i class="layui-icon layui-icon-tips" style="font-size: 24px;"></i>
+                    <span id="saving-text-3">推荐使用尖峰平谷方案，预计每月可节省电费 <b id="saving-amount-3">0</b> 元</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 刷新时间显示 -->
+        <div class="refresh-time" id="refresh-time">最后刷新: --</div>
+    </div>
+
+    <script type="text/javascript">
+        layui.use(['laydate', 'jquery'], function() {
+            var laydate = layui.laydate;
+            var $ = layui.$;
+
+            // ==================== 配置 ====================
+            const CONFIG = {
+                // SCADA API 地址
+                SCADA_API: 'http://192.168.7.229:8004/api/scada'
+            };
+
+            // ==================== 内部变量（SCADA变量映射，默认值为1） ====================
+            var unit_price_j_1_2 = 1;  // 尖电单价
+            var unit_price_f_1_2 = 1;  // 峰电单价
+            var unit_price_p_1_2 = 1;  // 平电单价
+            var unit_price_g_1_2 = 1;  // 谷电单价
+            var unit_price_j_3 = 1;    // 变电所3_尖电单价
+            var unit_price_f_3 = 1;    // 变电所3_峰电单价
+            var unit_price_p_3 = 1;    // 变电所3_平电单价
+            var unit_price_g_3 = 1;    // 变电所3_谷电单价
+            
+            // 统一电价（不从SCADA获取，从数据库 elec_unit_price 表获取）
+            var unit_price_all_1_2 = 4;   // 一号与二号变电所统一电价（默认值，将从数据库获取）
+            var unit_price_all_3 = 40;    // 三号变电所统一电价（默认值，将从数据库获取）
+
+            // ==================== 读取SCADA变量 ====================
+            async function readSCADAVariables() {
+                try {
+                    // SCADA变量名列表（不包含统一电价，统一电价手动配置）
+                    const scadaTags = [
+                        '尖电单价',
+                        '峰电单价',
+                        '平电单价',
+                        '谷电单价',
+                        '变电所3_尖电单价',
+                        '变电所3_峰电单价',
+                        '变电所3_平电单价',
+                        '变电所3_谷电单价'
+                    ];
+
+                    // 从SCADA读取变量
+                    const scadaResponse = await fetch(`${CONFIG.SCADA_API}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tags: scadaTags
+                        })
+                    });
+
+                    const scadaData = await scadaResponse.json();
+                    
+                    if (scadaData && scadaData.data && scadaData.data.length > 0) {
+                        // 创建变量名到值的映射
+                        const valueMap = {};
+                        scadaData.data.forEach(item => {
+                            if (item.N && item.V !== undefined) {
+                                valueMap[item.N] = item.V;
+                            }
+                        });
+
+                        // 赋值给内部变量（如果SCADA有值则使用，否则保持默认值1）
+                        unit_price_j_1_2 = valueMap['尖电单价'] !== undefined && valueMap['尖电单价'] !== null ? valueMap['尖电单价'] : 1;
+                        unit_price_f_1_2 = valueMap['峰电单价'] !== undefined && valueMap['峰电单价'] !== null ? valueMap['峰电单价'] : 1;
+                        unit_price_p_1_2 = valueMap['平电单价'] !== undefined && valueMap['平电单价'] !== null ? valueMap['平电单价'] : 1;
+                        unit_price_g_1_2 = valueMap['谷电单价'] !== undefined && valueMap['谷电单价'] !== null ? valueMap['谷电单价'] : 1;
+                        unit_price_j_3 = valueMap['变电所3_尖电单价'] !== undefined && valueMap['变电所3_尖电单价'] !== null ? valueMap['变电所3_尖电单价'] : 1;
+                        unit_price_f_3 = valueMap['变电所3_峰电单价'] !== undefined && valueMap['变电所3_峰电单价'] !== null ? valueMap['变电所3_峰电单价'] : 1;
+                        unit_price_p_3 = valueMap['变电所3_平电单价'] !== undefined && valueMap['变电所3_平电单价'] !== null ? valueMap['变电所3_平电单价'] : 1;
+                        unit_price_g_3 = valueMap['变电所3_谷电单价'] !== undefined && valueMap['变电所3_谷电单价'] !== null ? valueMap['变电所3_谷电单价'] : 1;
+
+                        // 输出到控制台
+                        console.log('========== SCADA变量读取结果 ==========');
+                        console.log('unit_price_j_1_2:', unit_price_j_1_2, '← 尖电单价');
+                        console.log('unit_price_f_1_2:', unit_price_f_1_2, '← 峰电单价');
+                        console.log('unit_price_p_1_2:', unit_price_p_1_2, '← 平电单价');
+                        console.log('unit_price_g_1_2:', unit_price_g_1_2, '← 谷电单价');
+                        console.log('unit_price_j_3:', unit_price_j_3, '← 变电所3_尖电单价');
+                        console.log('unit_price_f_3:', unit_price_f_3, '← 变电所3_峰电单价');
+                        console.log('unit_price_p_3:', unit_price_p_3, '← 变电所3_平电单价');
+                        console.log('unit_price_g_3:', unit_price_g_3, '← 变电所3_谷电单价');
+                        console.log('unit_price_all_1_2:', unit_price_all_1_2, '← 一号与二号变电所统一电价（将从数据库获取）');
+                        console.log('unit_price_all_3:', unit_price_all_3, '← 三号变电所统一电价（将从数据库获取）');
+                        console.log('========================================');
+
+                        return true;
+                    } else {
+                        console.warn('SCADA读取失败: 未返回数据');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('SCADA读取失败:', error);
+                    return false;
+                }
+            }
+
+            // ==================== 查询综合电价 ====================
+            async function loadComprehensiveUnitPrice(selectedMonth) {
+                try {
+                    // 查询 elec_unit_price 表，根据 use_date（年月）获取 unit_price1_2 和 unit_price3
+                    const priceSql = `
+                        SELECT unit_price1_2, unit_price3 
+                        FROM elec_unit_price 
+                        WHERE use_date = '${selectedMonth}'
+                    `;
+                    
+                    const priceResult = await sendSQL(priceSql);
+                    
+                    if (priceResult && priceResult.data && priceResult.data.length > 0) {
+                        const priceRow = priceResult.data[0];
+                        // 赋值给统一电价变量
+                        if (priceRow.unit_price1_2 !== null && priceRow.unit_price1_2 !== undefined) {
+                            unit_price_all_1_2 = parseFloat(priceRow.unit_price1_2);
+                        }
+                        if (priceRow.unit_price3 !== null && priceRow.unit_price3 !== undefined) {
+                            unit_price_all_3 = parseFloat(priceRow.unit_price3);
+                        }
+                        
+                        console.log('========== 综合电价查询结果 ==========');
+                        console.log('unit_price_all_1_2:', unit_price_all_1_2, '← 一二号变电所综合电价（来自数据库）');
+                        console.log('unit_price_all_3:', unit_price_all_3, '← 三号变电所综合电价（来自数据库）');
+                        console.log('========================================');
+                        
+                        return true;
+                    } else {
+                        console.warn('未找到对应月份的综合电价数据，使用默认值');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('查询综合电价失败:', error);
+                    return false;
+                }
+            }
+
+            // 获取当前年月
+            var today = new Date();
+            var currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+            $('#month-picker').val(currentMonth);
+
+            // SQL查询函数
+            async function sendSQL(strsql) {
+                const sql = strsql;
+                console.info(sql);
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ sql })
+                });
+
+                const data = await res.json();
+                return data;
+            }
+
+            // 查询尖峰平谷数据
+            async function queryFPGJData(selectedMonth, nos, unit_price_j, unit_price_f, unit_price_p, unit_price_g, unit_price_all) {
+                try {
+                    // 解析选中的月份
+                    const [year, month] = selectedMonth.split('-');
+                    const startdate = `${year}-${month}-01 00:00:00`;
+                    
+                    // 计算月份的最后一天
+                    const nextMonth = new Date(year, month, 1);
+                    const lastDay = new Date(nextMonth - 1);
+                    const enddate = `${year}-${month}-${String(lastDay.getDate()).padStart(2, '0')} 23:59:59`;
+                    
+                    // 构建SQL
+                    let sql = " WITH t1 AS (	\n" 
+                        +"    SELECT date_format( r.date, '%Y-%m-%d' ) AS date	\n" 
+                        +"  	,sum(case r.type when 3 then r.today_elec end ) AS use_f	\n" 
+                        +"  	,sum(case r.type when 2 then r.today_elec end ) AS use_p	\n" 
+                        +"  	,sum(case r.type when 1 then r.today_elec end ) AS use_g	\n" 
+                        +"  	,sum(case r.type when 4 then r.today_elec end ) AS use_j	" 
+                        +"  	FROM(	\n" 
+                        +" 			select no,date,type,sum_elec as today_elec from sum_elec_fpgj_group_by_day	\n" 
+                        +" 			where date >= '"+startdate+"' and date <= '"+enddate+"'	\n" 
+                        +" 			and  "+nos+"	\n" ;
+                    
+                    let compareDate = new Date();
+                    compareDate.setHours(7, 0, 0, 0);
+                    if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+                        sql +=" 			union all	\n" 
+                            +" 			select   	\n" 
+                            +" 			data.NO		\n" 					
+                            +" 			,data.date		\n" 
+                            +" 			,f.type	\n" 
+                            +" 			,if(LEAD(data.no,1,0) over(order by data.no,data.date) = data.no , LEAD(MIN(KWH),1,0) over(order by data.no,data.date),   MAX(KWH)) - MIN(data.KWH) as today_elec	\n" 
+                            +" 			from (	\n" 
+                            +" 				select date,no	\n" 
+                            +" 				,min(DATEDIFF(data.date,f.used_date)) as diff 	\n" 
+                            +" 				from data_all data 	\n" 
+                            +" 				left join fpgj_config f	\n" 
+                            +" 				on f.used_date <= data.date and DATE_FORMAT(data.date, '%H:%i:%s') >= f.start_date and DATE_FORMAT(data.date, '%H:%i:%s') <= f.end_date	\n" 
+                            +" 				where "+nos+"	\n" 
+                            +" 				and date >=  DATE_FORMAT(now() , '%Y-%m-%d 00:00:00')	\n" 
+                            +" 				and date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 1 Day), '%Y-%m-%d 00:05:00') \n" 
+                            +" 				group by date,no	\n" 
+                            +" 			)t left join data_all data FORCE INDEX (date_no_KWH)	\n" 
+                            +" 			on data.date >=  DATE_FORMAT(now(), '%Y-%m-%d 00:00:00') and data.date = t.date and data.no = t.no	\n" 
+                            +" 			left join fpgj_config f	\n" 
+                            +" 			on DATEDIFF(data.date,f.used_date) = t.diff and f.used_date <= data.date and DATE_FORMAT(data.date, '%H:%i:%s') >= f.start_date and DATE_FORMAT(data.date, '%H:%i:%s') <= f.end_date	\n" 
+                            +" 			where data.kwh > 0 and data.kwh != 99999999		\n" 
+                            +" 			GROUP BY data.no,DATE_FORMAT(data.date, '%Y-%m-%d') ,f.start_date,f.end_date,f.type,f.remark	\n" ;
+                    }
+                    
+                    sql+="  	) r 	\n" 
+                        +"  	GROUP BY date_format(r.date,'%Y-%m-%d') 	\n" 
+                        +"  	ORDER BY date_format(r.date,'%Y-%m-%d')		\n" 
+                        +" )	\n" 
+                        +" SELECT present_time \n"
+                        +" ,use_j,use_j * "+unit_price_j+" as cost_j \n"
+                        +" ,use_f \n"
+                        +" ,use_f * "+unit_price_f+" as cost_f \n"
+                        +" ,use_p \n"
+                        +" ,use_p * "+unit_price_p+" as cost_p \n"
+                        +" ,use_g,use_g * "+unit_price_g+" as cost_g \n"
+                        +" ,COALESCE(use_f, 0) + COALESCE(use_p, 0) + COALESCE(use_g, 0) + COALESCE(use_j, 0) as use_sum \n"
+                        +" ,COALESCE(use_f, 0) * "+unit_price_f+"  + COALESCE(use_p, 0) * "+unit_price_p+" + COALESCE(use_g, 0) * "+unit_price_g+" + COALESCE(use_j, 0) * "+unit_price_j+" as cost_sum \n"
+                        +" ,COALESCE(use_f, 0) * "+unit_price_all+"  + COALESCE(use_p, 0) * "+unit_price_all+" + COALESCE(use_g, 0) * "+unit_price_all+" + COALESCE(use_j, 0) * "+unit_price_all+" as cost_all_sum \n"
+                        +" FROM (	\n" 
+                        +"   select DATE_FORMAT(pt.time ,'%Y-%m-%d') as present_time,t1.use_f,t1.use_p,t1.use_g,t1.use_j FROM	(	\n" 
+                        +"    select DATE_FORMAT(DATE_SUB(DATE_FORMAT('"+startdate+"' ,'%Y-%m-%d 00:00:00'),INTERVAL (-(@i:=@i+1)) day),'%Y-%m-%d %H:%i') AS 'time' from sys_ints	\n" 
+                        +"    As b ,(select @i:= -1) AS i )	\n" 
+                        +"  pt left join t1 on date_format(pt.time, '%Y-%m-%d' )  =  t1.date	\n" 
+                        +"  where pt.time <= DATE_FORMAT( DATE_FORMAT('"+enddate+"','%Y-%m-%d'),'%Y-%m-%d %H:%i')	\n" 
+                        +"     UNION ALL	\n" 
+                        +"     SELECT '最大值' AS present_time,MAX(t1.use_f) AS use_f,MAX(t1.use_p) AS use_p,MAX(t1.use_g) AS use_g,MAX(t1.use_j) AS use_j FROM t1	\n" 
+                        +"     UNION ALL	\n" 
+                        +"     SELECT '最小值' AS present_time,MIN(t1.use_f) AS use_f,MIN(t1.use_p) AS use_p,MIN(t1.use_g) AS use_g,MIN(t1.use_j) AS use_j FROM t1	\n" 
+                        +" 	   UNION ALL	\n" 
+                        +"     SELECT '平均值' AS present_time,ROUND(AVG(t1.use_f), 2) AS use_f,ROUND(AVG(t1.use_p), 2) AS use_p,ROUND(AVG(t1.use_g), 2) AS use_g,ROUND(AVG(t1.use_j), 2) AS use_j FROM t1	\n" 
+                        +"     UNION ALL	\n" 
+                        +"     SELECT '总和' AS present_time,SUM(t1.use_f) AS use_f,SUM(t1.use_p) AS use_p,SUM(t1.use_g) AS use_g,SUM(t1.use_j) AS use_j FROM t1	\n" 
+                        +" ) final_data;	\n" ;
+                    
+                    // 输出SQL到控制台
+                    console.log('========== SQL查询语句 ==========');
+                    console.log(sql);
+                    console.log('================================');
+                    
+                    // 执行SQL查询
+                    const result = await sendSQL(sql);
+                    
+                    // 输出SQL结果到控制台
+                    console.log('========== SQL查询结果 ==========');
+                    console.log(result);
+                    console.log('================================');
+                    
+                    return result;
+                    
+                } catch (error) {
+                    console.error('查询尖峰平谷数据失败:', error);
+                    return null;
+                }
+            }
+
+            // 更新页面显示数据
+            function updateDisplayData(stationId, yearMonth, stationName, resultData, unit_price_all, unit_price_j, unit_price_f, unit_price_p, unit_price_g) {
+                if (!resultData || !resultData.data) {
+                    console.error('数据为空，无法更新显示');
+                    return;
+                }
+                
+                // 找到"总和"这一行数据
+                const sumRow = resultData.data.find(row => row.present_time === '总和');
+                
+                if (!sumRow) {
+                    console.error('未找到总和数据');
+                    return;
+                }
+                
+                // 提取数据
+                const use_sum = parseFloat(sumRow.use_sum || 0);
+                const use_j = parseFloat(sumRow.use_j || 0);
+                const use_f = parseFloat(sumRow.use_f || 0);
+                const use_p = parseFloat(sumRow.use_p || 0);
+                const use_g = parseFloat(sumRow.use_g || 0);
+                const cost_j = parseFloat(sumRow.cost_j || 0);
+                const cost_f = parseFloat(sumRow.cost_f || 0);
+                const cost_p = parseFloat(sumRow.cost_p || 0);
+                const cost_g = parseFloat(sumRow.cost_g || 0);
+                const cost_sum = parseFloat(sumRow.cost_sum || 0); // 尖峰平谷总费用
+                const cost_all_sum = parseFloat(sumRow.cost_all_sum || 0); // 综合电价总费用
+                
+                // 更新中间区域 - 尖峰平谷方案
+                // 电量
+                $('#use-j-' + stationId).text(use_j.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#use-f-' + stationId).text(use_f.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#use-p-' + stationId).text(use_p.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#use-g-' + stationId).text(use_g.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                
+                // 电价
+                $('#price-j-center-' + stationId).text(parseFloat(unit_price_j).toFixed(4));
+                $('#price-f-center-' + stationId).text(parseFloat(unit_price_f).toFixed(4));
+                $('#price-p-center-' + stationId).text(parseFloat(unit_price_p).toFixed(4));
+                $('#price-g-center-' + stationId).text(parseFloat(unit_price_g).toFixed(4));
+                
+                // 电费
+                $('#cost-j-' + stationId).text(cost_j.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#cost-f-' + stationId).text(cost_f.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#cost-p-' + stationId).text(cost_p.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#cost-g-' + stationId).text(cost_g.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                
+                // 更新中间区域 - 综合电价方案
+                $('#use-sum-' + stationId).text(use_sum.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                $('#unit-price-all-center-' + stationId).text(parseFloat(unit_price_all).toFixed(4));
+                $('#cost-all-sum-' + stationId).text(cost_all_sum.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                
+                // 更新左边尖峰平谷卡片 - 总费用
+                $('#amount-fpgj-' + stationId).html(cost_sum.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '<span style="font-size:16px; margin-left:5px;">元</span>');
+                
+                // 更新右边综合电价卡片 - 总费用
+                $('#amount-all-' + stationId).html(cost_all_sum.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '<span style="font-size:16px; margin-left:5px;">元</span>');
+                
+                // 获取标签元素
+                var fpgjFlag = $('#card-fpgj-' + stationId).find('.label-flag');
+                var allFlag = $('#card-all-' + stationId).find('.label-flag');
+                
+                // 比较两种方案，更新建议
+                var recommendedScheme = '';
+                var savingAmount = 0;
+                var schemeColor = '';
+                
+                if (cost_sum < cost_all_sum) {
+                    // 尖峰平谷更便宜
+                    recommendedScheme = '尖峰平谷';
+                    savingAmount = cost_all_sum - cost_sum;
+                    schemeColor = '#5ba3ff';
+                    $('#card-fpgj-' + stationId).addClass('active');
+                    $('#card-all-' + stationId).removeClass('active');
+                    fpgjFlag.removeClass('bg-grey bg-red').addClass('bg-green');
+                    allFlag.removeClass('bg-grey bg-green').addClass('bg-red');
+                } else if (cost_all_sum < cost_sum) {
+                    // 综合电价更便宜
+                    recommendedScheme = '综合电价';
+                    savingAmount = cost_sum - cost_all_sum;
+                    schemeColor = '#ffb800';
+                    $('#card-all-' + stationId).addClass('active');
+                    $('#card-fpgj-' + stationId).removeClass('active');
+                    allFlag.removeClass('bg-grey bg-red').addClass('bg-green');
+                    fpgjFlag.removeClass('bg-grey bg-green').addClass('bg-red');
+                } else {
+                    // 费用相同
+                    recommendedScheme = '尖峰平谷或综合电价';
+                    savingAmount = 0;
+                    schemeColor = '#b9d3f4';
+                    fpgjFlag.removeClass('bg-red bg-green').addClass('bg-grey');
+                    allFlag.removeClass('bg-red bg-green').addClass('bg-grey');
+                }
+                
+                // 更新建议文字
+                if (savingAmount > 0) {
+                    $('#saving-text-' + stationId).html('<b style="color: #b9d3f4;">' + stationName + '</b>推荐使用<b style="color: ' + schemeColor + '; margin: 0 5px;">' + recommendedScheme + '</b>方案，' + yearMonth + '可节省电费 <b class="underline-amount" id="saving-amount-' + stationId + '">' + savingAmount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '</b> 元');
+                } else {
+                    $('#saving-text-' + stationId).html('<b style="color: #b9d3f4;">' + stationName + '</b>两种方案费用相同，可选择任意一种方案');
+                }
+            }
+
+            // 更新页面数据
+            async function updatePageData() {
+                const selectedMonth = $('#month-picker').val();
+                const [year, month] = selectedMonth.split('-');
+                const yearMonthText = year + '年' + month + '月';
+                
+                // 更新月份标签 - 显示具体年月
+                $('#month-tag-1').text(yearMonthText + ' 一号与二号变电所');
+                $('#month-tag-3').text(yearMonthText + ' 三号变电所');
+                
+                // 查询综合电价（从数据库获取 unit_price1_2 和 unit_price3）
+                await loadComprehensiveUnitPrice(selectedMonth);
+                
+                // 查询一号与二号变电所的尖峰平谷数据（NO: 51, 52, 12, 17, 20）
+                const nos1_2 = "NO in('51','52','12','17','20')";
+                const result1_2 = await queryFPGJData(
+                    selectedMonth, 
+                    nos1_2,
+                    unit_price_j_1_2,
+                    unit_price_f_1_2,
+                    unit_price_p_1_2,
+                    unit_price_g_1_2,
+                    unit_price_all_1_2
+                );
+                
+                // 更新一号与二号变电所显示
+                updateDisplayData('1', yearMonthText, '一号与二号变电所', result1_2, unit_price_all_1_2, unit_price_j_1_2, unit_price_f_1_2, unit_price_p_1_2, unit_price_g_1_2);
+                
+                // 查询三号变电所的尖峰平谷数据（NO: 1, 26）
+                const nos3 = "NO in('1','26')";
+                const result3 = await queryFPGJData(
+                    selectedMonth, 
+                    nos3,
+                    unit_price_j_3,
+                    unit_price_f_3,
+                    unit_price_p_3,
+                    unit_price_g_3,
+                    unit_price_all_3
+                );
+                
+                // 更新三号变电所显示
+                updateDisplayData('3', yearMonthText, '三号变电所', result3, unit_price_all_3, unit_price_j_3, unit_price_f_3, unit_price_p_3, unit_price_g_3);
+                
+                // 更新刷新时间
+                const now = new Date();
+                const timeStr = now.getFullYear() + '-' + 
+                               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(now.getDate()).padStart(2, '0') + ' ' + 
+                               String(now.getHours()).padStart(2, '0') + ':' + 
+                               String(now.getMinutes()).padStart(2, '0') + ':' + 
+                               String(now.getSeconds()).padStart(2, '0');
+                $('#refresh-time').text('最后刷新: ' + timeStr);
+            }
+
+            // 日期选择初始化
+            laydate.render({
+                elem: '#month-picker',
+                type: 'month',
+                theme: '#1e88e5',
+                done: function(value, date) {
+                    // 月份改变时更新数据
+                    updatePageData();
+                }
+            });
+            
+            // 页面初始化：先读取SCADA变量，然后更新数据
+            (async function init() {
+                // 读取SCADA变量
+                await readSCADAVariables();
+                // 更新页面数据
+                updatePageData();
+            })();
+            
+            // 设置3分钟自动刷新（180000毫秒）
+            setInterval(function() {
+                updatePageData();
+            }, 180000);
+        });
+    </script>
+</body>
+</html>

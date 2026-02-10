@@ -1,0 +1,1155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能统计电能总和</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript" src="../js/d3.v7.min.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	#chart-container {
+        width: 100%;
+        height: 100%;
+    }
+    .node {
+        cursor: pointer;
+    }
+    .node rect {
+        /* [可修改] 节点边框的粗细 */
+        stroke-width: 2px;
+        /* [可修改] 节点边框的圆角大小 */
+        rx: 8;
+        ry: 8;
+        transition: all 0.3s;
+    }
+
+    /* --- 样式：实心节点 (对应数据中 is_main: true 的节点) --- */
+    .node .main-box {
+        /* [可修改] 实心节点的填充色 */
+        fill: rgb(0, 184, 217);
+        /* [可修改] 实心节点的边框色 */
+        stroke: rgb(0, 184, 217);
+    }
+
+    /* --- 样式：空心节点 (其他所有子节点) --- */
+    .node .sub-box {
+        /* [可修改] 空心节点的填充色 (transparent 表示透明) */
+        fill: transparent;
+        /* [可修改] 空心节点的边框色 */
+        stroke: rgb(0, 184, 217);
+    }
+
+    /* --- 样式：节点内所有文字的通用设置 --- */
+    .node text { 
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; 
+        pointer-events: none;
+    }
+    
+    /* --- 样式：实心节点内的文字 --- */
+    .node .title-text { font-size: 14px; font-weight: bold; fill: #ffffff; /* [可修改] 字体大小、粗细、颜色 */ }
+    .node .data-text { font-size: 13px; fill: #ffffff; /* [可修改] 字体大小、颜色 */ }
+    
+    /* --- 样式：空心节点内的文字 --- */
+    .node .sub-title-text { font-size: 14px; font-weight: bold; fill: rgb(0, 184, 217); /* [可修改] 字体大小、粗细、颜色 */ }
+    .node .sub-data-text { font-size: 12px; fill: rgb(0, 184, 217); /* [可修改] 字体大小、颜色 */ }
+
+    /* --- 样式：连接线 --- */
+    .link {
+        fill: none;
+        /* [可修改] 连接线的颜色 */
+        stroke: rgb(0, 184, 217);
+        /* [可修改] 连接线的粗细 */
+        stroke-width: 5px;
+    }
+	
+	/* --- 控件样式 --- */
+    .zoom-controls {
+        position: absolute;
+        top: 55px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+    }
+
+    .zoom-controls button {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 8px;
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 1;
+        background-color: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 50%; /* 圆形按钮 */
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4a5568;
+    }
+    
+    .zoom-controls button:hover {
+        background-color: #f7fafc;
+        border-color: #00B8D9;
+        color: #00B8D9;
+        transform: scale(1.1);
+    }
+
+    .zoom-controls button:active {
+        transform: scale(1.0);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">分类能耗：</label>
+							<div class="layui-input-inline">
+								<select name="interest" lay-filter="aihao">
+									<option value=""></option>
+									<option value="0">写作</option>
+									<option value="1" selected>阅读</option>
+									<option value="2">游戏</option>
+									<option value="3">音乐</option>
+									<option value="4">旅行</option>
+								</select>
+							</div>-->
+							<div class="layui-inline" style = "margin-right : 20px;">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid">-</div>
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<!--<div class="layui-inline">
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="day" title="日">
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="month" title="月" checked> 
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="year" title="年" > 
+							</div>-->
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+							</div>
+						</div>
+
+						
+						
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">电能统计厂区架构</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">kW·h</span>
+								</div>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<div id="chart-container"></div>
+									<div class="zoom-controls">
+										<button id="zoom-in" title="放大">+</button>
+										<button id="zoom-out" title="缩小">-</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var dateValue = "month";
+		var excel = layui.excel; //导出逻辑
+		var date = new Date().setDate(1);
+		console.info(date);
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		//currentDay.setHours(7, 0, 0, 0);
+
+		// 日期
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});
+
+		var table = layui.table;
+		var $ = layui.$;
+		
+		
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果
+				
+				var startdate = $("#ID-laydate-start-date-1")[0].value;
+				var enddate = $("#ID-laydate-end-date-1")[0].value;
+				var sql = " select "
+				
+					 
+					
+						+" sum(case when elec_name in ('elec_51','elec_52','elec_12','elec_16','elec_17','elec_20','elec_1','elec_26') then sum_elec else 0 end) as sum_elec, " // 总合计
+					
+						+"	 sum(case when elec_name in ('elec_51','elec_52') then sum_elec else 0 end) AS sum_elec1,"// 一号变电所合计
+						+"   sum(case when elec_name = 'elec_51' then sum_elec else 0 end) as elec_51,   " // 1#变压器主开关
+						+"   sum(case when elec_name = 'elec_110002' then sum_elec else 0 end) as elec_110002,   " // IT新机房
+						+"   sum(case when elec_name = 'elec_110003' then sum_elec else 0 end) as elec_110003,   " // 宿舍二三楼照明
+						+"   sum(case when elec_name = 'elec_110004' then sum_elec else 0 end) as elec_110004,   " // 办公照明
+						+"   sum(case when elec_name = 'elec_110005' then sum_elec else 0 end) as elec_110005,   " // 研发消防系统
+						+"   sum(case when elec_name = 'elec_110006' then sum_elec else 0 end) as elec_110006,   " // 组装GCS
+						+"   sum(case when elec_name = 'elec_110007' then sum_elec else 0 end) as elec_110007,   " // 电机9号
+						+"   sum(case when elec_name = 'elec_110008' then sum_elec else 0 end) as elec_110008,   " // M456
+						+"   sum(case when elec_name = 'elec_110009' then sum_elec else 0 end) as elec_110009,   " // M123
+						+"   sum(case when elec_name = 'elec_110010' then sum_elec else 0 end) as elec_110010,   " // 备用
+						+"   sum(case when elec_name = 'elec_110011' then sum_elec else 0 end) as elec_110011,   " // 备用
+						+"   sum(case when elec_name = 'elec_110012' then sum_elec else 0 end) as elec_110012,   " // 组装31#
+						+"   sum(case when elec_name = 'elec_110013' then sum_elec else 0 end) as elec_110013,   " // 组装照明
+						
+						+" 	 sum(case when elec_name = 'elec_52' then sum_elec else 0 end) as elec_52,   " // 2#变压器主开关
+						+"   sum(case when elec_name = 'elec_120002' then sum_elec else 0 end) as elec_120002,   " // 备用
+						+"   sum(case when elec_name = 'elec_120003' then sum_elec else 0 end) as elec_120003,   " // 备用
+						+"   sum(case when elec_name = 'elec_120004' then sum_elec else 0 end) as elec_120004,   " // 备用
+						+"   sum(case when elec_name = 'elec_120005' then sum_elec else 0 end) as elec_120005,   " // 神钢4#
+						+"   sum(case when elec_name = 'elec_120006' then sum_elec else 0 end) as elec_120006,   " // 组装32#
+						+"   sum(case when elec_name = 'elec_120007' then sum_elec else 0 end) as elec_120007,   " // 备用
+						+"   sum(case when elec_name = 'elec_120008' then sum_elec else 0 end) as elec_120008,   " // 空压机照明辅助
+						+"   sum(case when elec_name = 'elec_120009' then sum_elec else 0 end) as elec_120009,   " // 备用
+						+"   sum(case when elec_name = 'elec_120010' then sum_elec else 0 end) as elec_120010,   " // 神钢1#
+						+"   sum(case when elec_name = 'elec_120011' then sum_elec else 0 end) as elec_120011,   " // 神钢3#
+						+"   sum(case when elec_name = 'elec_120012' then sum_elec else 0 end) as elec_120012,   " // 备用
+						+"   sum(case when elec_name = 'elec_120013' then sum_elec else 0 end) as elec_120013,   " // 组装空调
+						+"   sum(case when elec_name = 'elec_120014' then sum_elec else 0 end) as elec_120014,   " // R290风机
+						+"   sum(case when elec_name = 'elec_120015' then sum_elec else 0 end) as elec_120015,   " // 变电所内用电
+						+"   sum(case when elec_name = 'elec_120016' then sum_elec else 0 end) as elec_120016,   " // CO2性能试验
+						+"   sum(case when elec_name = 'elec_120017' then sum_elec else 0 end) as elec_120017,   " // 电机13#柜
+						+"   sum(case when elec_name = 'elec_120018' then sum_elec else 0 end) as elec_120018,   " // 备用
+						
+						+" sum(case when elec_name in ('elec_12','elec_16','elec_17','elec_20') then sum_elec else 0 end) as sum_elec2, " // 二号变电所合计
+						+" sum(case when elec_name = 'elec_12' then sum_elec else 0 end) as elec_12,   " // 1#变压器主开关
+						+" sum(case when elec_name = 'elec_13' then sum_elec else 0 end) as elec_13,   " // 机加GCS西
+						+" sum(case when elec_name = 'elec_14' then sum_elec else 0 end) as elec_14,   " // 机加GCS西并
+						+" sum(case when elec_name = 'elec_210004' then sum_elec else 0 end) as elec_210004,   " // 备用
+						+" sum(case when elec_name = 'elec_210005' then sum_elec else 0 end) as elec_210005,   " // 备用
+						+" sum(case when elec_name = 'elec_16' then sum_elec else 0 end) as elec_16,   " // 2#变压器主开关
+						+" sum(case when elec_name = 'elec_15' then sum_elec else 0 end) as elec_15,   " // 机加GCS东
+						+" sum(case when elec_name = 'elec_220003' then sum_elec else 0 end) as elec_220003,   " // 备用
+						+" sum(case when elec_name = 'elec_220004' then sum_elec else 0 end) as elec_220004,   " // 新电机绕线
+						+" sum(case when elec_name = 'elec_220005' then sum_elec else 0 end) as elec_220005,   " // 定转子设备
+						+" sum(case when elec_name = 'elec_220006' then sum_elec else 0 end) as elec_220006,   " // 定转子照明
+						
+						
+						+" sum(case when elec_name = 'elec_17' then sum_elec else 0 end) as elec_17,   " // 3#变压器主开关
+						+" sum(case when elec_name = 'elec_18' then sum_elec else 0 end) as elec_18,   " // 旧退火炉及冷水机组
+						+" sum(case when elec_name = 'elec_230003' then sum_elec else 0 end) as elec_230003,   " // 冰山帕特
+						+" sum(case when elec_name = 'elec_230004' then sum_elec else 0 end) as elec_230004,   " // 80KW实验室
+						+" sum(case when elec_name = 'elec_230005' then sum_elec else 0 end) as elec_230005,   " // 80KW实验室_1
+						+" sum(case when elec_name = 'elec_230006' then sum_elec else 0 end) as elec_230006,   " // 寿力2#
+						+" sum(case when elec_name = 'elec_230007' then sum_elec else 0 end) as elec_230007,   " // 寿力4#
+						+" sum(case when elec_name = 'elec_230008' then sum_elec else 0 end) as elec_230008,   " // 神钢2#
+						+" sum(case when elec_name = 'elec_230009' then sum_elec else 0 end) as elec_230009,   " // 新碱清洗
+						+" sum(case when elec_name = 'elec_230010' then sum_elec else 0 end) as elec_230010,   " // 新磷化
+						+" sum(case when elec_name = 'elec_230011' then sum_elec else 0 end) as elec_230011,   " // 备用
+						
+						+" sum(case when elec_name = 'elec_20' then sum_elec else 0 end) as elec_20,   " // 4#变压器主开关
+						+" sum(case when elec_name = 'elec_19' then sum_elec else 0 end) as elec_19,   " // 新退火炉
+						+" sum(case when elec_name = 'elec_240003' then sum_elec else 0 end) as elec_240003,   " // 新壳体GCS柜
+						+" sum(case when elec_name = 'elec_240004' then sum_elec else 0 end) as elec_240004,   " // 食堂电锅
+						+" sum(case when elec_name = 'elec_240005' then sum_elec else 0 end) as elec_240005,   " // 电机8
+						+" sum(case when elec_name = 'elec_240006' then sum_elec else 0 end) as elec_240006,   " // 电机10
+						+" sum(case when elec_name = 'elec_240007' then sum_elec else 0 end) as elec_240007,   " // 电机7
+						+" sum(case when elec_name = 'elec_240008' then sum_elec else 0 end) as elec_240008,   " // 电机11
+
+						
+						
+						+"	 sum(case when elec_name in ('elec_1','elec_26') then sum_elec else 0 end) as sum_elec3,"  // 三号变电所合计
+						+" 	 sum(case when elec_name = 'elec_1' then sum_elec else 0 end) as elec_1,   " // 1#变压器主开关
+						+" 	 sum(case when elec_name = 'elec_2' then sum_elec else 0 end) as elec_2,   " // 变电所用电
+						+" 	 sum(case when elec_name = 'elec_3' then sum_elec else 0 end) as elec_3,   " // 污水处理
+						+" 	 sum(case when elec_name = 'elec_4' then sum_elec else 0 end) as elec_4,   " // 预留
+						+" 	 sum(case when elec_name = 'elec_5' then sum_elec else 0 end) as elec_5,   " // 耐久实验室3#动力柜
+						+" 	 sum(case when elec_name = 'elec_6' then sum_elec else 0 end) as elec_6,   " // 研发中心GCS柜
+						+" 	 sum(case when elec_name = 'elec_7' then sum_elec else 0 end) as elec_7,   " // 研发大马力性能实验室
+						+" 	 sum(case when elec_name = 'elec_8' then sum_elec else 0 end) as elec_8,   " // 耐久试验室2#柜
+						+" 	 sum(case when elec_name = 'elec_9' then sum_elec else 0 end) as elec_9,   " // 耐久1#5#柜
+						+" 	 sum(case when elec_name = 'elec_10' then sum_elec else 0 end) as elec_10,   " // 研发堵转实验室左侧
+						+" 	 sum(case when elec_name = 'elec_11' then sum_elec else 0 end) as elec_11,   " // 研发预留
+						+" 	 sum(case when elec_name = 'elec_310012' then sum_elec else 0 end) as elec_310012,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_310013' then sum_elec else 0 end) as elec_310013,   " // 备用
+						
+						
+						
+						
+						
+						+" 	 sum(case when elec_name = 'elec_26' then sum_elec else 0 end) as elec_26,   " // 2#变压器主开关
+						+" 	 sum(case when elec_name = 'elec_320002' then sum_elec else 0 end) as elec_320002,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320003' then sum_elec else 0 end) as elec_320003,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320004' then sum_elec else 0 end) as elec_320004,   " // IT新机房
+						+" 	 sum(case when elec_name = 'elec_320005' then sum_elec else 0 end) as elec_320005,   " // 新成品
+						+" 	 sum(case when elec_name = 'elec_320006' then sum_elec else 0 end) as elec_320006,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320007' then sum_elec else 0 end) as elec_320007,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320008' then sum_elec else 0 end) as elec_320008,   " // 热水炉
+						+" 	 sum(case when elec_name = 'elec_320009' then sum_elec else 0 end) as elec_320009,   " // 研发290性能实验室
+						+" 	 sum(case when elec_name = 'elec_320010' then sum_elec else 0 end) as elec_320010,   " // 焓差试验室
+						+" 	 sum(case when elec_name = 'elec_320011' then sum_elec else 0 end) as elec_320011,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320012' then sum_elec else 0 end) as elec_320012,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320013' then sum_elec else 0 end) as elec_320013,   " // 25马力组装凸焊机
+						+" 	 sum(case when elec_name = 'elec_320014' then sum_elec else 0 end) as elec_320014,   " // 25马力组装线设备1
+						+" 	 sum(case when elec_name = 'elec_320015' then sum_elec else 0 end) as elec_320015,   " // 25马力组装线设备2
+						+" 	 sum(case when elec_name = 'elec_320016' then sum_elec else 0 end) as elec_320016,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320017' then sum_elec else 0 end) as elec_320017,   " // 寿力3高压柜
+						+" 	 sum(case when elec_name = 'elec_320018' then sum_elec else 0 end) as elec_320018,   " // 耐久4#、8#、9#动力柜
+						+" 	 sum(case when elec_name = 'elec_320019' then sum_elec else 0 end) as elec_320019,   " // 耐久6#动力柜
+						+" 	 sum(case when elec_name = 'elec_320020' then sum_elec else 0 end) as elec_320020,   " // 耐久7#动力柜
+						+" 	 sum(case when elec_name = 'elec_320021' then sum_elec else 0 end) as elec_320021,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320022' then sum_elec else 0 end) as elec_320022,   " // B座大办冷水机组-左
+						+" 	 sum(case when elec_name = 'elec_320023' then sum_elec else 0 end) as elec_320023,   " // 备用
+						+" 	 sum(case when elec_name = 'elec_320024' then sum_elec else 0 end) as elec_320024   " // B座大办冷水机组-右
+						+" from (  " 
+						+" 	select date as jDay " 
+						+" 	,CONCAT('elec', '_', NO) as elec_name " 
+						+" 	,sum_elec " 
+						+" 	from sum_elec_group_by_day " 
+						+" 	where no in (51,52,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10,11,26,110002,110003,110004,110005,110006,110007,110008,110009,110010,110011,110012,110013 "
+						+"	,120002,120003,120004,120005,120006,120007,120008,120009,120010,120011,120012,120013,120014,120015,120016,120017,120018,210004,210005,220003,220004,220005,220006,230003,230004,230005,230006,230007,230008,230009,230010,230011 "
+						+"	,240003,240004,240005,240006,240007,240008,310012,310013,320002,320003,320004,320005,320006,320007,320008,320009,320010,320011,320012,320013,320014,320015,320016,320017,320018,320019,320020,320021,320022,320023,320024)" 
+						+" 	and date <= '"+enddate+"'  " 
+						+" 	AND date >= '"+startdate+"'	"; 
+				let compareDate = new Date();
+				compareDate.setHours(7, 0, 0, 0);
+				//如果当天在查询区间范围内
+				if(new Date(startdate).setHours(7, 0, 0, 0) <= compareDate &&  compareDate <= new Date(enddate).setHours(7, 0, 0, 0) ){
+					sql += "union all" ;
+					sql += " 	SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay " ;		
+					sql+=" 	,CONCAT('elec', '_', NO) as elec_name	" 		
+						//+" 	#,MIN(KWH) as min		" 
+						//+" 	#,MAX(KWH) as max		" 
+						+" 	,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec	" 
+						+" 	FROM data_all FORCE INDEX (date_no_KWH) 	" 
+						+" 	WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  " 
+						+" 	AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')	" 
+						+" 	and kwh != 0 and kwh != 99999999		" 
+						+" 	and no in (51,52,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10,11,26,110002,110003,110004,110005,110006,110007,110008,110009,110010,110011,110012,110013 "
+						+"	,120002,120003,120004,120005,120006,120007,120008,120009,120010,120011,120012,120013,120014,120015,120016,120017,120018,210004,210005,220003,220004,220005,220006,230003,230004,230005,230006,230007,230008,230009,230010,230011 "
+						+"	,240003,240004,240005,240006,240007,240008,310012,310013,320002,320003,320004,320005,320006,320007,320008,320009,320010,320011,320012,320013,320014,320015,320016,320017,320018,320019,320020,320021,320022,320023,320024) ";
+					sql += " 	GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') " ;
+
+				}
+						
+				sql+=" 	) r " 
+				+" where r.jDay >= '"+startdate+"' and r.jDay <= '"+enddate+"' " ;
+				
+				console.info(sql);
+				const data = await sendSQL(sql);
+				console.info(data);
+				//拼接新表格表头
+				var cols = [];
+				
+				/*//拼接表格内容
+				var tableDatas = [];
+				for(let i=0;i<data.data.length;i++){
+					let tableData = {};
+					tableData.id = data.data[i].ID;
+					tableData.no = data.data[i].NO;
+					tableData.name = data.data[i].name;
+					tableData.place = data.data[i].place;
+					tableDatas.push(tableData);
+				}*/
+				function resizeSvg() {
+					var width = $("#table_form").width(),
+					height = $("#table_form").height();
+					d3.select("svg")
+					.attr("width", width)
+					.attr("height", height);
+				}
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+				//清除掉之前的渲染的svg
+				$("#table_form svg").remove();
+				
+				(function(window) {
+					/**
+					* OrgChart 对象封装了组织结构图的所有功能
+					*/
+					const OrgChart = {
+						//======================================================================
+						// 1. 全局可配置参数
+						// 调整这些参数可以改变图表的外观和感觉
+						//======================================================================
+			
+						/**
+						* @param {number} nodeWidth - 每个节点的宽度（单位：像素）。
+						* 效果：增加此值会使卡片变宽。
+						*/
+						nodeWidth: 150,
+			
+						/**
+						* @param {number} nodeHeight - 每个节点的高度（单位：像素）。
+						* 效果：增加此值会使卡片变高。
+						*/
+						nodeHeight: 50,
+			
+						/**
+						* @param {number} verticalSeparation - 垂直方向上，父子节点之间的中心距离（单位：像素）。
+						* 效果：增加此值会拉大上下层级之间的距离。
+						*/
+						verticalSeparation: 180,
+			
+						/**
+						* @param {number} horizontalSeparation - 水平方向上，相邻叶子节点之间的最小距离（单位：像素）。
+						* 效果：增加此值会拉大同级节点之间的水平间距。
+						*/
+						horizontalSeparation: 220,
+			
+						/**
+						* @param {number} duration - 所有过渡动画的持续时间（单位：毫秒）。
+						* 效果：增加此值会使展开、折叠、缩放等动画变慢，反之则变快。
+						*/
+						duration: 500,
+			
+						/**
+						* @param {number} verticalLayoutPadding - 当子节点垂直布局时，它们之间的垂直内边距（单位：像素）。
+						* 效果：增加此值会拉大垂直布局下子节点之间的距离。
+						*/
+						verticalLayoutPadding: 20,
+						
+						//======================================================================
+						// 2. 内部状态变量 (不建议直接修改)
+						//======================================================================
+						svg: null,              // D3选择的SVG元素
+						g: null,                // SVG中的主要分组元素，用于缩放和平移
+						zoom: null,             // D3的zoom行为处理器
+						root: null,             // D3的层级化数据结构 (hierarchy)
+						container: null,        // 包含SVG的DOM容器
+						chartBounds: null,      // 存储图表内容的边界 {minX, maxX, minY, maxY}
+						
+						/**
+						* 初始化图表
+						* @param {string} containerSelector - 用于承载图表的DOM容器的选择器 (例如 '#chart-container')。
+						*/
+						init: function(containerSelector) {
+							this.container = d3.select(containerSelector).node();
+							this.svg = d3.select(containerSelector).append("svg");
+							
+							// 定义箭头的SVG标记
+							const defs = this.svg.append('defs');
+							defs.append('marker').attr('id', 'arrowhead').attr('viewBox', '-0 -5 10 10').attr('refX', 8).attr('refY', 0).attr('orient', 'auto').attr('markerWidth', 4).attr('markerHeight', 4).append('svg:path').attr('d', 'M 0,-5 L 10 ,0 L 0,5').attr('fill', '#00B8D9');
+			
+							this.g = this.svg.append("g");
+			
+							// 配置D3的zoom行为
+							this.zoom = d3.zoom()
+								.scaleExtent([0.1, 2]) // 设置最小和最大缩放比例
+								.wheelDelta(0) // 禁用默认的滚轮缩放行为
+								.on('zoom', (event) => {
+									// 【核心交互逻辑】处理平移和缩放事件
+									if (!this.chartBounds) return;
+			
+									const newTransform = event.transform;
+									const { width: svgWidth, height: svgHeight } = this.container.getBoundingClientRect();
+									
+									// 计算当前缩放比例下内容的实际尺寸
+									const contentWidth = (this.chartBounds.maxX - this.chartBounds.minX) * newTransform.k;
+									const contentHeight = (this.chartBounds.maxY - this.chartBounds.minY) * newTransform.k;
+			
+									let finalX = newTransform.x;
+									let finalY = newTransform.y;
+			
+									// 检查水平方向：如果内容宽度小于视图，则锁定水平位置以保持居中
+									if (contentWidth < svgWidth) {
+										finalX = (svgWidth / 2) - ((this.chartBounds.minX + this.chartBounds.maxX) / 2) * newTransform.k;
+									} else {
+										// 否则，应用边界检测，防止滚出视图
+										const padding = 80; // 边界缓冲
+										const minTx = svgWidth - this.chartBounds.maxX * newTransform.k - padding;
+										const maxTx = -this.chartBounds.minX * newTransform.k + padding;
+										finalX = Math.max(minTx, Math.min(maxTx, finalX));
+									}
+			
+									// 检查垂直方向：如果内容高度小于视图，则锁定垂直位置以保持顶部对齐
+									if (contentHeight < svgHeight) {
+										finalY = -this.chartBounds.minY * newTransform.k + 40; // 40是顶部内边距
+									} else {
+										// 否则，应用边界检测
+										const padding = 80;
+										const minTy = svgHeight - this.chartBounds.maxY * newTransform.k - padding;
+										const maxTy = -this.chartBounds.minY * newTransform.k + padding;
+										finalY = Math.max(minTy, Math.min(maxTy, finalY));
+									}
+			
+									// 应用最终计算出的变换
+									const finalTransform = d3.zoomIdentity.translate(finalX, finalY).scale(newTransform.k);
+									this.g.attr('transform', finalTransform);
+								});
+							
+							// 将zoom行为应用到SVG上
+							this.svg.call(this.zoom)
+								// 自定义滚轮行为，使其变为垂直平移
+								.on("wheel.zoom", event => {
+									event.preventDefault();
+									this.zoom.translateBy(this.svg, 0, -event.deltaY);
+								})
+								// 禁用双击缩放
+								.on("dblclick.zoom", null);
+			
+							// 为缩放按钮绑定事件
+							d3.select('#zoom-in').on('click', () => this.zoomIn());
+							d3.select('#zoom-out').on('click', () => this.zoomOut());
+							
+							
+							
+							
+							
+			
+							// 监听容器尺寸变化，实现自适应
+							const resizeObserver = new ResizeObserver(() => this._handleResize());
+							resizeObserver.observe(this.container);
+							this._handleResize(); 
+						},
+						
+						/** 放大视图 */
+						zoomIn: function() {
+							this.svg.transition().duration(this.duration).call(this.zoom.scaleBy, 1.2);
+						},
+						
+						/** 缩小视图 */
+						zoomOut: function() {
+							this.svg.transition().duration(this.duration).call(this.zoom.scaleBy, 1 / 1.2);
+						},
+			
+						/**
+						* 渲染或更新图表
+						* @param {object} chartData - 符合格式的树状JSON数据。
+						*/
+						render: function(chartData) {
+							if (!this.svg) { console.error("图表未初始化"); return; }
+							if (!chartData || typeof chartData !== 'object' || !chartData.name) { this.g.selectAll("*").remove(); console.warn("渲染数据为空或格式不正确，已清空图表。"); return; }
+							
+							// 保存当前节点的展开/折叠状态，以便在重绘时恢复
+							const expansionState = new Map();
+							if (this.root) { this.root.each(d => { const isCollapsed = !!d._children; expansionState.set(this._getNodePath(d), isCollapsed); }); }
+							
+							// 使用D3的hierarchy方法处理原始数据
+							this.root = d3.hierarchy(chartData, d => d.children);
+							this.root.x0 = 0; this.root.y0 = 0;
+							
+							// 恢复或初始化节点的折叠状态
+							this.root.each(d => {
+								const uniquePath = this._getNodePath(d);
+								const wasCollapsed = expansionState.get(uniquePath);
+								if (d.children && (wasCollapsed === true || (wasCollapsed === undefined && d.depth > 0))) {
+									d._children = d.children;
+									d.children = null;
+								}
+							});
+							this._update(this.root);
+						},
+			
+						/**
+						* 核心更新函数：计算布局、更新DOM、执行动画
+						* @param {object} source - 触发更新的源节点。
+						*/
+						_update: function(source) {
+							// 1. 重新计算布局
+							this.root.eachAfter(d => {
+								d.vBlockHeight = this._getVBlockHeight(d);
+								if (!d.children && !d._children) { d.leafCount = 1; } 
+								else if (d.data.childrenLayout === 'vertical') { d.leafCount = d.children ? 2 : 1; } 
+								else { d.leafCount = (d.children) ? d.children.reduce((s, c) => s + c.leafCount, 0) : 1; }
+							});
+							this.root.x = 0; this.root.y = 0;
+							this.root.eachBefore(p => {
+								if (!p.children) return;
+								if (p.data.childrenLayout === 'vertical') {
+									let y_cursor = p.y + (this.nodeHeight / 2) + this.verticalLayoutPadding;
+									p.children.forEach(child => {
+										child.x = p.x + this.horizontalSeparation * 0.75; 
+										const childHeight = child.vBlockHeight;
+										child.y = y_cursor + childHeight / 2;
+										y_cursor += childHeight + this.verticalLayoutPadding;
+									});
+								} else {
+									const totalLeafWidth = p.leafCount * this.horizontalSeparation;
+									let x_cursor = p.x - totalLeafWidth / 2;
+									p.children.forEach(child => {
+										const childLeafWidth = child.leafCount * this.horizontalSeparation;
+										child.x = x_cursor + childLeafWidth / 2;
+										child.y = p.y + this.verticalSeparation;
+										x_cursor += childLeafWidth;
+									});
+								}
+							});
+							
+							const nodes = this.root.descendants();
+							const links = this.root.links();
+			
+							// 2. 计算并存储当前图表的精确边界
+							let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+							nodes.forEach(n => { 
+								minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+								minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
+							});
+							this.chartBounds = {
+								minX: minX - this.nodeWidth / 2, maxX: maxX + this.nodeWidth / 2,
+								minY: minY - this.nodeHeight / 2, maxY: maxY + this.nodeHeight / 2
+							};
+							
+							// 3. 数据绑定和DOM操作 (Enter, Update, Exit)
+							// 节点
+							const node = this.g.selectAll('g.node').data(nodes, d => this._getNodePath(d));
+							const nodeEnter = node.enter().append('g').attr('class', 'node').attr("transform", d => `translate(${source.x0 || d.x}, ${source.y0 || d.y})`).style('opacity', 0).on('click', (event, d) => this._click(event, d));
+							nodeEnter.append('rect').attr('width', this.nodeWidth).attr('height', this.nodeHeight).attr('x', -this.nodeWidth / 2).attr('y', -this.nodeHeight / 2);
+							nodeEnter.append('text').attr('class', d => d.data.is_main ? 'title-text' : 'sub-title-text').attr('dy', -this.nodeHeight / 2 + 20).attr('text-anchor', 'middle').text(d => d.data.name);
+							nodeEnter.append('text').attr('class', d => d.data.is_main ? 'data-text' : 'sub-data-text').attr('dy', -this.nodeHeight / 2 + 38).attr('text-anchor', 'middle').text(d => d.data.value);
+							const nodeUpdate = nodeEnter.merge(node);
+							nodeUpdate.transition().duration(this.duration).ease(d3.easeCubicOut).delay(this.duration / 2).attr("transform", d => `translate(${d.x}, ${d.y})`).style('opacity', 1);
+							nodeUpdate.select('rect').attr('class', d => d.data.is_main ? 'main-box' : 'sub-box');
+							nodeUpdate.select('text:nth-of-type(1)').text(d => d.data.name);
+							nodeUpdate.select('text:nth-of-type(2)').text(d => d.data.value);
+							node.exit().transition().duration(this.duration / 2).ease(d3.easeCubicOut).attr("transform", d => `translate(${source.x}, ${source.y})`).style('opacity', 0).remove();
+							
+							// 链接
+							const link = this.g.selectAll('path.link').data(links, d => this._getNodePath(d.target));
+							const linkEnter = link.enter().insert('path', "g").attr("class", 'link').style('opacity', 0).attr('d', (d) => { const o = { x: source.x0 || d.source.x, y: source.y0 || d.source.y, data: d.source.data }; return o.data.childrenLayout === 'vertical' ? this._elbowVertical(o, o) : this._elbowHorizontal(o, o); });
+							const linkUpdate = linkEnter.merge(link);
+							linkUpdate.attr("marker-end", d => d.source.data.childrenLayout === 'vertical' ? null : "url(#arrowhead)");
+							linkUpdate.transition().duration(this.duration).ease(d3.easeCubicOut).style('opacity', 1).attr('d', d => d.source.data.childrenLayout === 'vertical' ? this._elbowVertical(d.source, d.target) : this._elbowHorizontal(d.source, d.target));
+							link.exit().transition().duration(this.duration / 2).ease(d3.easeCubicOut).delay(this.duration / 2).style('opacity', 0).attr('d', d => { const o = { x: source.x, y: source.y, data: d.source.data }; return o.data.childrenLayout === 'vertical' ? this._elbowVertical(o, o) : this._elbowHorizontal(o, o); }).remove();
+							
+							// 4. 存储节点位置，用于下次动画的起点
+							nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+							
+							// 5. 将视图调整到最佳位置
+							this._fitToView(this.duration);
+						},
+			
+						/**
+						* 自动缩放和平移视图以适应当前图表内容
+						* @param {number} duration - 动画时长
+						*/
+						_fitToView: function(duration) {
+							if (!this.chartBounds) return;
+							const { minX, maxX, minY, maxY } = this.chartBounds;
+							const w = maxX - minX;
+							const h = maxY - minY;
+							const svgWidth = this.svg.attr('width');
+							if (w === 0 || h === 0) return;
+			
+							// 仅根据宽度计算缩放比例，以实现垂直方向可滚动
+							const scale = (svgWidth / w) * 0.9;
+							const finalScale = Math.min(scale, 1.2); 
+							
+							// 计算平移量，确保水平居中，垂直顶部对齐
+							const tx = (svgWidth / 2) - ((minX + maxX) / 2) * finalScale;
+							const ty = -minY * finalScale + 40; // 40是顶部内边距
+			
+							const transform = d3.zoomIdentity.translate(tx, ty).scale(finalScale);
+							
+							// 应用变换
+							this.svg.transition().duration(duration || 0).ease(d3.easeCubicOut)
+								.call(this.zoom.transform, transform);
+						},
+						
+						/** 处理窗口或容器尺寸变化 */
+						_handleResize: function() {
+							if (!this.container) return;
+							const { width, height } = this.container.getBoundingClientRect();
+							this.svg.attr('width', width).attr('height', height);
+							if (this.root) {
+								this._fitToView(0); // 无动画地调整视图
+							}
+						},
+			
+						_getVBlockHeight: function(d) {
+							if (!d.children) { return this.nodeHeight; }
+							let totalHeight = d.children.reduce((sum, child) => sum + this._getVBlockHeight(child), 0);
+							totalHeight += (d.children.length - 1) * this.verticalLayoutPadding;
+							return Math.max(this.nodeHeight, totalHeight);
+						},
+						
+						/** 辅助函数：递归折叠一个节点及其所有后代 */
+						_collapseRecursively: function(d) {
+							if (d.children) {
+								d._children = d.children;
+								d._children.forEach(OrgChart._collapseRecursively); 
+								d.children = null;
+							}
+						},
+						
+						/** 节点点击事件处理 */
+						_click: function(event, d) { 
+							if (d.parent && d.parent.data.childrenLayout === 'vertical') { return; }
+							if (!d.children && !d._children) return; 
+			
+							// 如果节点已展开，则折叠它
+							if (d.children) { 
+								d._children = d.children;
+								d.children = null;
+							} else { // 如果节点已折叠，则展开它
+								d.children = d._children;
+								d._children = null;
+								// 【逐级展开逻辑】确保所有直接子节点在展开时是折叠的
+								if (d.children) {
+									d.children.forEach(child => {
+										OrgChart._collapseRecursively(child);
+									});
+								}
+							}
+							
+							this._update(d); // 触发图表更新
+						},
+			
+						_getNodePath: function(d) { return d.ancestors().reverse().map(node => node.data.name).join('/'); },
+						_elbowHorizontal: function(source, target) {
+							const sourceY = source.y + this.nodeHeight / 2;
+							const targetY = target.y - this.nodeHeight / 2 - 5;
+							return `M ${source.x},${sourceY} V ${(sourceY + targetY) / 2} H ${target.x} V ${targetY}`;
+						},
+						_elbowVertical: function(source, target) {
+							const sourceX = source.x; 
+							const sourceY = source.y + this.nodeHeight / 2;
+							const targetX = target.x - this.nodeWidth / 2;
+							const targetY = target.y;
+							return `M ${sourceX},${sourceY} V ${targetY} H ${targetX}`;
+						}
+					};
+			
+					// 初始化图表
+					OrgChart.init('#chart-container');
+					// 将渲染函数暴露到全局，以便外部调用
+					window.updateChartData = function(data) { OrgChart.render(data); };
+				})(window);
+			
+				// 示例数据保持不变
+				const exampleData_debug = {
+					name: "总厂", value: data.data[0].sum_elec + " KWh", is_main: true,
+					children: [
+						{ 
+							name: "一号变电所", value: data.data[0].sum_elec1 +" KWh", 
+							children: [
+								{ 
+									name: "1#变压器", value: data.data[0].elec_51 +" KWh", childrenLayout: 'vertical',
+									children: [
+										{ name: "IT新机房", value: data.data[0].elec_110002 +" KWh" }
+										,{ name: "宿舍二三楼照明", value: data.data[0].elec_110003 +" KWh" }
+										,{ name: "办公照明", value: data.data[0].elec_110004 +" KWh" }
+										,{ name: "研发消防系统", value: data.data[0].elec_110005 +" KWh" }
+										,{ name: "组装GCS", value: data.data[0].elec_110006 +" KWh" }
+										,{ name: "电机9号", value: data.data[0].elec_110007 +" KWh" }
+										,{ name: "M456", value: data.data[0].elec_110008 +" KWh" }
+										,{ name: "M123", value: data.data[0].elec_110009 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_110010 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_110011 +" KWh" }
+										,{ name: "组装31#", value: data.data[0].elec_110012 +" KWh" }
+										,{ name: "组装照明", value: data.data[0].elec_110013 +" KWh" }
+									]
+								},
+								{ 
+									name: "2#变压器", value: data.data[0].elec_52 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										
+										
+										{ name: "备用", value: data.data[0].elec_120002 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120003 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120004 +" KWh" }
+										,{ name: "神钢4#", value: data.data[0].elec_120005 +" KWh" }
+										,{ name: "组装32#", value: data.data[0].elec_120006 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120007 +" KWh" }
+										,{ name: "空压机照明辅助", value: data.data[0].elec_120008 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120009 +" KWh" }
+										,{ name: "神钢1#", value: data.data[0].elec_120010 +" KWh" }
+										,{ name: "神钢3#", value: data.data[0].elec_120011 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120012 +" KWh" }
+										,{ name: "组装空调", value: data.data[0].elec_120013 +" KWh" }
+										,{ name: "R290风机", value: data.data[0].elec_120014 +" KWh" }
+										,{ name: "变电所内用电", value: data.data[0].elec_120015 +" KWh" }
+										,{ name: "CO2性能试验", value: data.data[0].elec_120016 +" KWh" }
+										,{ name: "电机13#柜", value: data.data[0].elec_120017 +" KWh" }
+										,{ name: "备用", value: data.data[0].elec_120018 +" KWh" }
+									]
+								}
+							] 
+						},
+						{ 
+							name: "二号变电所", value: data.data[0].sum_elec2 +" KWh", 
+							children: [
+								{ 
+									name: "1#变压器", value: data.data[0].elec_12 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "机加GCS西", value: data.data[0].elec_13 +" KWh" }, 
+										{ name: "机加GCS西并", value: data.data[0].elec_14 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_210004 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_210005 +" KWh" },
+									] 
+								},
+								{ 	
+									name: "2#变压器", value: data.data[0].elec_16 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "机加GCS东", value: data.data[0].elec_15 +" KWh" }, 
+										{ name: "备用", "value": data.data[0].elec_220003 +" KWh" },
+										{ name: "新电机绕线", "value": data.data[0].elec_220004 +" KWh" },
+										{ name: "定转子设备", "value": data.data[0].elec_220005 +" KWh" },
+										{ name: "定转子照明", "value": data.data[0].elec_220006 +" KWh" },
+									] 
+								},
+								{ 
+									name: "3#变压器", value: data.data[0].elec_17 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "冷水机组、瑞星退火炉", value: data.data[0].elec_18 +" KWh" }, 
+										{ name: "冰山帕特", value: data.data[0].elec_230003 +" KWh" },
+										{ name: "80KW实验室", value: data.data[0].elec_230004 +" KWh" },
+										{ name: "80KW实验室_1", value: data.data[0].elec_230005 +" KWh" },
+										{ name: "寿力2#", value: data.data[0].elec_230006 +" KWh" },
+										{ name: "寿力4#", value: data.data[0].elec_230007 +" KWh" },
+										{ name: "神钢2#", value: data.data[0].elec_230008 +" KWh" },
+										{ name: "新碱清洗", value: data.data[0].elec_230009 +" KWh" },
+										{ name: "新磷化", value: data.data[0].elec_230010 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_230011 +" KWh" },
+									] 
+								},{ 
+									name: "4#变压器", value: data.data[0].elec_20 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "新退火炉", value: data.data[0].elec_19 +" KWh" }, 
+										{ name: "新壳体GCS柜", value: data.data[0].elec_240003 +" KWh" },
+										{ name: "食堂电锅", value: data.data[0].elec_240004 +" KWh" },
+										{ name: "电机8", value: data.data[0].elec_240005 +" KWh" },
+										{ name: "电机10", value: data.data[0].elec_240006 +" KWh" },
+										{ name: "电机7", value: data.data[0].elec_240007 +" KWh" },
+										{ name: "电机11", value: data.data[0].elec_240008 +" KWh" },
+									] 
+								},
+							] 
+						},
+						{ 
+							name: "三号变电所", value: data.data[0].sum_elec3 +" KWh", 
+							children: [
+								{ 
+									name: "1#变压器", value: data.data[0].elec_1 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "变电所用电", value: data.data[0].elec_2 +" KWh" }, 
+										{ name: "污水处理", value: data.data[0].elec_3 +" KWh" }, 
+										{ name: "预留", value: data.data[0].elec_4 +" KWh" },
+										{ name: "耐久实验室3#动力柜", value: data.data[0].elec_5 +" KWh" },
+										{ name: "研发中心GCS柜", value: data.data[0].elec_6 +" KWh" },
+										{ name: "研发大马力性能实验室", value: data.data[0].elec_7 +" KWh" },
+										{ name: "耐久试验室2#柜", value: data.data[0].elec_8 +" KWh" },
+										{ name: "耐久1#5#柜", value: data.data[0].elec_9 +" KWh" },
+										{ name: "研发堵转实验室左侧", value: data.data[0].elec_10 +" KWh" },
+										{ name: "研发预留", value: data.data[0].elec_11 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_310012 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_310013 +" KWh" },
+									] 
+								},
+								{ 	
+									name: "2#变压器", value: data.data[0].elec_26 +" KWh", childrenLayout: 'vertical', 
+									children: [
+										{ name: "备用", value: data.data[0].elec_320002 +" KWh" }, 
+										{ name: "备用", value: data.data[0].elec_320003 +" KWh" },
+										{ name: "IT新机房", value: data.data[0].elec_320004 +" KWh" },
+										{ name: "新成品", value: data.data[0].elec_320005 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320006 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320007 +" KWh" },
+										{ name: "热水炉", value: data.data[0].elec_320008 +" KWh" },
+										{ name: "研发290性能实验室", value: data.data[0].elec_320009 +" KWh" },
+										{ name: "焓差试验室", value: data.data[0].elec_320010 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320011 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320012 +" KWh" },
+										{ name: "25马力组装凸焊机", value: data.data[0].elec_320013 +" KWh" },
+										{ name: "25马力组装线设备1", value: data.data[0].elec_320014 +" KWh" },
+										{ name: "25马力组装线设备2", value: data.data[0].elec_320015 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320016 +" KWh" },
+										{ name: "寿力3高压柜", value: data.data[0].elec_320017 +" KWh" },
+										{ name: "耐久4#、8#、9#动力柜", value: data.data[0].elec_320018 +" KWh" },
+										{ name: "耐久6#动力柜", value: data.data[0].elec_320019 +" KWh" },
+										{ name: "耐久7#动力柜", value: data.data[0].elec_320020 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320021 +" KWh" },
+										{ name: "B座大办冷水机组-左", value: data.data[0].elec_320022 +" KWh" },
+										{ name: "备用", value: data.data[0].elec_320023 +" KWh" },
+										{ name: "B座大办冷水机组-右", value: data.data[0].elec_320024 +" KWh" },
+									] 
+								}
+							] 
+						}
+					]
+				};
+				// 使用示例数据首次渲染图表
+				
+				
+				
+				
+				updateChartData(exampleData_debug);
+				
+				
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		$('#search').click();
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

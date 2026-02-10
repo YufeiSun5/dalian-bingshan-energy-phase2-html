@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能源监控树形图</title>
+    <script type="text/javascript" src="js/d3.v7.min.js"></script> 
+    <style>
+        body{
+			height:100%;
+			font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+			
+		}
+        div.bar {
+			display: inline-block;
+			width: 20px;
+			margin-right: 2px;
+			background-color: teal;
+		}
+		.pumpkin {
+			fill: yellow;
+            stroke: orange;
+            stroke-width: 5;
+		}
+		
+		.axis path,
+            .axis line {
+                fill: none;
+                stroke: black;
+                shape-rendering: crispEdges;
+            }
+            .axis text {
+                font-family: sans-serif;
+                font-size: 11px;
+            }
+
+    </style>
+</head>
+<body>
+    
+    This is my HTML page. <br>
+
+    <script type="text/javascript">
+		// 在 body 中插入一個 svg
+
+		var svg = d3.select('body').append('svg');
+		svg.attr('width', 600)
+		.attr('height', 300);
+			
+		// 在 svg 中插入一個 path
+		svg.append('path').attr('d','M50 150Q300 50 300 150T450 150')
+		.style('fill','none')
+		.style('stroke','purple')
+		.style('stroke-width',5);
+
+    </script>
+</body>
+</html>

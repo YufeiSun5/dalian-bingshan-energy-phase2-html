@@ -1,0 +1,1320 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能极值报表</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	.layui-col-md10 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	.layui-table-click,
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	.class-layer-demo-custom .layui-layer-title{ 
+		background-color: rgba(29, 54, 102);
+		color:white;
+		border-bottom:0px;
+	}
+	.class-layer-demo-custom .layui-layer-content{ 
+		background-color: rgba(29, 54, 102);
+		color:white;
+	}
+	.class-layer-demo-custom span{ 
+		
+		color:white;
+	}
+	.class-layer-demo-custom .layui-layer-btn{padding: 5px 10px 10px;}
+	.class-layer-demo-custom .layui-layer-btn a{background: #fff; border-color: #E9E7E7; color: #333;}
+	.class-layer-demo-custom .layui-layer-btn .layui-layer-btn0{border-color: #FA584D; background-color: #FA584D; color: #fff;}
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<!--<label class="layui-form-label" style = "padding: 9px 0px; width:auto">分类能耗：</label>
+							<div class="layui-input-inline">
+								<select name="interest" lay-filter="aihao">
+									<option value=""></option>
+									<option value="0">写作</option>
+									<option value="1" selected>阅读</option>
+									<option value="2">游戏</option>
+									<option value="3">音乐</option>
+									<option value="4">旅行</option>
+								</select>
+							</div>-->
+							<div class="layui-inline" style = "margin-right : 20px;">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<!--<div class="layui-form-mid">-</div>
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>-->
+								</div>
+							</div>
+							<div class="layui-inline">
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="day" title="日" checked>
+								<!--	<input type="radio" name="AAA"  lay-filter="radio-filter" value="week" title="周" >	-->
+								<input type="radio" name="AAA"  lay-filter="radio-filter" value="month" title="月" > 
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>-->
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+
+						
+						
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md2">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;overflow: auto;" >
+								<div id="ID-tree-demo-showLine" style = "padding:10px; height:calc(100% - 75px);"></div>
+							</div>
+						</div>
+						<div class="layui-col-md10">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">电能极值报表</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">kW·h</span>
+								</div>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+									<script type="text/html" id="barDemo">
+										<div class="layui-btn layui-btn-sm layui-btn-normal" style = "height:26px;line-height:24px;padding: 0px 0px;width: 54px;" lay-event="detail">图表</div>
+									</script>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var dateValue = "day";
+		var excel = layui.excel; //导出逻辑
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		currentDay.setHours(7, 0, 0, 0);
+		var table = layui.table;
+		var $ = layui.$;
+
+		// 初始化日期日期
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: currentDay, // 设置初始日期
+		});
+		/*laydate.render({
+			type:"date",
+			elem: '#ID-laydate-end-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		laydate.render({
+			type:"date",
+			elem: '#ID-laydate-rangeLinked',
+			range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+			rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+		});*/
+		
+		
+		// 树形图初始化
+		var data = [{title:'一号变电所',field:'123456',checked:true,
+					id:'sum_elec1',
+					children:[
+						{title:'1#变压器主开关',id:'elec_51',no:51},
+						{title:'备用',id:'elec_110002',no:110002},
+						{title:'备用',id:'elec_110003',no:110003},
+						{title:'备用',id:'elec_110004',no:110004},
+						{title:'神钢4#',id:'elec_110005',no:110005},
+						{title:'组装32#',id:'elec_110006',no:110006},
+						{title:'备用',id:'elec_110007',no:110007},
+						{title:'空压机照明辅助',id:'elec_110008',no:110008},
+						{title:'备用',id:'elec_110009',no:110009},
+						{title:'神钢1#',id:'elec_110010',no:110010},
+						{title:'神钢3#',id:'elec_110011',no:110011},
+						{title:'备用',id:'elec_110012',no:110012},
+						{title:'组装空调',id:'elec_110013',no:110013},
+						{title:'R290风机',id:'elec_110014',no:110014},
+						{title:'变电所内用电',id:'elec_110015',no:110015},
+						{title:'CO2性能试验',id:'elec_110016',no:110016},
+						{title:'电机13#柜',id:'elec_110017',no:110017},
+						{title:'备用',id:'elec_110018',no:110018},
+						
+						{title:'2#变压器主开关',id:'elec_52',no:52},
+						{title:'IT新机房',id:'elec_120002',no:120002},
+						{title:'宿舍二三楼照明',id:'elec_120003',no:120003},
+						{title:'办公照明',id:'elec_120004',no:120004},
+						{title:'研发消防系统',id:'elec_120005',no:120005},
+						{title:'组装GCS',id:'elec_120006',no:120006},
+						{title:'电机9号',id:'elec_120007',no:120007},
+						{title:'M456',id:'elec_120008',no:120008},
+						{title:'M123',id:'elec_120009',no:120009},
+						{title:'备用',id:'elec_120010',no:120010},
+						{title:'备用',id:'elec_120011',no:120011},
+						{title:'组装31#',id:'elec_120012',no:120012},
+						{title:'组装照明',id:'elec_120013',no:120013},
+						
+					]},
+					{title:'二号变电所',checked:true,
+					id:'sum_elec2',
+					children:[
+						{title:'1#变压器主开关',id:'elec_12',no:12},
+						{title:'机加GCS西',id:'elec_13',no:13},
+						{title:'机加GCS西并',id:'elec_14',no:14},
+						
+						{title:'备用',id:'elec_210004',no:210004},
+						{title:'备用',id:'elec_210005',no:210005},
+						
+						{title:'2#变压器主开关',id:'elec_16',no:16},
+						{title:'机加GCS东',id:'elec_15',no:15},
+						{title:'备用',id:'elec_220003',no:220003},
+						{title:'新电机绕线',id:'elec_220004',no:220004},
+						{title:'定转子设备',id:'elec_220005',no:220005},
+						{title:'定转子照明',id:'elec_220006',no:220006},
+						
+						{title:'3#变压器主开关',id:'elec_17',no:17},
+						{title:'旧退火炉及冷水机组',id:'elec_18',no:18},
+						{title:'冰山帕特',id:'elec_230003',no:220003},
+						{title:'80KW实验室',id:'elec_230004',no:220004},
+						{title:'80KW实验室_1',id:'elec_230005',no:220005},
+						{title:'寿力2#',id:'elec_230006',no:220006},
+						{title:'寿力4#',id:'elec_230007',no:220007},
+						{title:'神钢2#',id:'elec_230008',no:220008},
+						{title:'新碱清洗',id:'elec_230009',no:220009},
+						{title:'新磷化',id:'elec_230010',no:220010},
+						{title:'备用',id:'elec_230011',no:220011},
+						
+						{title:'4#变压器主开关',id:'elec_20',no:20},
+						{title:'新退火炉',id:'elec_19',no:19},
+						{title:'新壳体GCS柜',id:'elec_240003',no:240003},
+						{title:'食堂电锅',id:'elec_240004',no:240004},
+						{title:'电机8',id:'elec_240005',no:240005},
+						{title:'电机10',id:'elec_240006',no:240006},
+						{title:'电机7',id:'elec_240007',no:240007},
+						{title:'电机11',id:'elec_240008',no:240008},
+						
+					]},
+					{title:'三号变电所',checked:true,
+					id:'sum_elec3',
+					children:[
+						{title:'1#变压器主开关',id:'elec_1',no:1},
+						{title:'变电所用电',id:'elec_2',no:2},
+						{title:'污水处理',id:'elec_3',no:3},
+						{title:'预留',id:'elec_4',no:4},
+						{title:'耐久实验室3#动力柜',id:'elec_5',no:5},
+						{title:'研发中心GCS柜',id:'elec_6',no:6},
+						{title:'研发大马力性能实验室',id:'elec_7',no:7},
+						{title:'耐久试验室2#柜',id:'elec_8',no:8},
+						{title:'耐久1#5#柜',id:'elec_9',no:9},
+						{title:'研发堵转实验室左侧',id:'elec_10',no:10},
+						{title:'研发预留',id:'elec_11',no:11},
+						{title:'备用',id:'elec_310012',no:310012},
+						{title:'备用',id:'elec_310013',no:310013},
+						
+						
+						{title:'2#变压器主开关',id:'elec_26',no:26},
+						{title:'备用',id:'elec_320002',no:320002},
+						{title:'备用',id:'elec_320003',no:320003},
+						{title:'IT新机房',id:'elec_320004',no:320004},
+						{title:'新成品',id:'elec_320005',no:320005},
+						{title:'备用',id:'elec_320006',no:320006},
+						{title:'备用',id:'elec_320007',no:320007},
+						{title:'热水炉',id:'elec_320008',no:320008},
+						{title:'研发290性能实验室',id:'elec_320009',no:320009},
+						{title:'焓差试验室',id:'elec_320010',no:320010},
+						{title:'备用',id:'elec_320011',no:320011},
+						{title:'备用',id:'elec_320012',no:320012},
+						{title:'25马力组装凸焊机',id:'elec_320013',no:320013},
+						{title:'25马力组装线设备1',id:'elec_320014',no:320014},
+						{title:'25马力组装线设备2',id:'elec_320015',no:320015},
+						{title:'备用',id:'elec_320016',no:320016},
+						{title:'寿力3高压柜',id:'elec_320017',no:320017},
+						{title:'耐久4#、8#、9#动力柜',id:'elec_320018',no:320018},
+						{title:'耐久6#动力柜',id:'elec_320019',no:320019},
+						{title:'耐久7#动力柜',id:'elec_320020',no:320020},
+						{title:'备用',id:'elec_320021',no:320021},
+						{title:'B座大办冷水机组-左',id:'elec_320022',no:320022},
+						{title:'备用',id:'elec_320023',no:320023},
+						{title:'B座大办冷水机组-右',id:'elec_320024',no:320024},
+						
+					]}
+					];
+		// 渲染
+		tree.render({
+			id:'tree',
+			elem: '#ID-tree-demo-showLine',
+			data: data,
+			showCheckbox: true,
+			height: $("#table_form").height()-1,
+			showLine: false  // 是否开启连接线
+		});
+		
+
+		
+		table.render({
+			elem: '#test',
+			cols: [[ // 表头第一层配置项
+			
+				{field: 'placename', title: '变压器位置',width:350, rowspan:3, align:"left" }, 	// 变压器位置
+				{field: 'date', title: '日期',width:120,rowspan:3, align:"center" }, 			// 日期
+				{ title: '三相有功功率（KW）', colspan:4, align:"center"}, 					//三相有功功率（KW）
+				{ title: 'A相电流（A）', colspan:4, align:"center"}, 					//A相电流（A）
+				{ title: 'B相电流（A）', colspan:4, align:"center"}, 					//B相电流（A）
+				{ title: 'C相电流（A）', colspan:4, align:"center"}, 					//C相电流（A）
+			],[ // 表头第二层配置项
+				{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+				{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+				{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+				{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+				{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+				{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+				{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+				{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+				
+			],[ // 表头第三层配置项
+				{field: 'P_ABC_MAX',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'P_ABC_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'P_ABC_min',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'P_ABC_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'a_max',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'a_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'a_min',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'a_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'b_max',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'b_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'b_min',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'b_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'c_max',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'c_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				{field: 'c_min',width:100, title: '数值', align:"center" }, 	// 数值
+				{field: 'c_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+				
+			]],
+			data: [],
+			height: $("#table_form").height()-1,
+			//skin: 'line', // 表格风格
+			even: true,
+			//page: true, // 是否显示分页
+			//limits: [5, 10, 15],
+			//limit: 5 // 每页默认显示的数量
+		});
+		$('#search').on('click', async function() {
+			try {
+				//获取树形图选择结果
+				var checkedData = tree.getChecked('tree');
+				//console.info(checkedData);
+				var showData = [];
+				var data;
+				for(let i=0;i<checkedData.length;i++){
+					let temp = {};
+					temp.title = checkedData[i].title;
+					temp.no = checkedData[i].no;
+					showData.push(temp);
+					if(checkedData[i].children != undefined){
+						let children = checkedData[i].children;
+						for(let j=0;j<children.length;j++){
+							let tempC = {};
+							tempC.title = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+children[j].title;
+							tempC.no = children[j].no;
+							showData.push(tempC);
+						}
+					}
+				}
+				//console.log("noArr",noArr.join(','));
+				console.log("showData",showData);
+				var startdate = $("#ID-laydate-start-date-1")[0].value;
+				var today = new Date().getFullYear() +"-" + (new Date().getMonth()+1) + "-" + new Date().getDate()+" 08:00:00";
+				//var enddate = $("#ID-laydate-end-date-1")[0].value;
+				var sql = " ";
+				//循环添加数据
+				debugger;
+				//如果是包含了当天的时间
+				if(dateValue == "day"){
+					for(let i=0;i<showData.length;i++){
+						if(showData[i].no == undefined){
+							sql += " select '"+showData[i].title+"' as placename ,'' as date,'' as P_ABC_max,'' as P_ABC_happen_max,''  as P_ABC_min,'' as P_ABC_happen_min,'' as a_max,'' as a_happen_max,''  as a_min,'' as a_happen_min,'' as b_max,'' as b_happen_max,'' as b_min,'' as b_happen_min,'' as c_max,'' as c_happen_max,'' as c_min,'' as c_happen_min \n";
+						}else{
+							sql += " select '"+showData[i].title+"' as placename ,DATE_FORMAT(a_happen_max,'%Y-%m-%d') as date,P_ABC_max,DATE_FORMAT(P_ABC_happen_max,'%H:%i') as P_ABC_happen_max,P_ABC_min,DATE_FORMAT(P_ABC_happen_min,'%H:%i') as P_ABC_happen_min,a_max,DATE_FORMAT(a_happen_max,'%H:%i') as a_happen_max,a_min,DATE_FORMAT(a_happen_min,'%H:%i') as a_happen_min,b_max,DATE_FORMAT(b_happen_max,'%H:%i') as b_happen_max,b_min,DATE_FORMAT(b_happen_min,'%H:%i') as b_happen_min,c_max,\n"
+								+"DATE_FORMAT(c_happen_max,'%H:%i') as c_happen_max,c_min,DATE_FORMAT(c_happen_min,'%H:%i') as c_happen_min \n"
+							if(new Date(startdate).getTime() == new Date(today).getTime()){
+								sql +=" from ( "
+									/*+"\n 	select min(date) as a_happen_max, a_max.* "
+									+"\n 	from data_all "
+									+"\n 	left join ( "
+									+"\n 		select no,max(A_A_MAX) as a_max from data_all "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 		and no = "+showData[i].no+" "
+									+"\n 	) a_max on a_max.a_max = data_all.A_A_MAX and a_max.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 	and a_max.no is not null "
+									+"\n 	and a_max.no = "+showData[i].no+" "*/
+									
+									+"\n	select min(date) as a_happen_max,no, A_A_MAX as a_max 	"
+									+"\n	from data_all_today  	"
+									+"\n	where no = "+showData[i].no+"  	"
+									+"\n	and A_A_MAX = (select max(A_A_MAX) as a_max from data_all_today where no = "+showData[i].no+"  	) "
+									
+									+"\n )a_max left join ( "
+									
+									/*+"\n 	select min(date) as a_happen_min, a_min.* "
+									+"\n 	from data_all "
+									+"\n 	left join ( "
+									+"\n 		select no,min(A_a_min) as a_min from data_all "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 		and no = "+showData[i].no+"  "
+									+"\n 	) a_min on a_min.a_min = data_all.A_a_min and a_min.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 	and a_min.no is not null "
+									+"\n 	and a_min.no = "+showData[i].no+" "*/
+									
+									+"\n 	select min(date) as a_happen_min,no, A_A_Min as a_min 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"  	"
+									+"\n 	and A_A_Min = (select min(A_A_Min) as a_min from data_all_today where no = "+showData[i].no+"  	) "
+									
+									+"\n )a_min on a_max.no = a_min.no "
+									+"\n left join ( "
+									
+									/*+"\n		select max(date) as P_ABC_happen_max, P_ABC_max.* "
+									+"\n		from data_all "
+									+"\n		left join ( "
+									+"\n			select no,max(P_ABC_max) as P_ABC_max from data_all "
+									+"\n			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 			and no = "+showData[i].no+" "
+									+"\n		) P_ABC_max on P_ABC_max.P_ABC_max = data_all.P_ABC_max and P_ABC_max.no = data_all.NO "
+									+"\n		where date >= DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d 07:00:00') "
+									+"\n		and date < DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n		and P_ABC_max.no is not null "
+									+"\n		and P_ABC_max.no = "+showData[i].no+" "*/
+									
+									+"\n 	select min(date) as P_ABC_happen_max,no, P_ABC_max as P_ABC_max 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"  	"
+									+"\n 	and P_ABC_MAX = (select max(P_ABC_MAX) as a_max from data_all_today where no = "+showData[i].no+"  	)"
+									
+									+"\n )P_ABC_max on a_max.no = P_ABC_max.no "
+									+"\n left join ( "
+									
+									/*+"\n		select min(date) as P_ABC_happen_min, P_ABC_min.* "
+									+"\n		from data_all "
+									+"\n		left join ( "
+									+"\n			select no,min(P_ABC_min) as P_ABC_min from data_all "
+									+"\n			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 			and no = "+showData[i].no+" "
+									+"\n		) P_ABC_min on P_ABC_min.P_ABC_min = data_all.P_ABC_min and P_ABC_min.no = data_all.NO "
+									+"\n		where date >= DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d 07:00:00') "
+									+"\n		and date < DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n		and P_ABC_min.no is not null "
+									+"\n		and P_ABC_min.no = "+showData[i].no+"  "*/
+									
+									+"\n 	select min(date) as P_ABC_happen_min,no, P_ABC_Min as P_ABC_min 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"  	"
+									+"\n 	and P_ABC_Min = (select min(P_ABC_Min) as a_min from data_all_today where no = "+showData[i].no+"  	)"
+									
+									+"\n )P_ABC_min on a_max.no = P_ABC_min.no "
+									+"\n left join ( "
+									
+									
+									/*+"\n 	select max(date) as b_happen_max, b_max.* "
+									+"\n 	from data_all "
+									+"\n 	left join ( "
+									+"\n 		select no,max(A_b_max) as b_max from data_all "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00') "
+									+"\n 		and no = "+showData[i].no+"  "
+									+"\n 	) b_max on b_max.b_max = data_all.A_b_max and b_max.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')					 "
+									+"\n 	and b_max.no is not null                                             "
+									+"\n 	and b_max.no = "+showData[i].no+"                                    "*/
+									
+									+"\n 	select min(date) as b_happen_max,no, A_b_MAX as b_max 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"  	"
+									+"\n 	and A_b_MAX = (select max(A_b_MAX) as b_max from data_all_today where no = "+showData[i].no+"  )"
+									
+									
+									+"\n )b_max on a_max.no = b_max.no                                         "
+									+"\n left join (                                                           "
+									
+									/*+"\n 	select min(date) as b_happen_min, b_min.*                            "
+									+"\n 	from data_all                                                        "
+									+"\n 	left join (                                                          "
+									+"\n 		select no,min(A_b_min) as b_min from data_all                    "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')              "
+									+"\n 		and no = "+showData[i].no+"                                      "
+									+"\n 	) b_min on b_min.b_min = data_all.A_b_min and b_min.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                  "
+									+"\n 	and b_min.no is not null                                             "
+									+"\n 	and b_min.no = "+showData[i].no+"                                    "*/
+									
+									+"\n 	select min(date) as b_happen_min,no, A_b_Min as b_min 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"  	"
+									+"\n 	and A_b_Min = (select min(A_b_Min) as b_min from data_all_today where no = "+showData[i].no+"  	)"
+									
+									+"\n )b_min on a_max.no = b_min.no                                         "
+									+"\n left join (                                                           "
+									
+									/*+"\n 	select min(date) as c_happen_max, c_max.*                            "
+									+"\n 	from data_all                                                        "
+									+"\n 	left join (                                                          "
+									+"\n 		select no,max(A_c_max) as c_max from data_all                    "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')              "
+									+"\n 		and no = "+showData[i].no+"                                                      "
+									+"\n 	) c_max on c_max.c_max = data_all.A_c_max and c_max.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                  "
+									+"\n 	and c_max.no is not null                                             "
+									+"\n 	and c_max.no = "+showData[i].no+"                                    "*/
+									
+									+"\n	select min(date) as c_happen_max,no, A_c_MAX as c_max 	"
+									+"\n	from data_all_today  	"
+									+"\n	where no = "+showData[i].no+"   	"
+									+"\n	and A_c_MAX = (select max(A_c_MAX) as c_max from data_all_today where no = "+showData[i].no+"  	)"
+									
+									
+									+"\n )c_max on a_max.no = c_max.no                                         "
+									+"\n left join (                                                           "
+									
+									/*+"\n 	select min(date) as c_happen_min, c_min.*                            "
+									+"\n 	from data_all                                                        "
+									+"\n 	left join (                                                          "
+									+"\n 		select no,min(A_c_min) as c_min from data_all                    "
+									+"\n 		where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')              "
+									+"\n 		and no = "+showData[i].no+"                                                      "
+									+"\n 	) c_min on c_min.c_min = data_all.A_c_min and c_min.no = data_all.NO "
+									+"\n 	where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                  "
+									+"\n 	and c_min.no is not null                                             "
+									+"\n 	and c_min.no = "+showData[i].no+"                                    "*/
+									
+									+"\n 	select min(date) as c_happen_min,no, A_c_Min as c_min 	"
+									+"\n 	from data_all_today  	"
+									+"\n 	where no = "+showData[i].no+"   	"
+									+"\n 	and A_c_Min = (select min(A_c_Min) as c_min from data_all_today where no = "+showData[i].no+"   	)"
+									
+									+"\n )c_min on c_min.no = c_max.no                                             ";
+							}else{
+								sql += "\n from extreme_value_record_a where date = '"+startdate+"' and no = "+showData[i].no+" ";
+							
+							}
+						}
+						
+						sql += "\n union all ";
+					
+					
+					}
+					
+				}else if(dateValue == "month"){
+					
+					sql +="	with base_t as( "
+					+"		select no,date,P_ABC_max,P_ABC_happen_max,P_ABC_min,P_ABC_happen_min,a_max,a_happen_max,a_min,a_happen_min,b_max,b_happen_max,b_min,b_happen_min,c_max,c_happen_max,c_min,c_happen_min  "
+					+"		from extreme_value_record_a "
+					+"		where date >= '"+startdate+"' and date <= DATE_SUB(DATE_ADD('"+startdate+"',INTERVAL 1 month),INTERVAL 1 day) ";
+					if(new Date(startdate).getMonth() == new Date().getMonth()&&new Date(startdate).getFullYear() == new Date().getFullYear()){
+						sql +="		union ALL "
+						+"		select a_max.no,DATE_FORMAT(a_happen_max,'%Y-%m-%d') as date,P_ABC_max,P_ABC_happen_max,P_ABC_min,P_ABC_happen_min,a_max,a_happen_max,a_min,a_happen_min,b_max,b_happen_max,b_min,b_happen_min,c_max,c_happen_max,c_min,c_happen_min from ( "
+						/*+"			select min(date) as a_happen_max, a_max.*								"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,max(A_A_MAX) as a_max from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) a_max on a_max.a_max = data_all.A_A_MAX and a_max.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and a_max.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						+" 			select min(date) as a_happen_max, a_max.no,	a_max.a_max		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(A_A_MAX) as a_max from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) a_max on a_max.a_max = data_all_today.A_A_MAX and a_max.no = data_all_today.NO "
+						+" 			where a_max.no is not null                                            "
+						+" 			group by no  "
+						+"		)a_max left join (                                                      	"
+						/*+"			select min(date) as a_happen_min, a_min.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,min(A_a_min) as a_min from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) a_min on a_min.a_min = data_all.A_a_min and a_min.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and a_min.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						
+						+" 			select min(date) as a_happen_min, a_min.no,	a_min.a_min		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(A_A_Min) as a_min from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) a_min on a_min.a_min = data_all_today.A_A_Min and a_min.no = data_all_today.NO "
+						+" 			where a_min.no is not null                                            "
+						+" 			group by no  "
+						
+						+"		)a_min on a_max.no = a_min.no                                           	"
+						+"		left join (                                                             	"
+						/*+"			select max(date) as P_ABC_happen_max, P_ABC_max.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,max(P_ABC_max) as P_ABC_max from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) P_ABC_max on P_ABC_max.P_ABC_max = data_all.P_ABC_max and P_ABC_max.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and P_ABC_max.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						+" 			select min(date) as P_ABC_happen_max, P_ABC_max.no,	P_ABC_max.P_ABC_max		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(P_ABC_MAX) as P_ABC_max from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) P_ABC_max on P_ABC_max.P_ABC_max = data_all_today.P_ABC_MAX and P_ABC_max.no = data_all_today.NO "
+						+" 			where P_ABC_max.no is not null                                            "
+						+" 			group by no  "
+						+"		)P_ABC_max on a_max.no = P_ABC_max.no                                       "
+						+"		left join (                                                             	"
+						
+						/*+"			select min(date) as P_ABC_happen_min, P_ABC_min.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,min(P_ABC_min) as P_ABC_min from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) P_ABC_min on P_ABC_min.P_ABC_min = data_all.P_ABC_min and P_ABC_min.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and P_ABC_min.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						
+						+" 			select min(date) as a_happen_min, a_min.no,	a_min.a_min		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(A_A_Min) as a_min from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) a_min on a_min.a_min = data_all_today.A_A_Min and a_min.no = data_all_today.NO "
+						+" 			where a_min.no is not null                                            "
+						+" 			group by no  "
+						
+						+"		)P_ABC_min on a_max.no = P_ABC_min.no                                           	"
+						+"		left join (                                                             	"
+						/*+"			select max(date) as b_happen_max, b_max.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,max(A_b_max) as b_max from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) b_max on b_max.b_max = data_all.A_b_max and b_max.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and b_max.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						+" 			select min(date) as b_happen_max, b_max.no,	b_max.b_max		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(A_b_MAX) as b_max from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) b_max on b_max.b_max = data_all_today.A_b_MAX and b_max.no = data_all_today.NO "
+						+" 			where b_max.no is not null                                            "
+						+" 			group by no  "
+						+"		)b_max on a_max.no = b_max.no                                           	"
+						+"		left join (                                                             	"
+						+"			select min(date) as b_happen_min, b_min.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,min(A_b_min) as b_min from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) b_min on b_min.b_min = data_all.A_b_min and b_min.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and b_min.no is not null                                            	"
+						+"			group by no                                                         	"
+						+"		)b_min on a_max.no = b_min.no                                           	"
+						+"		left join (                                                             	"
+						/*+"			select min(date) as c_happen_max, c_max.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,max(A_c_max) as c_max from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) c_max on c_max.c_max = data_all.A_c_max and c_max.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and c_max.no is not null                                            	"
+						+"			group by no                                                         	"*/
+						+" 			select min(date) as c_happen_max, c_max.no,	c_max.c_max		"
+						+" 			from data_all_today                                          	"             
+						+" 			left join (                                                      "   
+						+" 				select no,max(A_c_MAX) as c_max from data_all_today           "                  
+						+" 				group by no                                                    " 
+						+" 			) c_max on c_max.c_max = data_all_today.A_c_MAX and c_max.no = data_all_today.NO "
+						+" 			where c_max.no is not null                                            "
+						+" 			group by no  "
+						+"		)c_max on a_max.no = c_max.no                                           	"
+						+"		left join (                                                             	"
+						+"			select min(date) as c_happen_min, c_min.*                           	"
+						+"			from data_all                                                       	"
+						+"			left join (                                                         	"
+						+"				select no,min(A_c_min) as c_min from data_all                   	"
+						+"				where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')             	"
+						+"				group by no                                                     	"
+						+"			) c_min on c_min.c_min = data_all.A_c_min and c_min.no = data_all.NO	"
+						+"			where date > DATE_FORMAT(NOW(),'%Y-%m-%d 07:00:00')                 	"
+						+"			and c_min.no is not null                                            	"
+						+"			group by no                                                         	"
+						+"		)c_min on c_min.no = c_max.no                                           	";
+					}
+					sql +="	)                                                                           	";
+					for(let i=0;i<showData.length;i++){
+						if(showData[i].no == undefined){
+							sql += " select '"+showData[i].title+"' as placename ,'' as date,'' as P_ABC_max,'' as P_ABC_happen_max,''  as P_ABC_min,'' as P_ABC_happen_min,'' as a_max,'' as a_happen_max,''  as a_min,'' as a_happen_min,'' as b_max,'' as b_happen_max,'' as b_min,'' as b_happen_min,'' as c_max,'' as c_happen_max,'' as c_min,'' as c_happen_min ";
+						}else{
+							sql +="	select '"+showData[i].title+"' as placename,DATE_FORMAT(a_happen_max,'%Y-%m-%d') as date,t_a_max.a_max,DATE_FORMAT(t_a_max.a_happen_max,'%d日 %h:%i') as a_happen_max,t_a_min.a_min,DATE_FORMAT(t_a_min.a_happen_min,'%d日 %h:%i') as a_happen_min "
+							+",t_P_ABC_max.P_ABC_max,DATE_FORMAT(t_P_ABC_max.P_ABC_happen_max,'%d日 %h:%i') as P_ABC_happen_max,t_P_ABC_min.P_ABC_min,DATE_FORMAT(t_P_ABC_min.P_ABC_happen_min,'%d日 %h:%i') as P_ABC_happen_min "
+							+",t_b_max.b_max,DATE_FORMAT(t_b_max.b_happen_max,'%d日 %h:%i') as b_happen_max,t_b_min.b_min,DATE_FORMAT(t_b_min.b_happen_min,'%d日 %h:%i') as b_happen_min "
+							+",t_c_max.c_max,DATE_FORMAT(t_c_max.c_happen_max,'%d日 %h:%i') as c_happen_max,t_c_min.c_min,DATE_FORMAT(t_c_min.c_happen_min,'%d日 %h:%i') as c_happen_min from ( "
+								+" select base_t.no, t.a_max,min(base_t.a_happen_max) as a_happen_max  from (	"
+								+" 		select no,max(a_max) as a_max  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.a_max = t.a_max          "
+								+" 	group by t.no                                                               "
+								+" )t_a_max left join(                                                          "
+								+" 	select base_t.no, t.a_min,min(base_t.a_happen_min) as a_happen_min  from (  "
+								+" 		select no,min(a_min) as a_min  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.a_min = t.a_min          "
+								+" 	group by t.no                                                               "
+								+" )t_a_min on t_a_max.no = t_a_min.no                                          "
+								
+								
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.P_ABC_max,min(base_t.P_ABC_happen_max) as P_ABC_happen_max  from (  "
+								+" 		select no,max(P_ABC_max) as P_ABC_max  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.P_ABC_max = t.P_ABC_max          "
+								+" 	group by t.no                                                               "
+								+" )t_P_ABC_max on t_a_max.no = t_P_ABC_max.no                                          "
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.P_ABC_min,min(base_t.P_ABC_happen_min) as P_ABC_happen_min  from (  "
+								+" 		select no,min(P_ABC_min) as P_ABC_min  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.P_ABC_min = t.P_ABC_min          "
+								+" 	group by t.no                                                               "
+								+" )t_P_ABC_min on t_P_ABC_max.no = t_P_ABC_min.no                                          "
+								
+								
+								
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.b_max,min(base_t.b_happen_max) as b_happen_max  from (  "
+								+" 		select no,max(b_max) as b_max  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.b_max = t.b_max          "
+								+" 	group by t.no                                                               "
+								+" )t_b_max on t_a_max.no = t_b_max.no                                          "
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.b_min,min(base_t.b_happen_min) as b_happen_min  from (  "
+								+" 		select no,min(b_min) as b_min  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.b_min = t.b_min          "
+								+" 	group by t.no                                                               "
+								+" )t_b_min on t_b_max.no = t_b_min.no                                          "
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.c_max,min(base_t.c_happen_max) as c_happen_max  from (  "
+								+" 		select no,max(c_max) as c_max  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.c_max = t.c_max          "
+								+" 	group by t.no                                                               "
+								+" )t_c_max on t_a_max.no = t_c_max.no                                          "
+								+" left join(                                                                   "
+								+" 	select base_t.no, t.c_min,min(base_t.c_happen_min) as c_happen_min  from (  "
+								+" 		select no,min(c_min) as c_min  from base_t where no = "+showData[i].no+"                  "
+								+" 	)t left join base_t on base_t.no = t.no and base_t.c_min = t.c_min          "
+								+" 	group by t.no                                                               "
+								+" )t_c_min on t_c_max.no = t_c_min.no                                          ";
+							
+	
+						}
+						sql += " union all ";
+					}
+					
+					
+					
+				}
+				
+				
+				sql = sql.substring(0,sql.length-10);
+				
+				console.info(sql);
+				data = await sendSQL(sql);
+				console.info(data);
+				for(let i=0;i<data.data.length;i++){
+					if(data.data[i].date == ""||data.data[i].date == null){
+						data.data[i].date = "-";
+					}
+					
+					if(data.data[i].a_max == "" || data.data[i].a_max == null){
+						data.data[i].a_max = "-";
+					}	
+					if(data.data[i].a_happen_max == "" || data.data[i].a_happen_max == null){
+						data.data[i].a_happen_max = "-";
+					}
+					if(data.data[i].a_min == "" || data.data[i].a_min == null){
+						data.data[i].a_min = "-";
+					}
+					if(data.data[i].a_happen_min == "" || data.data[i].a_happen_min == null){
+						data.data[i].a_happen_min = "-";
+					}
+					
+					if(data.data[i].P_ABC_max == "" || data.data[i].P_ABC_max == null){
+						data.data[i].P_ABC_max = "-";
+					}	
+					if(data.data[i].P_ABC_happen_max == "" || data.data[i].P_ABC_happen_max == null){
+						data.data[i].P_ABC_happen_max = "-";
+					}
+					if(data.data[i].P_ABC_min == "" || data.data[i].P_ABC_min == null){
+						data.data[i].P_ABC_min = "-";
+					}
+					if(data.data[i].P_ABC_happen_min == "" || data.data[i].P_ABC_happen_min == null){
+						data.data[i].P_ABC_happen_min = "-";
+					}
+					
+					if(data.data[i].b_max == "" || data.data[i].b_max == null){
+						data.data[i].b_max = "-";
+					}	
+					if(data.data[i].b_happen_max == "" || data.data[i].b_happen_max == null){
+						data.data[i].b_happen_max = "-";
+					}
+					if(data.data[i].b_min == "" || data.data[i].b_min == null){
+						data.data[i].b_min = "-";
+					}
+					if(data.data[i].b_happen_min == "" || data.data[i].b_happen_min == null){
+						data.data[i].b_happen_min = "-";
+					}
+					if(data.data[i].c_max == "" || data.data[i].c_max == null){
+						data.data[i].c_max = "-";
+					}	
+					if(data.data[i].c_happen_max == "" || data.data[i].c_happen_max == null){
+						data.data[i].c_happen_max = "-";
+					}
+					if(data.data[i].c_min == "" || data.data[i].c_min == null){
+						data.data[i].c_min = "-";
+					}
+					if(data.data[i].c_happen_min == "" || data.data[i].c_happen_min == null){
+						data.data[i].c_happen_min = "-";
+					}
+				}
+				console.info(data);
+				let cols = [];
+				cols = [[ // 表头第一层配置项
+					{field: 'placename', title: '变压器位置',width:350, rowspan:3, align:"left" }, 	// 变压器位置
+					{field: 'date', title: '日期',width:120,rowspan:3, align:"center" }, 			// 日期
+					{ title: '三相有功功率（KW）', colspan:4, align:"center"}, 					//三相有功功率（KW）
+					{ title: 'A相电流（A）', colspan:4, align:"center"}, 					//A相电流（A）
+					{ title: 'B相电流（A）', colspan:4, align:"center"}, 					//B相电流（A）
+					{ title: 'C相电流（A）', colspan:4, align:"center"}, 					//C相电流（A）
+				],[ // 表头第二层配置项
+					
+					{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+					{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+					{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+					{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+					{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+					{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+					{ title: '最大值', colspan:2, align:"center" }, 	// 最大值
+					{ title: '最小值', colspan:2, align:"center" }, 	// 最小值
+					
+				],[ // 表头第三层配置项
+					{field: 'P_ABC_max',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'P_ABC_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'P_ABC_min',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'P_ABC_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'a_max',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'a_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'a_min',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'a_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'b_max',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'b_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'b_min',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'b_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'c_max',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'c_happen_max',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					{field: 'c_min',width:100, title: '数值', align:"center" }, 	// 数值
+					{field: 'c_happen_min',width:120, title: '发生时间', align:"center" }, 	// 发生时间
+					
+				]];
+				
+				
+				/*for(let i=0;i<cols[1].length;i++){
+					if(showData.indexOf(cols[1][i].field)>=0){
+						cols[1][i].hide = false;
+					}
+				}*/
+				table.render({
+					elem: '#test',
+					cols: cols,
+					data: data.data,
+					//skin: 'line', // 表格风格
+					even: true,
+					height: $("#table_form").height()-1,
+					//page: true, // 是否显示分页
+					//limits: [5, 10, 15],
+					//limit: 5 // 每页默认显示的数量
+				});
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		form.on('radio(radio-filter)', function(data){
+			debugger;
+			var elem = data.elem; // 获得 radio 原始 DOM 对象
+			var checked = elem.checked; // 获得 radio 选中状态
+			var value = elem.value; // 获得 radio 值
+			dateValue = value;
+			var othis = data.othis; // 获得 radio 元素被替换后的 jQuery 对象
+			$('#search').click();
+			
+			//layer.msg(['value: '+ value, 'checked: '+ checked].join('<br>'));
+			
+		});
+		$('#export').on('click', async function() {
+			try {
+				debugger;
+				//获取树形表格中的值。
+				//var checkedData = tree.getChecked('tree');
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				
+				var cols = table.getOptions('test').cols;
+				console.log("cols",cols);
+				
+				//动态添加表头
+				//先预设全部表头
+				var dataArr = [
+				{
+					placename:"变压器位置"
+					,date:"日期"
+					,P_ABC_max:"三相有功功率（KW）"
+					,P_ABC_happen_max:""
+					,P_ABC_min:""
+					,P_ABC_happen_min:""
+					,a_max:"A相电流（A）"
+					,a_happen_max:""
+					,a_min:""
+					,a_happen_min:""
+					,b_max:"B相电流（A）"
+					,b_happen_max:""
+					,b_min:""
+					,b_happen_min:""	
+					,c_max:"C相电流（A）"
+					,c_happen_max:""
+					,c_min:""
+					,c_happen_min:""						
+				},{
+					placename:""
+					,date:""
+					,P_ABC_max:"最大值"
+					,P_ABC_happen_max:""
+					,P_ABC_min:"最小值"
+					,P_ABC_happen_min:""
+					,a_max:"最大值"
+					,a_happen_max:""
+					,a_min:"最小值"
+					,a_happen_min:""
+					,b_max:"最大值"
+					,b_happen_max:""
+					,b_min:"最小值"
+					,b_happen_min:""
+					,c_max:"最大值"
+					,c_happen_max:""
+					,c_min:"最小值"
+					,c_happen_min:""					
+				},{
+					placename:""
+					,date:""
+					,P_ABC_max:"数值"
+					,P_ABC_happen_max:"发生时间"
+					,P_ABC_min:"数值"
+					,P_ABC_happen_min:"发生时间"	
+					,a_max:"数值"
+					,a_happen_max:"发生时间"
+					,a_min:"数值"
+					,a_happen_min:"发生时间"	
+					,b_max:"数值"
+					,b_happen_max:"发生时间"
+					,b_min:"数值"
+					,b_happen_min:"发生时间"	
+					,c_max:"数值"
+					,c_happen_max:"发生时间"
+					,c_min:"数值"
+					,c_happen_min:"发生时间"	
+				}
+				
+				];
+				/*for (const key in dataArr[1]) {
+					if (dataArr[1].hasOwnProperty(key)) { // 确保只处理对象自身的属性
+						console.log(key, dataArr[1][key]);
+					}
+				}*/
+				var data = table.getData('test');                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+				console.log("data",data);
+				for(let i=0;i<data.length;i++){
+					for (const key in data[i]) {
+						data[i][key] = data[i][key].replaceAll("&nbsp;","");
+					}
+					dataArr.push(data[i]);
+				}
+				
+				//构建合并格配置
+				//拼接合并配置项
+				let mergeObj = [
+					['A1', 'A3'],
+					['B1', 'B3'],
+					['C1', 'F1'],
+					['C2', 'D2'],
+					['E2', 'F2'],
+					['G1', 'J1'],
+					['G2', 'H2'],
+					['I2', 'J2'],
+					['K1', 'N1'],
+					['K2', 'L2'],
+					['M2', 'N2'],
+					['O1', 'R1'],
+					['O2', 'P2'],
+					['Q2', 'R2'],
+					
+				];
+				
+				
+				var mergeConf = excel.makeMergeConfig(mergeObj);
+				
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig({
+					'A': 170,
+					'B': 95,
+					'C': 80,
+					'D': 80,
+					'E': 80,
+					'F': 80,
+					'G': 80,
+					'H': 80,
+					'I': 80,
+					'J': 80,
+					'K': 80,
+					'M': 80,
+					'I': 80,
+					'N': 80,
+					'O': 80,
+					'P': 80,
+					'Q': 80,
+					'R': 80,
+				}, 60)
+				/*// 3. 第1行行高40，第二行行高30，默认20
+				var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20)*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '电能极值报表_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							'!merges': mergeConf
+							,'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				})
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		
+		function convertNumberToLetter(num) {
+			if (num <= 25) {
+				return String.fromCharCode(65 + num); // 将数字转换为大写字母
+			} else {
+				var quotient = Math.floor(num / 26) - 1;
+				var remainder = num % 26;
+				return convertNumberToLetter(quotient) + String.fromCharCode(65 + remainder); // 递归计算每一位的字母
+			}
+		}
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

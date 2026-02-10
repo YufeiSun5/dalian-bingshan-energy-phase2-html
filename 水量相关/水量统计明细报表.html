@@ -1,0 +1,735 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>水量统计明细报表</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	/* 自定义滚动条样式 - 与UI风格一致 */
+	::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+	
+	::-webkit-scrollbar-track {
+		background: rgba(15, 38, 108, 0.5); /* 深蓝色背景 */
+		border-radius: 5px;
+	}
+	
+	::-webkit-scrollbar-thumb {
+		background: rgba(42, 109, 200, 0.8); /* 亮蓝色滑块 */
+		border-radius: 5px;
+		border: 2px solid rgba(15, 38, 108, 0.5);
+	}
+	
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(48, 127, 190, 0.9); /* 悬停时更亮 */
+	}
+	
+	::-webkit-scrollbar-corner {
+		background: rgba(15, 38, 108, 0.5);
+	}
+	
+	/* Firefox 滚动条样式 */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(42, 109, 200, 0.8) rgba(15, 38, 108, 0.5);
+	}
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<label class="layui-form-label" style = "padding: 9px 0px; width:auto">日期类型：</label>
+							<div class="layui-input-inline" style="margin-right: 20px;">
+								<select id = "interest" name="interest" lay-filter="interest">
+									<option value="day" selected>单日</option>
+									<option value="diy" >自定义</option>
+								</select>
+							</div>
+							<div class="layui-inline" style = "margin-right : 20px;">
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid" style="display: none;" >-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							<div class="layui-inline" style="margin-right: 20px;">
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto">显示类型：</label>
+								<div class="layui-input-inline">
+									<select id = "displayType" name="displayType" lay-filter="displayType">
+										<option value="total" selected>累计水量</option>
+										<option value="usage" >用量</option>
+									</select>
+								</div>
+							</div>
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>-->
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">水量统计明细报表</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">m³</span>
+								</div>
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 75px);margin:25px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var dateValue = "day";
+		var displayType = "total"; // 默认显示累计水量
+		
+		
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 加载日期
+		var datetest =  laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		
+		// 监听显示类型切换
+		form.on('select(displayType)', function(data){
+			displayType = data.value;
+			console.info("切换显示类型为:", displayType);
+		});
+		
+		form.on('select(interest)', function(data){
+			if(dateValue != data.value){
+				dateValue = data.value;
+				if(dateValue == "day"){//如果是单天日期查询形式
+					$("#ID-laydate-rangeLinked .layui-form-mid").hide();
+					$("#ID-laydate-end-date-1").parent().hide();
+					laydate.render({
+						type:"datetime",
+						elem: '#ID-laydate-rangeLinked',
+						range: [],
+						rangeLinked: false // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+					});
+					laydate.render({
+						type:"date",
+						elem: '#ID-laydate-start-date-1',
+						value: new Date(), // 设置初始日期
+					});
+				}else{//如果是自定义日期查询形式
+					$("#ID-laydate-rangeLinked .layui-form-mid").show();
+					$("#ID-laydate-end-date-1").parent().show();
+					let date = new Date();
+					date.setDate(date.getDate() - 7);
+					laydate.render({
+						type:"date",
+						elem: '#ID-laydate-start-date-1',
+						value: date, // 设置初始日期
+					});
+					laydate.render({
+						type:"date",
+						elem: '#ID-laydate-end-date-1',
+						value: new Date(), // 设置初始日期
+					});
+					laydate.render({
+						type:"date",
+						elem: '#ID-laydate-rangeLinked',
+						range: ['#ID-laydate-start-date-1', '#ID-laydate-end-date-1'],
+						rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+					});
+				}
+			}
+		});
+		
+		
+		table.render({
+			elem: '#test',
+			cols: [[ // 表头配置项
+				{field: 'date',title: '时间',minwidth: 130,align:"center"}, // 日期
+				{field: 'FLOW_TOTAL', title: '累计水量',minwidth: 200, align:"center" }, // 示数（m³）
+				
+			]],
+			data: [],
+			height: $("#table_form").height()-1,
+			//skin: 'line', // 表格风格
+			even: true,
+			//page: true, // 是否显示分页
+			//limits: [5, 10, 15],
+			//limit: 5 // 每页默认显示的数量
+		});
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果
+				var startdate ;
+				var enddate;
+				startdate = $("#ID-laydate-start-date-1")[0].value;
+				if(dateValue == "diy"){
+					enddate = $("#ID-laydate-end-date-1")[0].value;
+					//开始时间和结束时间比对
+					if( new Date(enddate).getTime() - new Date(startdate).getTime() > 7 * 86400000){
+						layer.msg("开始时间和结束时间的间隔不能超过七天");
+						return;
+					}
+				}
+				
+				// 获取当前时间，用于判断是否是今天的逻辑日
+				var now = new Date();
+				var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0);
+				var todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 7, 0, 0);
+				var isTodayLogicDay = now >= todayStart && now < todayEnd;
+				
+				var allData = [];
+				
+				if(dateValue == "day"){
+					// 单日查询：统一使用详细表（data_water），显示详细信息（包含时分秒）
+					var sql = " select DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as date, FLOW_TOTAL from data_water ";
+					sql += " where date>= DATE_FORMAT('"+startdate+"', '%Y-%m-%d 07:00:00') and date < DATE_FORMAT(DATE_ADD('"+startdate+"',INTERVAL 24 HOUR), '%Y-%m-%d 07:00:00') ";
+					sql += " and water_ID = 1 ";
+					sql += " order by date ";
+					console.info(sql);
+					const data = await sendSQL(sql);
+					if(data && data.data){
+						if(displayType === "usage"){
+							// 用量需要用累计量计算（当前值 - 前一个值）
+							// 先保存所有的累计值，避免在循环中被覆盖
+							var totalValues = data.data.map(item => parseFloat(item.FLOW_TOTAL));
+							for(let i = 0; i < data.data.length; i++){
+								if(i === 0){
+									// 第一条数据，用量设为0或者与前一天的最后一条比较（暂时设为0）
+									data.data[i].FLOW_TOTAL = 0;
+								} else {
+									// 当前累计量 - 前一个累计量 = 用量（不显示小数点）
+									var currentTotal = totalValues[i];
+									var previousTotal = totalValues[i-1];
+									data.data[i].FLOW_TOTAL = Math.round(currentTotal - previousTotal);
+								}
+							}
+						}
+						allData = data.data;
+					}
+				}else{
+					// 自定义日期范围查询（只使用日期，不含时分秒）
+					// 将日期字符串转换为日期对象，只取日期部分
+					var startDateStr = startdate.split(' ')[0]; // 只取日期部分，去掉时分秒
+					var endDateStr = enddate.split(' ')[0]; // 只取日期部分，去掉时分秒
+					
+					var startDate = new Date(startDateStr);
+					var endDate = new Date(endDateStr);
+					
+					// 计算查询范围的逻辑日
+					// 逻辑日：>=7:00到第二天的<7:00
+					// 开始日期：从该日期的7:00开始
+					var queryStartLogicDay = new Date(startDate);
+					queryStartLogicDay.setHours(7, 0, 0, 0);
+					
+					// 结束日期：到该日期的次日7:00结束（包含该日期的整个逻辑日）
+					var queryEndLogicDay = new Date(endDate);
+					queryEndLogicDay.setDate(queryEndLogicDay.getDate() + 1);
+					queryEndLogicDay.setHours(7, 0, 0, 0);
+					
+					// 判断是否包含今天的逻辑日
+					var containsToday = queryStartLogicDay.getTime() <= todayStart.getTime() && queryEndLogicDay.getTime() > todayStart.getTime();
+					
+					if(containsToday && isTodayLogicDay){
+						// 包含今天，需要分开查询
+						// 1. 查询今天的数据（从data_water表），只取最后一条（今天的逻辑日：从今天7:00到明天7:00）
+						// 使用todayStart来构建查询条件，确保与单日查询一致
+						var todayYear = todayStart.getFullYear();
+						var todayMonth = (todayStart.getMonth() + 1).toString().padStart(2, '0');
+						var todayDay = todayStart.getDate().toString().padStart(2, '0');
+						var todayDateStr = todayYear + "-" + todayMonth + "-" + todayDay;
+						
+						if(displayType === "usage"){
+							// 用量：需要查询今天的第一条和最后一条，计算差值
+							var sqlTodayUsage = " select DATE_FORMAT(date, '%Y-%m-%d') as date, FLOW_TOTAL from data_water ";
+							sqlTodayUsage += " where date >= '"+todayDateStr+" 07:00:00' ";
+							sqlTodayUsage += " and date < DATE_ADD('"+todayDateStr+" 07:00:00', INTERVAL 1 DAY) ";
+							sqlTodayUsage += " and water_ID = 1 ";
+							sqlTodayUsage += " order by date ASC LIMIT 1 "; // 获取第一条
+							const dataFirstToday = await sendSQL(sqlTodayUsage);
+							
+							var sqlTodayLast = " select DATE_FORMAT(date, '%Y-%m-%d') as date, FLOW_TOTAL from data_water ";
+							sqlTodayLast += " where date >= '"+todayDateStr+" 07:00:00' ";
+							sqlTodayLast += " and date < DATE_ADD('"+todayDateStr+" 07:00:00', INTERVAL 1 DAY) ";
+							sqlTodayLast += " and water_ID = 1 ";
+							sqlTodayLast += " order by ID DESC LIMIT 1 "; // 获取最后一条
+							const dataLastToday = await sendSQL(sqlTodayLast);
+							
+							if(dataFirstToday && dataFirstToday.data && dataFirstToday.data.length > 0 &&
+							   dataLastToday && dataLastToday.data && dataLastToday.data.length > 0){
+								var firstTotal = parseFloat(dataFirstToday.data[0].FLOW_TOTAL);
+								var lastTotal = parseFloat(dataLastToday.data[0].FLOW_TOTAL);
+								var usage = Math.round(lastTotal - firstTotal);
+								allData = allData.concat([{
+									date: dataLastToday.data[0].date,
+									FLOW_TOTAL: usage
+								}]);
+							}
+						} else {
+							// 累计水量：查询最后一条
+							var sqlToday = " select DATE_FORMAT(date, '%Y-%m-%d') as date, FLOW_TOTAL from data_water ";
+							sqlToday += " where date >= '"+todayDateStr+" 07:00:00' ";
+							sqlToday += " and date < DATE_ADD('"+todayDateStr+" 07:00:00', INTERVAL 1 DAY) ";
+							sqlToday += " and water_ID = 1 ";
+							sqlToday += " order by ID DESC LIMIT 1 ";
+							console.info("查询今天数据SQL: " + sqlToday);
+							const dataToday = await sendSQL(sqlToday);
+							if(dataToday && dataToday.data && dataToday.data.length > 0){
+								allData = allData.concat([dataToday.data[0]]);
+							}
+						}
+						
+						// 2. 查询历史数据（从sum_water_flow_total_by_day表）
+						// 历史数据的逻辑日对应的date字段是逻辑日开始的日期（00:00:00）
+						if(queryStartLogicDay.getTime() < todayStart.getTime()){
+							// 计算历史数据的结束日期（今天的逻辑日的前一天）
+							var historyEndDate = new Date(todayStart);
+							historyEndDate.setDate(historyEndDate.getDate() - 1);
+							// 格式化开始日期
+							var startYear = queryStartLogicDay.getFullYear();
+							var startMonth = (queryStartLogicDay.getMonth() + 1).toString().padStart(2, '0');
+							var startDay = queryStartLogicDay.getDate().toString().padStart(2, '0');
+							var startDateStr = startYear + "-" + startMonth + "-" + startDay;
+							// 格式化结束日期
+							var endYear = historyEndDate.getFullYear();
+							var endMonth = (historyEndDate.getMonth() + 1).toString().padStart(2, '0');
+							var endDay = historyEndDate.getDate().toString().padStart(2, '0');
+							var endDateStr = endYear + "-" + endMonth + "-" + endDay;
+							
+							// 根据显示类型选择不同的字段
+							var historyField = displayType === "usage" ? "sum_water_FLOW_total" : "max_water";
+							var sqlHistory = " select DATE_FORMAT(date, '%Y-%m-%d') as date, "+historyField+" as FLOW_TOTAL from sum_water_flow_total_by_day ";
+							sqlHistory += " where date >= DATE_FORMAT('"+startDateStr+"', '%Y-%m-%d 00:00:00') ";
+							sqlHistory += " and date <= DATE_FORMAT('"+endDateStr+"', '%Y-%m-%d 00:00:00') ";
+							sqlHistory += " and no = 1 ";
+							sqlHistory += " order by date ";
+							console.info("查询历史数据: " + sqlHistory);
+							const dataHistory = await sendSQL(sqlHistory);
+							if(dataHistory && dataHistory.data){
+								allData = allData.concat(dataHistory.data);
+							}
+						}
+						
+						// 按日期排序
+						allData.sort(function(a, b){
+							return new Date(a.date) - new Date(b.date);
+						});
+					} else {
+						// 不包含今天，全部从sum_water_flow_total_by_day表查询
+						// 计算需要查询的逻辑日范围对应的日期
+						// 格式化开始日期
+						var startYear = queryStartLogicDay.getFullYear();
+						var startMonth = (queryStartLogicDay.getMonth() + 1).toString().padStart(2, '0');
+						var startDay = queryStartLogicDay.getDate().toString().padStart(2, '0');
+						var startDateStr = startYear + "-" + startMonth + "-" + startDay;
+						// 格式化结束日期
+						var endYear = queryEndLogicDay.getFullYear();
+						var endMonth = (queryEndLogicDay.getMonth() + 1).toString().padStart(2, '0');
+						var endDay = queryEndLogicDay.getDate().toString().padStart(2, '0');
+						var endDateStr = endYear + "-" + endMonth + "-" + endDay;
+						
+						// 根据显示类型选择不同的字段
+						var historyField = displayType === "usage" ? "sum_water_FLOW_total" : "max_water";
+						var sql = " select DATE_FORMAT(date, '%Y-%m-%d') as date, "+historyField+" as FLOW_TOTAL from sum_water_flow_total_by_day ";
+						sql += " where date >= DATE_FORMAT('"+startDateStr+"', '%Y-%m-%d 00:00:00') ";
+						sql += " and date <= DATE_FORMAT('"+endDateStr+"', '%Y-%m-%d 00:00:00') ";
+						sql += " and no = 1 ";
+						sql += " order by date ";
+						console.info(sql);
+						const data = await sendSQL(sql);
+						if(data && data.data){
+							allData = data.data;
+						}
+					}
+				}
+				
+				console.info("最终数据: ", allData);
+				
+				// 根据显示类型动态设置列标题
+				var columnTitle = displayType === "usage" ? "用量" : "累计水量";
+				
+				table.render({
+					elem: '#test',
+					cols: [[ // 表头配置项
+						{field: 'date',title: '时间',minwidth: 130,align:"center"}, // 日期
+						{field: 'FLOW_TOTAL', title: columnTitle,minwidth: 200, align:"center" }, // 示数（m³）
+				
+					]],
+					data: allData,
+					//skin: 'line', // 表格风格
+					even: true,
+					height: $("#table_form").height()-1,
+					//page: true, // 是否显示分页
+					//limits: [5, 10, 15],
+					//limit: 5 // 每页默认显示的数量
+				});
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		$('#export').on('click', async function() {
+			debugger;
+			try {
+				let date = new Date();
+				let write = date.getFullYear()+(date.getMonth() + 1).toString().padStart(2, '0')+date.getDate().toString().padStart(2, '0')+date.getHours().toString().padStart(2, '0')
+					+date.getMinutes().toString().padStart(2, '0')+date.getSeconds().toString().padStart(2, '0');
+				var cols = table.getOptions('test').cols;
+				console.info(cols);
+				var dataArr = [];
+				//先动态添加表头
+				var colsData = {
+					date:"时间"
+					,FLOW_TOTAL:"累计水量"
+				};
+				dataArr.push(colsData);
+				
+				var data = table.getData('test');                                                                                                                                            
+				console.log(data);
+				
+				
+				
+				for(let i=0;i<data.length;i++){
+					dataArr.push(data[i]);
+				}
+				console.info(dataArr);
+				/*excel.exportExcel({
+					sheet1: dataArr
+				}, '测试导出.xlsx', 'xlsx');*/
+				
+				// 生成配置的辅助函数，返回结果作为扩展功能的配置参数传入即可
+				// 1. 复杂表头合并[B1,C1,D1][E1,F1]
+				/*var mergeConf = excel.makeMergeConfig([
+					['A1', 'A2'],
+				])*/
+				// 2. B列宽 150，F列宽200，默认80
+				var colConf = excel.makeColConfig({
+					'A': 130,
+					'B': 130,
+					//'D': 130,
+					//'E':130,
+					
+				}, 130);
+				// 3. 第1行行高40，第二行行高30，默认20
+				/*var rowConf = excel.makeRowConfig({
+					1: 40,
+					3: 30
+				}, 20);*/
+				// 4. 公式的用法
+				excel.setExportCellStyle(dataArr, '', {
+					s: {
+						
+						alignment: {
+							horizontal: 'center',
+							vertical: 'center'
+						}
+					}
+				}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+					if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+						return {
+							v:cell,
+							t:'n',
+							s:newCell.s
+						};
+					}
+					return newCell;
+				})
+				excel.exportExcel({
+					sheet1: dataArr
+				}, '水量统计明细报表_'+write+'.xlsx', 'xlsx', {
+					extend: {
+						// extend 中可以指定某个 sheet 的属性，如果不指定 sheet 则所有 sheet 套用同一套属性
+						sheet1: {
+							//'!merges': mergeConf
+							'!cols': colConf
+							//, '!rows': rowConf
+						}
+					}
+				});
+				
+				/*var dataArr = [];
+				for(let i=0;i<data.length;i++){
+					let arr = [];
+					for (let key in data[i]) {
+						arr.push(data[i][key]);
+					}
+					dataArr.push(arr);
+				}
+				console.info(dataArr);
+				
+				table.exportFile(colsArr,dataArr, {
+					type: 'xls', // 导出的文件格式，支持: csv,xls
+					title: '导出的文件标题'
+				});*/
+			} catch (err) {
+				console.error('导出出错：', err);
+			}
+		});
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

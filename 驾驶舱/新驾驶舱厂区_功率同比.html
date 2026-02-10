@@ -1,0 +1,155 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+
+    <meta charset="utf-8" />
+    <title> New Document </title>
+    <meta NAME="Generator" CONTENT="EditPlus">
+    <meta NAME="Author" CONTENT="">
+    <meta NAME="Keywords" CONTENT="">
+    <meta NAME="Description" CONTENT="">
+    <meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width" />
+    <!--<link>-->
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+    <script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+</head>
+<body style="height:100%;margin:0;background-size:cover;background-color:rgba(255,255,255,0.5);overflow:hidden;">
+    <div id="main" style="height: 100%"></div>
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        option = {
+            backgroundColor: 'rgb(10, 30, 84)',
+            title: {
+                text: '功率同比(KW)',
+                top: '3%',
+                textStyle: {
+                    color: '#FFFF',
+                    fontSize: 16
+                },
+                left: '2%'
+            },
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(17,95,182,0.5)',
+                borderColor: '',
+                borderWidth: 0,
+                textStyle: {
+                    color: "#fff"
+                },
+                formatter: function (params) {
+                    console.log(params, '====')
+                    let str = '';
+                    for (let i = 0; i < params.length; i++) {
+                        str = str + '时间:' + (params[i].axisValue + '   值:' + params[i].data) + '<br/>';
+                    }
+                    return str;
+                },
+            },
+
+            grid: {
+                left: '2%',
+                right: '4%',
+                bottom: '2%',
+                top: '16%',
+                containLabel: true
+            },
+            legend: {
+                show: true,
+                top: 10,
+                right: 50,
+                itemGap: 20,
+                textStyle: {
+                    color: '#fff',
+                },
+            },
+
+            xAxis:
+            {
+                //name:'ss',
+                type: 'category',
+                data: ['01:00', '01:15', '01:30', '01:45', '02:00', '02:15', '02:30', '01:45', '02:00', '02:15', '02:45', '03:00', '03:15'],
+                //axisTick: {
+                //    alignWithLabel: true,
+                //},
+                axisLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+                axisLabel: {          //坐标轴字体颜色
+                    textStyle: {
+                        color: '#9eaaba'
+                    }
+                },
+     
+            },
+
+            yAxis:
+            {
+               
+                type: 'value',
+           
+                axisLabel: {          //坐标轴字体颜色
+                    textStyle: {
+                        color: '#9eaaba'
+                    }
+                },
+                axisTick: {
+                    show: false,
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+            },
+            series: [
+                {
+                    name: '今日',
+                    type: 'line', //bar
+                    smooth: true,
+                    barWidth: '15%',
+                    itemStyle: {
+                        normal: {
+                            color: 'rgba(255, 204, 0,.3)',
+                            //borderColor: '#ffcc00',
+                        },
+                    },
+                    data: [/*357, 800, 300, 479, 300, 268, 789, 400, 300, 173, 400, 300*/],
+                    //areaStyle: {}
+                },
+
+                {
+                    name: '昨日',
+                    type: 'line',
+                    smooth: true,
+                    barWidth: '15%',
+                    itemStyle: {
+                        normal: {
+                            color: 'rgba(0, 255, 255, 0.3)',
+                            //borderColor: '#ffcc00',
+                        },
+                    },
+                    data: [/*400, 210, 700, 480, 1400, 245, 658, 890, 245, 368, 372, 725*/],
+                    //areaStyle: {}
+                }
+            ]
+        };
+
+
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    </script>
+</body>
+</html>

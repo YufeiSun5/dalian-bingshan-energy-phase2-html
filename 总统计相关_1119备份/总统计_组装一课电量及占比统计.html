@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组装一课电量及占比统计</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script src="../js/xlsx.full.min.js"></script>
+<style>
+    /* --- 全局与基础样式 --- */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+        background-color: #0f266c;
+        color: #3c52f1;
+        overflow: hidden;
+        font-size: 13px;          /* <-- 【调整】全局字体从14px改为13px */
+    }
+
+    /* --- 主要布局容器 --- */
+    .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 12px;            /* <-- 调整: 改为12px以节省空间 (原:15px) */
+        box-sizing: border-box;
+        gap: 12px;                /* <-- 调整: 改为12px间距 (原:15px) */
+    }
+
+    /* --- 卡片通用样式 --- */
+    .card-block {
+        background-color: #1d386f;
+        border: 1px solid #2a6dc8;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* --- 筛选栏 (核心改动) --- */
+    .filter-bar {
+        flex-shrink: 0;
+        flex-direction: row;            /* <-- 改动: 确保水平布局 */
+        justify-content: space-between; /* <-- 改动: 实现左、中、右分布 */
+        align-items: center;            /* <-- 改动: 实现垂直居中 */
+        padding: 0 12px;                /* <-- 调整: 改为12px以节省空间 (原:15px) */
+    }
+
+    /* --- 顶部居中大标题样式 (核心改动) --- */
+    .top-bar-title {
+        /* 移除绝对定位，变为flex项目 */
+        font-size: 22px;          /* <-- 调整: 改为22px (原:24px) */
+        font-weight: bold;
+        color: #ffffff;
+        letter-spacing: 2px;
+    }
+
+    .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+        margin-top: 5px;
+    }
+
+    .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        padding: 10px 10px;
+        width: auto;
+    }
+    .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1);
+        border-color: transparent;
+        color: #fff;
+    }
+    .filter-bar .layui-input::placeholder {
+        color: #bbb;
+    }
+    .filter-bar .layui-btn {
+        margin-left: 10px;
+    }
+    .filter-bar .layui-bg-orange {
+        background-color: #fa8c16;
+        border-color: #fa8c16;
+    }
+
+    /* --- 主要内容区域 --- */
+    .main-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    
+    .main-content .card-block {
+        height: 100%;
+    }
+
+    /* --- 卡片头部样式 (已修改) --- */
+    .card-header {
+        background-color: #29498e;
+        color: #fff;
+        padding: 8px 12px;         /* <-- 调整: padding从10px 15px改为8px 12px */
+        border-bottom: 1px solid #2a6dc8;
+        font-size: 15px;            /* <-- 调整: 从16px改为15px */
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* <-- 改动: 让左右两部分自动分开 */
+        gap: 15px;                  /* <-- 调整: 从20px改为15px */
+    }
+
+    .header-summary {
+        font-size: 15px;            /* <-- 调整: 从17px改为15px */
+        font-weight: normal;
+        color: #fff7ca;
+    }
+    .header-unit {
+        font-size: 13px;            /* <-- 调整: 从14px改为13px */
+        font-weight: normal;
+        color: #b9d3f4;
+        flex-shrink: 0;
+    }
+
+    /* --- 表格区域特定样式 --- */
+    .table-container {
+        flex-grow: 1;
+        overflow: auto;
+        padding: 10px;
+        position: relative; 
+        scrollbar-width: thin;
+        scrollbar-color: #2a6dc8 #18589b;
+    }
+    
+    /* ... 以下的表格和弹窗样式与之前相同，无需改动 ... */
+    .table-container .layui-table { border: 1px solid #3c8ce7 !important; background-color: transparent; }
+    .table-container .layui-table th, .table-container .layui-table td { border: 1px solid #3c8ce7 !important; background-color: #1e4e89 !important; color: #ffffff; font-weight: bold; text-align: center; vertical-align: middle; padding: 5px 3px; font-size: 12px; min-width: 48px; transition: background-color 0.2s ease-in-out; } /* <-- 调整: font-size从11px改为12px */
+    .table-container .layui-table th[data-month], .table-container .layui-table td[data-month] { cursor: pointer; }
+    .table-container .layui-table th { font-size: 12px; background-color: #0c6ed3 !important; } /* <-- 调整: 表头字体从14px改为12px */
+    .table-container .layui-table td:first-child, .table-container .layui-table th:first-child { min-width: 60px; cursor: default; } /* <-- 调整: 第一列宽度从65px改为60px */
+    .table-container .layui-table tbody tr td:first-child { background-color: #0c6ed3 !important; }
+    .table-container .layui-table .layui-bg-yellow td { background-color: #ffff00 !important; color: #000000 !important; }
+    .table-container .layui-table .layui-bg-green td { background-color: #18589b !important; color: #ffffff !important; }
+    .table-container .layui-table .layui-bg-yellow td:first-child, .table-container .layui-table .layui-bg-green td:first-child { background-color: #0c6ed3 !important; color: #ffffff !important; }
+    .table-container .layui-table tr.electricity-row td:nth-child(2) { background-color: #0c6ed3 !important; }
+    .table-container .layui-table td.col-hover, .table-container .layui-table th.col-hover { background-color: rgb(112, 167, 255) !important; }
+    .layui-table tbody tr:hover { background-color: transparent !important; }
+    .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .table-container::-webkit-scrollbar-thumb { background-color: #2a6dc8; border-radius: 4px; }
+    .table-container::-webkit-scrollbar-track { background-color: #18589b; }
+    .production-popup { background-color: #1d386f !important; border-radius: 5px !important; overflow: hidden !important; }
+    .production-popup .layui-layer-title { background-color: #29498e !important; color: #ffffff !important; border-bottom: 1px solid #2a6dc8 !important; }
+    .production-popup .layui-layer-content { padding: 20px !important; box-sizing: border-box; max-height: 65vh !important; overflow-y: auto !important; }
+    .production-popup .layui-form-item { margin-bottom: 12px !important; }
+    .production-popup .layui-form-label { width: 90px !important; padding: 7px 15px !important; color: #ffffff !important; height: 32px !important; box-sizing: border-box; float: left !important; text-align: right !important; }
+    .production-popup .layui-input { height: 32px !important; background-color: rgb(255, 255, 255) !important; border: 1px solid #2a6dc8 !important; color: #000000 !important; }
+    .production-popup .layui-input-block { margin-left: 90px !important; min-height: 32px !important; }
+    .production-popup .layui-form-item:last-child { margin-top: 15px !important; margin-bottom: 0 !important; }
+    .production-popup .layui-form-item:last-child .layui-input-block { margin-left: 0 !important; text-align: center; }
+    .production-popup .layui-btn { height: 32px !important; line-height: 32px !important; padding: 0 20px !important; background-color: #2a6dc8 !important; color: #ffffff !important; }
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="card-block filter-bar">
+        <div class="layui-form" lay-filter="filter-form-left">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">年份</label>
+                    <div class="layui-input-inline">
+                        <input type="text" id="year-selector" class="layui-input" placeholder="请选择年份">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-bar-title">组装一课电量及占比统计</div>
+
+        <div class="layui-form" lay-filter="filter-form-right">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <button id="add-production-btn" class="layui-btn layui-btn-normal">
+                        <i class="layui-icon layui-icon-add-1"></i>
+                        <span>填写产量</span>
+                    </button>
+                    <button id="search-btn" class="layui-btn">
+                        <i class="layui-icon layui-icon-search"></i>
+                        <span>查询</span>
+                    </button>
+                    <button id="export-btn" class="layui-btn layui-bg-orange">
+                        <span>导出</span>
+                        <i class="layui-icon layui-icon-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="card-block">
+            <div class="card-header">
+                <div class="header-summary">
+                    <span id="header-summary-text"></span>
+                </div>
+                <div class="header-unit">
+                    <span>电能单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="layui-table" id="data-table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">项目</th>
+                            <th colspan="2" data-month="1">1月份</th>
+                            <th colspan="2" data-month="2">2月份</th>
+                            <th colspan="2" data-month="3">3月份</th>
+                            <th colspan="2" data-month="4">4月份</th>
+                            <th colspan="2" data-month="5">5月份</th>
+                            <th colspan="2" data-month="6">6月份</th>
+                            <th colspan="2" data-month="7">7月份</th>
+                            <th colspan="2" data-month="8">8月份</th>
+                            <th colspan="2" data-month="9">9月份</th>
+                            <th colspan="2" data-month="10">10月份</th>
+                            <th colspan="2" data-month="11">11月份</th>
+                            <th colspan="2" data-month="12">12月份</th>
+                            <th>合计</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="production-form-container" style="display: none;">
+    <div class="layui-form" lay-filter="production-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">月份</label>
+            <div class="layui-input-block">
+                <input type="text" name="production_month" id="popup-month-selector" class="layui-input" placeholder="请选择月份" autocomplete="off">
+            </div>
+        </div>
+        </div>
+</div>
+
+
+<script src="../js/layui.js"></script>
+<script>
+    // 您原来的 JavaScript 代码放在这里，无需任何改动
+    layui.use(['laydate', 'form', 'layer'], function(){
+        const laydate = layui.laydate;
+        const form = layui.form;
+        const layer = layui.layer;
+        const $ = layui.jquery;
+        let globalData;
+
+        const itemConfig = [
+            { key: 'c_zuzhuang', name: 'C组装', no: [1, 6] }, 
+            { key: 'cs', name: 'CS', no: 2 },
+            { key: 'tig', name: 'TIG', no: 3 },
+            { key: 'chengpin', name: '成品', no: 4 },
+            { key: 'qingxi', name: '清洗', no: 5 },
+            { key: 'linhua', name: '磷化', no: [7, 8] },
+        ];
+        const groupKeys = itemConfig.map(item => item.key);
+
+        function generateDynamicContent() {
+            const tableBody = $('#data-table tbody');
+            const formContainer = $('#production-form-container .layui-form');
+            
+            tableBody.empty();
+            formContainer.find('.dynamic-form-item, .submit-button-container').remove();
+
+            tableBody.html(`
+                <tr>
+                    <td colspan="2">合计电量</td>
+                    ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="total_elec_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="total_elec_total" class="data-cell"></td>
+                    <td id="total_elec_total_pct" class="data-cell"></td>
+                </tr>
+                <tr class="layui-bg-yellow">
+                    <td colspan="2">辅助合计<br>电量及占比</td>
+                    ${Array.from({length: 12}, (_, i) => `<td id="aux_total_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="aux_total_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="aux_total_total" class="data-cell"></td>
+                    <td id="aux_total_total_pct" class="data-cell"></td>
+                </tr>
+                <tr class="layui-bg-green">
+                    <td colspan="2">生产合计<br>电量及占比</td>
+                    ${Array.from({length: 12}, (_, i) => `<td id="prod_total_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="prod_total_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                    <td id="prod_total_total" class="data-cell"></td>
+                    <td id="prod_total_total_pct" class="data-cell"></td>
+                </tr>
+            `);
+
+            itemConfig.forEach(item => {
+                let tableRows = `
+                    <tr class="layui-bg-green dynamic-row electricity-row">
+                        <td rowspan="3">${item.name}</td>
+                        <td>电量</td>
+                        ${Array.from({length: 12}, (_, i) => `<td id="${item.key}_dianliang_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="${item.key}_dianliang_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td id="${item.key}_dianliang_total" class="data-cell"></td>
+                        <td id="${item.key}_dianliang_total_pct" class="data-cell"></td>
+                    </tr>
+                    <tr class="layui-bg-green dynamic-row">
+                        <td>产量</td>
+                        ${Array.from({length: 12}, (_, i) => `<td colspan="2" id="${item.key}_chanliang_m${i+1}" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td colspan="2" id="${item.key}_chanliang_total" class="data-cell"></td>
+                    </tr>
+                    <tr class="layui-bg-green dynamic-row">
+                        <td>单台</td>
+                        ${Array.from({length: 12}, (_, i) => `<td id="${item.key}_dantai_m${i+1}_val" class="data-cell" data-month="${i+1}"></td><td id="${item.key}_dantai_m${i+1}_pct" class="data-cell" data-month="${i+1}"></td>`).join('')}
+                        <td id="${item.key}_dantai_total_val" class="data-cell"></td><td id="${item.key}_dantai_total_pct" class="data-cell"></td>
+                    </tr>
+                `;
+                tableBody.append(tableRows);
+
+                let formItem = `
+                    <div class="layui-form-item dynamic-form-item">
+                        <label class="layui-form-label">${item.name}</label>
+                        <div class="layui-input-block">
+                            <input type="number" name="${item.key}_prod" placeholder="请输入产量" class="layui-input" autocomplete="off">
+                        </div>
+                    </div>
+                `;
+                formContainer.append(formItem);
+            });
+
+            formContainer.append(`
+                <div class="layui-form-item submit-button-container">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="submit-production">立即提交</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) {
+                    layer.msg(`数据加载失败: ${res.statusText}`);
+                    return { data: [] };
+                }
+                return await res.json();
+            } catch (err) {
+                console.error('sendSQL Error:', err);
+                layer.msg('数据加载失败，请检查网络或联系管理员。');
+                return { data: [] };
+            }
+        }
+
+        async function fetchAndProcessData(year) {
+            const selectClauses = itemConfig.map(item => {
+                const nos = Array.isArray(item.no) ? item.no : [item.no];
+                const nosString = nos.join(','); 
+                return `
+                    SUM(CASE WHEN sub.no IN (${nosString}) THEN sub.total_elec ELSE 0 END) AS ${item.key}_elec,
+                    SUM(CASE WHEN sub.no IN (${nosString}) THEN 100 ELSE 0 END) AS ${item.key}_prod
+                `;
+            }).join(',\n');
+
+            const departmentSql = `
+                SELECT
+                    sub.month,
+                    0 AS aux_elec,
+                    ${selectClauses}
+                FROM (
+                    SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                    FROM sum_elec_group_by_day
+                    WHERE YEAR(\`date\`) = ${year}
+                    GROUP BY no, MONTH(\`date\`)
+                ) AS sub
+                GROUP BY sub.month
+                ORDER BY sub.month;
+            `.trim();
+            
+            const companyTotalSql = `
+                SELECT
+                    MONTH(\`date\`) AS month,
+                    SUM(sum_elec) AS company_total_elec
+                FROM sum_elec_group_by_day
+                WHERE YEAR(\`date\`) = ${year}
+                GROUP BY MONTH(\`date\`);
+            `.trim();
+
+            const [departmentApiResult, companyTotalApiResult] = await Promise.all([
+                sendSQL(departmentSql),
+                sendSQL(companyTotalSql)
+            ]);
+
+            const rawData = departmentApiResult.data || [];
+            const transformedData = { aux_total: {}, groups: {} };
+            groupKeys.forEach(key => {
+                transformedData.groups[key] = { electricity: {}, production: {} };
+            });
+            rawData.forEach(row => {
+                const month = row.month;
+                transformedData.aux_total[month] = row.aux_elec || 0;
+                groupKeys.forEach(key => {
+                    transformedData.groups[key].electricity[month] = row[`${key}_elec`];
+                    transformedData.groups[key].production[month] = row[`${key}_prod`];
+                });
+            });
+
+            const companyTotals = {};
+            const companyRawData = companyTotalApiResult.data || [];
+            companyRawData.forEach(row => {
+                companyTotals[row.month] = row.company_total_elec;
+            });
+            
+            return { departmentData: transformedData, companyTotals: companyTotals };
+        }
+
+        async function reloadData() {
+            const loading = layer.load(1, { shade: [0.1, '#fff'] });
+            const year = $('#year-selector').val();
+            try {
+                globalData = await fetchAndProcessData(year);
+                updateDashboard(globalData);
+            } catch (e) {
+                console.error("Failed to load or process data", e);
+                layer.msg("数据处理失败");
+            } finally {
+                layer.close(loading);
+            }
+        }
+        
+        function updateHeaderSummaryForMonth(month) {
+            if (!globalData || !globalData.departmentData || !globalData.companyTotals) {
+                return;
+            }
+
+            const mockData = globalData.departmentData;
+            const companyTotals = globalData.companyTotals;
+
+            let monthElec = mockData.aux_total[month] || 0;
+            groupKeys.forEach(key => {
+                monthElec += mockData.groups[key]?.electricity[month] || 0;
+            });
+
+            if (monthElec === 0) {
+                const summaryHtml = `组装一课<span style="color: red;">${month}</span>月份无用电数据`;
+                $('#header-summary-text').html(summaryHtml);
+                return;
+            }
+
+            const companyTotalForMonth = companyTotals[month] || 0;
+            const percentageOfCompanyTotal = companyTotalForMonth > 0
+                ? (monthElec / companyTotalForMonth * 100).toFixed(2)
+                : '0.00';
+
+            const summaryHtml = `组装一课<span style="color: red;">${month}</span>月份用电电量<span style="color: red;">${Math.round(monthElec).toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>`;  /* <-- 【调整】去掉小数点 */
+            $('#header-summary-text').html(summaryHtml);
+        }
+
+        function updateDashboard(data) {
+            $('.data-cell').html('');
+            $('#header-summary-text').text('');
+            
+            const mockData = data.departmentData;
+            const companyTotals = data.companyTotals;
+
+            const totals = {
+                grand_total: 0,
+                aux_total: 0,
+                prod_total: 0
+            };
+            groupKeys.forEach(key => {
+                totals[`${key}_elec_total`] = 0;
+                totals[`${key}_prod_total`] = 0;
+            });
+
+            for (let m = 1; m <= 12; m++) {
+                let month_prod_total = 0;
+                groupKeys.forEach(key => {
+                    month_prod_total += mockData.groups[key]?.electricity[m] || 0;
+                });
+
+                const month_aux_total = mockData.aux_total[m] || 0;
+                const month_grand_total = month_prod_total + month_aux_total;
+
+                totals.prod_total += month_prod_total;
+                totals.aux_total += month_aux_total;
+                totals.grand_total += month_grand_total;
+
+                if (month_grand_total > 0) {
+                    $('#total_elec_m' + m).text(Math.round(month_grand_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                    $('#aux_total_m' + m + '_val').text(Math.round(month_aux_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                    $('#aux_total_m' + m + '_pct').text((month_aux_total / month_grand_total * 100).toFixed(2) + '%');
+                    $('#prod_total_m' + m + '_val').text(Math.round(month_prod_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                    $('#prod_total_m' + m + '_pct').text((month_prod_total / month_grand_total * 100).toFixed(2) + '%');
+
+                    groupKeys.forEach(key => {
+                        const elec_val = mockData.groups[key]?.electricity[m] || 0;
+                        const prod_val = mockData.groups[key]?.production[m] || 0;
+                        const per_unit_val = prod_val > 0 ? (elec_val / prod_val) : 0;
+                        const elec_pct = month_prod_total > 0 ? (elec_val / month_prod_total * 100) : 0;
+                        const per_unit_pct = prod_val > 0 ? (elec_pct / prod_val).toFixed(4) + '%' : '0.0000%';
+
+                        $(`#${key}_dianliang_m${m}_val`).text(Math.round(elec_val).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                        $(`#${key}_dianliang_m${m}_pct`).text(elec_pct.toFixed(2) + '%');
+                        $(`#${key}_chanliang_m${m}`).text(Math.round(prod_val).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                        $(`#${key}_dantai_m${m}_val`).text(per_unit_val.toFixed(2));
+                        $(`#${key}_dantai_m${m}_pct`).text(per_unit_pct);
+                        
+                        totals[`${key}_elec_total`] += elec_val;
+                        totals[`${key}_prod_total`] += prod_val;
+                    });
+                }
+            }
+
+            if (totals.grand_total > 0) {
+                $('#total_elec_total').text(Math.round(totals.grand_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                $('#total_elec_total_pct').text('100.00%');
+                $('#aux_total_total').text(Math.round(totals.aux_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                $('#aux_total_total_pct').text((totals.aux_total / totals.grand_total * 100).toFixed(2) + '%');
+                $('#prod_total_total').text(Math.round(totals.prod_total).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                $('#prod_total_total_pct').text((totals.prod_total / totals.grand_total * 100).toFixed(2) + '%');
+
+                groupKeys.forEach(key => {
+                    const total_elec = totals[`${key}_elec_total`];
+                    const total_prod = totals[`${key}_prod_total`];
+                    const total_per_unit = total_prod > 0 ? (total_elec / total_prod) : 0;
+                    const total_elec_pct = totals.prod_total > 0 ? (total_elec / totals.prod_total * 100) : 0;
+                    const total_per_unit_pct = total_prod > 0 ? (total_elec_pct / total_prod).toFixed(4) + '%' : '0.0000%';
+
+                    $(`#${key}_dianliang_total`).text(Math.round(total_elec).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                    $(`#${key}_dianliang_total_pct`).text(total_elec_pct.toFixed(2) + '%');
+                    $(`#${key}_chanliang_total`).text(Math.round(total_prod).toLocaleString());  /* <-- 【调整】去掉小数点 */
+                    $(`#${key}_dantai_total_val`).text(total_per_unit.toFixed(2));
+                    $(`#${key}_dantai_total_pct`).text(total_per_unit_pct);
+                });
+                
+                const allMonthsWithData = Object.keys(mockData.groups[groupKeys[0]]?.electricity || {});
+                const latestMonth = allMonthsWithData.length > 0 ? Math.max(...allMonthsWithData.map(Number)) : 0;
+                
+                if (latestMonth > 0) {
+                    updateHeaderSummaryForMonth(latestMonth);
+                } else {
+                    $('#header-summary-text').html('暂无月度数据');
+                }
+            }
+        }
+
+        // ========= 设置单元格 title 提示（鼠标悬浮显示） =========
+        function setupTooltip() {
+            $('#data-table').on('mouseover', 'td', function() {
+                const text = $(this).text().trim();
+                if (text) {
+                    $(this).attr('title', text);
+                }
+            });
+        }
+        
+        // 调用设置
+        setupTooltip();
+        
+        laydate.render({
+            elem: '#year-selector',
+            type: 'year',
+            value: new Date()
+        });
+        
+        laydate.render({
+            elem: '#popup-month-selector',
+            type: 'month'
+        });
+
+        $('#search-btn').on('click', reloadData);
+        
+        $('#add-production-btn').on('click', function() {
+            layer.open({
+                type: 1,
+                title: '填写产量数据',
+                area: ['500px', 'auto'],
+                skin: 'production-popup',
+                content: $('#production-form-container'),
+                success: function(layero, index) {},
+                end: function() {
+                    $('body').append($('#production-form-container').hide());
+                }
+            });
+        });
+
+        form.on('submit(submit-production)', function(data){
+            const mainPageYear = $('#year-selector').val();
+            const formData = data.field;
+            
+            const monthValue = formData.production_month || "";
+            const monthPart = monthValue.split('-')[1] || "";
+
+            const submissionData = {
+                year: mainPageYear,
+                month: monthPart,
+                production: {}
+            };
+            
+            itemConfig.forEach(item => {
+                submissionData.production[item.key] = formData[`${item.key}_prod`] || 0;
+            });
+
+            layer.alert(
+                '<pre>' + JSON.stringify(submissionData, null, 2) + '</pre>', 
+                { title: '提交的数据' }
+            );
+            
+            return false;
+        });
+
+        $('#export-btn').on('click', function() {
+            try {
+                const year = $('#year-selector').val() || new Date().getFullYear();
+                const filename = `组装一课电量及占比统计_${year}.xlsx`;
+                
+                const table = document.getElementById('data-table');
+                const ws = XLSX.utils.table_to_sheet(table, {raw: true});
+
+                // ---【核心修改】---
+                // 手动为28列设置宽度，wch代表字符宽度
+                // 【1720x1080适配】列宽调整，节省空间
+                ws['!cols'] = [
+                    { wch: 9 },  { wch: 11 }, // 项目 (2列) 原:(10,12)
+                    { wch: 9 },  { wch: 9 },  // 1月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 2月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 3月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 4月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 5月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 6月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 7月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 8月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 9月  原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 10月 原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 11月 原:(10,10)
+                    { wch: 9 },  { wch: 9 },  // 12月 原:(10,10)
+                    { wch: 13 },             // 合计 原:(15)
+                    { wch: 11 }              // 占比 原:(12)
+                ];
+                // ---【修改结束】---
+
+                // 您原有的百分比格式化代码保持不变
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cell_address = XLSX.utils.encode_cell({c: C, r: R});
+                        const cell = ws[cell_address];
+                        if (!cell || typeof cell.v !== 'string' || !cell.v.endsWith('%')) {
+                            continue;
+                        }
+                        const numericValue = parseFloat(cell.v.replace(/[,%]/g, '')) / 100.0;
+                        if (isNaN(numericValue)) {
+                            continue;
+                        }
+                        cell.t = 'n';
+                        cell.v = numericValue;
+                        cell.z = '0.00%';
+                    }
+                }
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+                
+                XLSX.writeFile(wb, filename);
+
+            } catch (e) {
+                console.error(e);
+                layer.msg('导出失败，请检查控制台错误。');
+            }
+        });
+
+        const table = $('#data-table');
+        
+        table.on('click', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                updateHeaderSummaryForMonth(month);
+            }
+        });
+
+        table.on('mouseover', 'td, th', function() {
+            const month = $(this).data('month');
+            if (month) {
+                table.find('.col-hover').removeClass('col-hover');
+                table.find(`[data-month="${month}"]`).addClass('col-hover');
+            }
+        });
+
+        table.on('mouseleave', function() {
+            table.find('.col-hover').removeClass('col-hover');
+        });
+
+        generateDynamicContent();
+        reloadData();
+    });
+</script>
+
+</body>
+</html>

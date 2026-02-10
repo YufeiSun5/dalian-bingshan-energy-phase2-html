@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>压缩机产量数据录入</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        });
+    </script>
+
+    <style>
+        /* ========== 全局样式 (深蓝科技风，与气量比页面一致) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 18px; font-weight: bold; color: #fff7ca; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-btn-normal { background-color: #1e88e5 !important; }
+        .layui-btn-warm { background-color: #ffb800 !important; }
+
+        /* 内容区域 */
+        .content-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            overflow: hidden;
+        }
+
+        /* 表格容器 */
+        .table-container {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .info-tip {
+            background: rgba(30, 136, 229, 0.2);
+            border-left: 3px solid #1e88e5;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            color: #b9d3f4;
+            font-size: 12px;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #3c8ce7;
+            padding: 10px 8px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .data-table thead th {
+            background: #0c6ed3;
+            color: #fff;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody td {
+            background: #1e4e89;
+        }
+
+        /* 已录入行的背景色 - 深绿色调 */
+        .data-table tbody tr.row-filled td {
+            background: #196e57;
+        }
+
+        .data-table tbody tr.row-filled:hover td {
+            background: #196e57;
+        }
+
+        /* 未录入行的背景色 - 保持原深蓝色 */
+        .data-table tbody tr.row-empty td {
+            background: #1e4e89;
+        }
+
+        .data-table tbody tr.row-empty:hover td {
+            background: rgba(48, 127, 190, 0.9);
+        }
+
+        /* 输入框样式 */
+        .data-table input[type="number"] {
+            background: rgba(40, 80, 167, 0.6);
+            border: 1px solid #2a6dc8;
+            color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .data-table input[type="number"]:focus {
+            border-color: #409eff;
+            outline: none;
+            background: rgba(40, 80, 167, 0.8);
+        }
+
+        .data-table input[type="number"]::placeholder {
+            color: rgba(185, 211, 244, 0.5);
+        }
+
+        /* 状态标识 */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .status-empty {
+            background: rgba(255, 152, 0, 0.3);
+            color: #ffa726;
+        }
+
+        .status-filled {
+            background: rgba(76, 175, 80, 0.3);
+            color: #66bb6a;
+        }
+
+        .status-modified {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffd54f;
+        }
+
+        /* 底部按钮区 */
+        .footer-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2a6dc8;
+            margin-top: 15px;
+        }
+
+        .footer-actions .layui-btn {
+            min-width: 150px;
+            height: 38px;
+            line-height: 38px;
+        }
+
+        /* 修复 layui 弹窗样式 - 确保文字可见 */
+        .layui-layer-content {
+            color: #333 !important;
+        }
+        
+        .layui-layer-prompt input {
+            color: #333 !important;
+        }
+        
+        .layui-layer-msg {
+            color: #333 !important;
+        }
+        
+        .layui-layer-dialog .layui-layer-content {
+            color: #333 !important;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1d386f;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="date-group">
+                    <label>数据月份</label>
+                    <input type="text" id="date-input" readonly>
+                </div>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title">压缩机产量数据录入</span>
+            </div>
+            <div class="toolbar-right">
+                <button type="button" id="btn-to-report" class="layui-btn layui-btn-sm layui-btn-normal">
+                    <i class="layui-icon layui-icon-chart"></i> 查看报表
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="table-container">
+                <div class="info-tip">
+                    <i class="layui-icon layui-icon-tips"></i> 
+                    请填写每日的压缩机产量数据。空数据可直接提交，修改已有数据需要输入修改人姓名。每行可单独提交，也可一键提交全部。
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th width="9%">日期</th>
+                                <th width="7%">状态</th>
+                                <th width="15%">下线产量(台)</th>
+                                <th width="15%">机加工(台)</th>
+                                <th width="15%">组装1(台)</th>
+                                <th width="15%">组装2(台)</th>
+                                <th width="15%">电机(台)</th>
+                                <th width="9%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="footer-actions">
+                    <button type="button" id="btn-submit-all" class="layui-btn layui-btn-warm">
+                        <i class="layui-icon layui-icon-ok"></i> 一键提交全部
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'jquery'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        
+        // API配置
+        var API_BASE_URL = 'http://192.168.7.229:8004';
+        
+        // 当前选择的月份
+        var currentMonth = getCurrentMonth();
+        
+        // 存储当月数据
+        var monthData = {}; // key: date, value: {id, finished, machining, assembly, motor, isModified}
+        
+        // 初始化日期选择器
+        laydate.render({ 
+            elem: '#date-input', 
+            type: 'month',
+            value: currentMonth,
+            theme: '#1e88e5',
+            done: function(value, date){
+                currentMonth = value;
+                loadMonthData(value);
+            }
+        });
+        
+        // 获取当前月份
+        function getCurrentMonth() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = (now.getMonth() + 1).toString().padStart(2, '0');
+            return year + '-' + month;
+        }
+        
+        // HTTP请求封装
+        async function request(url, options = {}) {
+            try {
+                const res = await fetch(url, { 
+                    ...options, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (e) {
+                console.error('[请求错误]', e);
+                throw e;
+            }
+        }
+        
+        // 执行SQL
+        async function sendSQL(sql) {
+            return await request(API_BASE_URL + '/api/sql/run-sql', {
+                method: 'POST',
+                body: JSON.stringify({ sql: sql })
+            });
+        }
+        
+        // 加载月份数据
+        function loadMonthData(month) {
+            console.log('[数据加载] 查询月份:', month);
+            
+            var idx = layer.load(2, { shade: 0.1 });
+            
+            // 构建查询SQL - 查询指定月份的所有数据
+            var sql = `
+                SELECT * FROM data_input_compressor 
+                WHERE DATE_FORMAT(date, '%Y-%m') = '${month}'
+                ORDER BY date
+            `;
+            
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+                
+                console.log('[数据加载] SQL执行结果:', result);
+                
+                // 清空并重新填充数据
+                monthData = {};
+                if (result && result.data && result.data.length > 0) {
+                    console.log('[数据加载] 找到 ' + result.data.length + ' 条记录');
+                    result.data.forEach(function(row) {
+                        console.log('[数据加载] 处理行:', row);
+                        // 提取日期部分，兼容不同格式
+                        var dateKey = '';
+                        if (typeof row.date === 'string') {
+                            // 支持多种日期格式
+                            // "2025-12-18 00:00:00" -> "2025-12-18"
+                            // "2025-12-18T00:00:00" -> "2025-12-18"
+                            dateKey = row.date.split('T')[0].split(' ')[0];
+                        } else if (row.date instanceof Date) {
+                            var d = row.date;
+                            dateKey = d.getFullYear() + '-' + 
+                                     (d.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                                     d.getDate().toString().padStart(2, '0');
+                        }
+                        console.log('[数据加载] 日期键:', dateKey);
+                        monthData[dateKey] = {
+                            id: row.id,
+                            finished: row.finished !== null && row.finished !== undefined ? row.finished : null,
+                            machining: row.machining !== null && row.machining !== undefined ? row.machining : null,
+                            assembly: row.assembly !== null && row.assembly !== undefined ? row.assembly : null,
+                            assembly2: row.assembly2 !== null && row.assembly2 !== undefined ? row.assembly2 : null,
+                            motor: row.motor !== null && row.motor !== undefined ? row.motor : null,
+                            isModified: false
+                        };
+                    });
+                    console.log('[数据加载] monthData:', monthData);
+                } else {
+                    console.log('[数据加载] 没有找到数据');
+                }
+                
+                // 渲染表格
+                renderTable(month);
+                layer.msg('已加载 ' + month + ' 的数据（' + (result.data ? result.data.length : 0) + ' 条）', { icon: 1 });
+            }).catch(function(error) {
+                layer.close(idx);
+                monthData = {};
+                renderTable(month);
+                console.error('[数据加载] 失败:', error);
+                layer.msg('数据加载失败，请检查网络连接', { icon: 2 });
+            });
+        }
+        
+        // 渲染表格
+        function renderTable(month) {
+            console.log('[渲染表格] 开始渲染月份:', month);
+            console.log('[渲染表格] monthData:', monthData);
+            
+            var tbody = $('#table-body');
+            tbody.empty();
+            
+            // 获取该月的天数
+            var parts = month.split('-');
+            var year = parseInt(parts[0]);
+            var monthNum = parseInt(parts[1]);
+            var daysInMonth = new Date(year, monthNum, 0).getDate();
+            
+            console.log('[渲染表格] 年:', year, '月:', monthNum, '天数:', daysInMonth);
+            
+            // 生成每一天的行
+            for (var day = 1; day <= daysInMonth; day++) {
+                var dateStr = year + '-' + monthNum.toString().padStart(2, '0') + '-' + day.toString().padStart(2, '0');
+                var data = monthData[dateStr] || { finished: '', machining: '', assembly: '', assembly2: '', motor: '', isModified: false };
+                var hasData = monthData[dateStr] && monthData[dateStr].id;
+                
+                if (day === 18 || monthData[dateStr]) {
+                    console.log('[渲染表格] 第' + day + '天 dateStr:', dateStr, 'data:', data, 'hasData:', hasData);
+                }
+                
+                var statusHtml = hasData 
+                    ? '<span class="status-badge status-filled">已录入</span>'
+                    : '<span class="status-badge status-empty">待录入</span>';
+                
+                // 添加行的class以区分已录入和未录入
+                var rowClass = hasData ? 'row-filled' : 'row-empty';
+                
+                // 按钮文字：已录入显示"修改"，未录入显示"提交"
+                var buttonText = hasData ? '修改' : '提交';
+                var buttonIcon = hasData ? 'layui-icon-edit' : 'layui-icon-ok';
+                
+                // 确保value不显示空字符串，如果没有数据就留空
+                var finishedVal = data.finished !== '' && data.finished !== null && data.finished !== undefined ? data.finished : '';
+                var machiningVal = data.machining !== '' && data.machining !== null && data.machining !== undefined ? data.machining : '';
+                var assemblyVal = data.assembly !== '' && data.assembly !== null && data.assembly !== undefined ? data.assembly : '';
+                var assembly2Val = data.assembly2 !== '' && data.assembly2 !== null && data.assembly2 !== undefined ? data.assembly2 : '';
+                var motorVal = data.motor !== '' && data.motor !== null && data.motor !== undefined ? data.motor : '';
+                
+                var row = `
+                    <tr data-date="${dateStr}" class="${rowClass}">
+                        <td>${monthNum}月${day}日</td>
+                        <td>${statusHtml}</td>
+                        <td><input type="number" step="1" class="input-finished" value="${finishedVal}" placeholder="无" data-original="${finishedVal}"></td>
+                        <td><input type="number" step="1" class="input-machining" value="${machiningVal}" placeholder="无" data-original="${machiningVal}"></td>
+                        <td><input type="number" step="1" class="input-assembly" value="${assemblyVal}" placeholder="无" data-original="${assemblyVal}"></td>
+                        <td><input type="number" step="1" class="input-assembly2" value="${assembly2Val}" placeholder="无" data-original="${assembly2Val}"></td>
+                        <td><input type="number" step="1" class="input-motor" value="${motorVal}" placeholder="无" data-original="${motorVal}"></td>
+                        <td>
+                            <button class="layui-btn layui-btn-xs layui-btn-normal btn-submit-row">
+                                <i class="layui-icon ${buttonIcon}"></i> ${buttonText}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            }
+            
+            // 绑定输入框change事件，标记修改状态
+            tbody.find('input[type="number"]').on('change', function() {
+                var $row = $(this).closest('tr');
+                var dateStr = $row.data('date');
+                // 只有当该日期已经有数据库记录时，才标记为修改
+                if (monthData[dateStr] && monthData[dateStr].id) {
+                    monthData[dateStr].isModified = true;
+                    $row.find('.status-badge').removeClass('status-filled status-empty').addClass('status-modified').text('已修改');
+                }
+            });
+            
+            // 绑定单行提交按钮
+            tbody.find('.btn-submit-row').on('click', function() {
+                var $row = $(this).closest('tr');
+                submitRow($row);
+            });
+        }
+        
+        // 获取行数据
+        function getRowData($row) {
+            var finishedVal = $row.find('.input-finished').val();
+            var machiningVal = $row.find('.input-machining').val();
+            var assemblyVal = $row.find('.input-assembly').val();
+            var assembly2Val = $row.find('.input-assembly2').val();
+            var motorVal = $row.find('.input-motor').val();
+            
+            return {
+                date: $row.data('date'),
+                finished: finishedVal === '' || finishedVal === null ? null : parseInt(finishedVal),
+                machining: machiningVal === '' || machiningVal === null ? null : parseInt(machiningVal),
+                assembly: assemblyVal === '' || assemblyVal === null ? null : parseInt(assemblyVal),
+                assembly2: assembly2Val === '' || assembly2Val === null ? null : parseInt(assembly2Val),
+                motor: motorVal === '' || motorVal === null ? null : parseInt(motorVal)
+            };
+        }
+        
+        // 检查行是否被修改
+        function isRowModified($row) {
+            var dateStr = $row.data('date');
+            var originalData = monthData[dateStr];
+            if (!originalData || !originalData.id) return false;
+            
+            var currentData = getRowData($row);
+            // 统一处理null和0的比较
+            var orig = {
+                finished: originalData.finished || null,
+                machining: originalData.machining || null,
+                assembly: originalData.assembly || null,
+                assembly2: originalData.assembly2 || null,
+                motor: originalData.motor || null
+            };
+            return currentData.finished != orig.finished ||
+                   currentData.machining != orig.machining ||
+                   currentData.assembly != orig.assembly ||
+                   currentData.assembly2 != orig.assembly2 ||
+                   currentData.motor != orig.motor;
+        }
+        
+        // 提交单行数据
+        function submitRow($row, operatorName) {
+            var dateStr = $row.data('date');
+            var rowData = getRowData($row);
+            var existingData = monthData[dateStr];
+            var isModified = isRowModified($row);
+            
+            // 如果是修改已有数据，需要输入操作人
+            if (isModified && !operatorName) {
+                layer.confirm('该日期已有数据，修改将覆盖原数据，是否继续？', { 
+                    icon: 3, 
+                    title: '数据修改警告',
+                    btn: ['继续', '取消']
+                }, function(confirmIndex) {
+                    layer.close(confirmIndex);
+                    layer.prompt({
+                        title: '修改数据需要提供操作人姓名，请输入操作人姓名',
+                        formType: 0,
+                        btn: ['确认提交', '取消']
+                    }, function(value, promptIndex, elem) {
+                        if (!value || value.trim().length < 2) {
+                            layer.msg('操作人姓名至少需要2个字', { icon: 0 });
+                            return false;
+                        }
+                        layer.close(promptIndex);
+                        submitRow($row, value.trim());
+                    });
+                });
+                return;
+            }
+            
+            var idx = layer.load(2, { shade: 0.1 });
+            
+            var sql = '';
+            var dateTimeStr = dateStr + ' 00:00:00';
+            
+            if (existingData && existingData.id) {
+                // 更新现有数据
+                sql = `
+                    UPDATE data_input_compressor SET
+                        finished = ${rowData.finished === null ? 'NULL' : rowData.finished},
+                        machining = ${rowData.machining === null ? 'NULL' : rowData.machining},
+                        assembly = ${rowData.assembly === null ? 'NULL' : rowData.assembly},
+                        assembly2 = ${rowData.assembly2 === null ? 'NULL' : rowData.assembly2},
+                        motor = ${rowData.motor === null ? 'NULL' : rowData.motor}
+                    WHERE id = ${existingData.id}
+                `;
+            } else {
+                // 插入新数据
+                sql = `
+                    INSERT INTO data_input_compressor 
+                    (date, finished, machining, assembly, assembly2, motor)
+                    VALUES 
+                    ('${dateTimeStr}', ${rowData.finished === null ? 'NULL' : rowData.finished}, ${rowData.machining === null ? 'NULL' : rowData.machining}, ${rowData.assembly === null ? 'NULL' : rowData.assembly}, ${rowData.assembly2 === null ? 'NULL' : rowData.assembly2}, ${rowData.motor === null ? 'NULL' : rowData.motor})
+                `;
+            }
+            
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+                console.log('[提交成功]', result);
+                var msg = operatorName ? '操作人：' + operatorName : '系统录入';
+                layer.msg('数据提交成功！' + msg, { icon: 1, time: 1500 });
+                // 重新加载数据
+                loadMonthData(currentMonth);
+            }).catch(function(error) {
+                layer.close(idx);
+                console.error('[提交失败]', error);
+                layer.msg('数据提交失败，请检查网络连接或数据格式', { icon: 2 });
+            });
+        }
+        
+        // 一键提交全部
+        $('#btn-submit-all').click(function() {
+            var $rows = $('#table-body tr');
+            var modifiedRows = [];
+            var newRows = [];
+            
+            $rows.each(function() {
+                var $row = $(this);
+                var dateStr = $row.data('date');
+                if (isRowModified($row)) {
+                    modifiedRows.push($row);
+                } else if (!monthData[dateStr] || !monthData[dateStr].id) {
+                    newRows.push($row);
+                }
+            });
+            
+            console.log('[一键提交] 修改行数:', modifiedRows.length, '新增行数:', newRows.length);
+            
+            // 如果有修改的数据，需要输入操作人姓名
+            if (modifiedRows.length > 0) {
+                layer.confirm('检测到 ' + modifiedRows.length + ' 条数据被修改' + 
+                             (newRows.length > 0 ? ('，' + newRows.length + ' 条新数据') : '') + 
+                             '，是否继续提交？', { 
+                    icon: 3, 
+                    title: '数据修改警告',
+                    btn: ['继续', '取消']
+                }, function(confirmIndex) {
+                    layer.close(confirmIndex);
+                    layer.prompt({
+                        title: '修改数据需要提供操作人姓名，请输入操作人姓名',
+                        formType: 0,
+                        btn: ['确认提交', '取消']
+                    }, function(value, promptIndex, elem) {
+                        if (!value || value.trim().length < 2) {
+                            layer.msg('操作人姓名至少需要2个字', { icon: 0 });
+                            return false;
+                        }
+                        layer.close(promptIndex);
+                        submitAllRows($rows, value.trim());
+                    });
+                });
+            } else if (newRows.length > 0) {
+                // 只有新增数据，不需要输入操作人，直接提交
+                layer.confirm('确认提交 ' + currentMonth + ' 的 ' + newRows.length + ' 条新数据吗？', { 
+                    icon: 3, 
+                    title: '确认提交',
+                    btn: ['确认', '取消']
+                }, function(index) {
+                    layer.close(index);
+                    submitAllRows($rows, '系统录入');
+                });
+            } else {
+                // 没有任何数据需要提交
+                layer.msg('没有需要提交的数据', { icon: 0 });
+            }
+        });
+        
+        // 提交所有行
+        function submitAllRows($rows, operatorName) {
+            var idx = layer.load(2, { shade: 0.3 });
+            var sqlStatements = [];
+            
+            $rows.each(function() {
+                var $row = $(this);
+                var dateStr = $row.data('date');
+                var rowData = getRowData($row);
+                var existingData = monthData[dateStr];
+                var dateTimeStr = dateStr + ' 00:00:00';
+                
+                var sql = '';
+                if (existingData && existingData.id) {
+                    sql = `
+                        UPDATE data_input_compressor SET
+                            finished = ${rowData.finished === null ? 'NULL' : rowData.finished},
+                            machining = ${rowData.machining === null ? 'NULL' : rowData.machining},
+                            assembly = ${rowData.assembly === null ? 'NULL' : rowData.assembly},
+                            assembly2 = ${rowData.assembly2 === null ? 'NULL' : rowData.assembly2},
+                            motor = ${rowData.motor === null ? 'NULL' : rowData.motor}
+                        WHERE id = ${existingData.id}
+                    `;
+                } else {
+                    sql = `
+                        INSERT INTO data_input_compressor 
+                        (date, finished, machining, assembly, assembly2, motor)
+                        VALUES 
+                        ('${dateTimeStr}', ${rowData.finished === null ? 'NULL' : rowData.finished}, ${rowData.machining === null ? 'NULL' : rowData.machining}, ${rowData.assembly === null ? 'NULL' : rowData.assembly}, ${rowData.assembly2 === null ? 'NULL' : rowData.assembly2}, ${rowData.motor === null ? 'NULL' : rowData.motor})
+                    `;
+                }
+                sqlStatements.push(sql);
+            });
+            
+            // 合并SQL并执行
+            var combinedSQL = sqlStatements.join('; ');
+            
+            sendSQL(combinedSQL).then(function(result) {
+                layer.close(idx);
+                console.log('[批量提交成功]', result);
+                layer.msg('全部数据提交成功！操作人：' + operatorName, { icon: 1, time: 2000 });
+                // 重新加载数据
+                loadMonthData(currentMonth);
+            }).catch(function(error) {
+                layer.close(idx);
+                console.error('[批量提交失败]', error);
+                layer.msg('批量提交失败，请检查网络连接或数据格式', { icon: 2 });
+            });
+        }
+        
+        // 查看报表按钮
+        $('#btn-to-report').click(function() {
+            window.location.href = '气量比.html';
+        });
+        
+        // 页面加载时自动加载当前月份数据
+        loadMonthData(currentMonth);
+    });
+    </script>
+</body>
+</html>
+

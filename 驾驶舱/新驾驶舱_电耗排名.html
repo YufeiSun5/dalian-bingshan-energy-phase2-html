@@ -1,0 +1,135 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	
+	
+	<meta charset="utf-8" /> 
+	<title> New Document </title>
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<!--<link>-->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+</head>
+<body style="height:100%;margin:0;background-size:cover;background-color:rgba(255,255,255,0.5);overflow:hidden;">
+<div id="main" style="height: 100%"></div>
+<script type="text/javascript">
+// 基于准备好的dom，初始化echarts实例
+var myChart = echarts.init(document.getElementById('main'));
+
+    var data = [/*786534, 768673, 675642, 565675, 498782,*/ /*325645,316767,298787,212321,129121*/];
+    var className = [/*"1#变主开关", "1#变耐久实验室3#动力柜", "1#变研发堵转实验左侧", "1#变研发R290性能实验室", "1#变机加GCS(西)井",*/ /*"1#变污水处理","1#变堵转实验台","4#变新退火炉","3#变主开关","4#变主开关"*/];
+    option = {
+        backgroundColor: '#081A52',
+        grid: {
+            left: "1%",
+            right: "1%",
+            bottom: "1%",
+            top: "5%",
+            containLabel: true
+        },
+        xAxis: {
+            show: false,
+            type: "value"
+        },
+        yAxis: [
+            {
+                type: "category",
+                inverse: true,
+                axisLabel: {
+                    show: true,
+                    textStyle: {
+                        color: "#D1E6EB",
+                        fontSize: 14
+                    }
+                },
+                splitLine: {
+                    show: false
+                },
+                axisTick: {
+                    show: false
+                },
+                axisLine: {
+                    show: false
+                },
+                data: className
+            }
+        ],
+        series: [
+            {
+                name: "员工出信息",
+                type: "bar",
+                zlevel: 1,
+                label: {
+                    //数据显示的位置
+                    show: true, //数值是否显示
+                    // rotate: 60, //数值显示的角度
+                    position: [100,-10,0,0], //数值相对于柱状图显示的位置
+                    textStyle: {
+                        color: "#FFFFFF", // 标签字体颜色
+                        fontSize: 14, // 标签字体大小
+                        fontStyle: "italic", // 标签字体斜体
+                        fontFamily: "baba" // 标签字体
+                    }
+                },
+
+                itemStyle: {
+                    normal: {
+                        barBorderRadius: 0,
+                        color: {
+                            type: "linear",
+                            colorStops: [
+                                {
+                                    offset: 0,
+                                    color: "rgba(94, 238, 255, 1)"
+                                },
+                                {
+                                    offset: 1,
+                                    color: "rgba(255, 255, 255, 0)"
+                                }
+                            ]
+                        }
+                    }
+                },
+                barWidth: 20,
+                emphasis: {
+                    disabled: true,
+                    focus: "none"
+                },
+                data: data
+            },
+            {
+                // name: "外圆",
+                type: "scatter",
+                emphasis: {
+                    scale: false
+                },
+                symbol: "rect",
+                symbolSize: [4, 18], // 进度条白点
+                itemStyle: {
+                    barBorderRadius: [30, 0, 0, 30],
+                    color: "#5EEEFF",
+                    shadowColor: "rgba(94, 238, 255, 0.5)",
+                    shadowBlur: 1,
+                    borderWidth: 1,
+                    opacity: 1
+                },
+                z: 2,
+                data: data,
+                animationDelay: 500
+            }
+        ]
+    };
+
+
+
+if (option && typeof option === "object") {
+    myChart.setOption(option, true);
+}
+       </script>
+   </body>
+</html>

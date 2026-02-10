@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各区域用电量及占比统计</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <style>
+        /* --- 全局与基础样式 --- */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background-color: #0f266c;
+            color: #d0d2e0;
+            overflow: hidden; /* 防止页面本身出现滚动条 */
+        }
+
+        /* --- 主要布局容器 --- */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 15px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        /* --- 卡片通用样式 --- */
+        .card-block {
+            background-color: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+
+        }
+        
+        /* --- 筛选栏 --- */
+        /* --- 顶部筛选栏样式（替换用） --- */
+        /* 1. 把上下左右的内边距都给上，保证上下空间一致 */
+        .filter-bar {
+        background: #1d386f;
+        border: 1px solid #2a6dc8;
+        color: #fff;
+        padding: 5px 15px;      /* ← 改这里：左右各 15px，上下各 10px */
+        box-sizing: border-box;
+        }
+
+        .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;  /* ← 两端对齐 */
+
+        }
+
+
+        .filter-bar .layui-form-label {
+        color: #d0d2e0;
+        
+        padding: 10px 10px;
+        width: auto;
+        }
+        .filter-bar .layui-input {
+        background-color: rgba(40, 80, 167, 1);
+        border-color: transparent;
+        color: #fff;
+        }
+        .filter-bar .layui-input::placeholder {
+        color: #bbb;
+        }
+        .filter-bar .layui-btn {
+        margin-left: 10px;
+        vertical-align: middle;
+        }
+        .filter-bar .layui-btn span {
+        margin: 0 5px;
+        }
+        .filter-bar .layui-bg-orange {
+        background-color: #fa8c16;
+        border-color: #fa8c16;
+        }
+
+
+        /* --- 主要内容区域 --- */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        .table-block {
+            flex: 5; /* 5/8 的高度 */
+            min-height: 0;
+        }
+
+        .charts-container {
+            flex: 3; /* 3/8 的高度 */
+            display: flex;
+            gap: 15px;
+        }
+
+        /* --- 卡片头部样式 --- */
+        .card-header {
+            background-color: #29498e;
+            color: #fff;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a6dc8;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .card-header-icon {
+            width: 5px;
+            height: 20px;
+            background-color: #5470c6;
+            margin-right: 10px;
+        }
+        
+        .main-title {
+            font-size: 16px;
+        }
+
+        .header-controls {
+            margin-left: auto;   /* ← 新增：把自己推到最右 */
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .unit-label {
+            font-size: 14px;
+            color: #b9d3f4;
+            font-weight: normal;
+        }
+
+
+        /* 让卡片顶部区域不裁剪溢出 */
+        .card-block.filter-bar {
+        overflow: visible;
+        }
+
+        /* filter-bar 本身撑满宽度 */
+        .filter-bar {
+        width: 100%;
+        padding: 10px 15px;
+        box-sizing: border-box;
+        }
+
+        /* 表单项目撑满、垂直居中 */
+        .filter-bar .layui-form-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 0;
+        /* → 不再写 justify-content */
+        }
+
+        /* 最后一组按钮自动推到最右 */
+        .filter-bar .layui-form-item .layui-inline:last-child {
+        margin-left: auto;
+        }
+
+
+        /* --- 表格区域特定样式 --- */
+        .table-container {
+            flex-grow: 1;
+            overflow: hidden; /* 隐藏滚动条，由JS控制内容适应 */
+            padding: 10px;
+            position: relative; 
+        }
+
+        /* --- Layui 表格样式覆盖 --- */
+        .layui-table-view {
+            border: none;
+            border-right: 1px solid #2a6dc8 !important; /* 右边框修复 */
+            background-color: transparent;
+            margin: 0 !important;
+        }
+        .layui-table-header {
+            border-bottom: 1px solid #2a6dc8 !important;
+        }
+        .layui-table-header thead tr, .layui-table-header th {
+            background-color: #18589b !important;
+        }
+        .layui-table-header th {
+            color: #ffffff;
+            font-weight: 600;
+            border-color: #2a6dc8 !important;
+        }
+        .layui-table-body tr {
+            background-color: #1d386f !important;
+        }
+        .layui-table-body td, .layui-table-total tr, .layui-table-total td {
+            border-color: #2a6dc8 !important;
+            background-color: transparent !important;
+            color: #b9d3f4;
+            vertical-align: middle;
+        }
+        .layui-table-view .layui-table-cell {
+            height: 28px !important;
+            line-height: 28px !important;
+            padding: 0 2px !important; 
+            font-size: 12px;
+        }
+        .layui-table-body tr:hover, .layui-table-hover {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-body tr:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-body tr.clickable-row:hover {
+            background-color: #2b5597 !important;
+            cursor: pointer;
+        }
+        .layui-table-body tr.clickable-row:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-body tr.active-row {
+            background-color: #3b74c4 !important;
+        }
+        .layui-table-body tr.active-row td {
+            background-color: #3b74c4 !important;
+        }
+        .layui-table-body tr.total-row td {
+            font-weight: bold;
+        }
+        .layui-table-body tr.total-row:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-body td.highlight-col {
+             background-color: #695d31 !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr td{
+            background-color: #18589b !important;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .layui-table-fixed-l .layui-table-body tr:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr.clickable-row:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr.total-row td {
+            background-color: #18589b !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr.total-row:hover td {
+            background-color: #2b5597 !important;
+        }
+        .layui-table-fixed-l .layui-table-body tr.active-row td {
+            background-color: #3b74c4 !important;
+        }
+        .layui-table-fixed-l {
+            box-shadow: none;
+        }
+        .layui-table-page {
+            display: none;
+        }
+        .layui-table-body::-webkit-scrollbar {
+            width: 6px;
+            height: 6px; 
+        }
+        .table-container::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .table-container::-webkit-scrollbar-thumb,
+        .layui-table-body::-webkit-scrollbar-thumb {
+            background-color: #2a6dc8;
+            border-radius: 3px;
+        }
+        .table-container::-webkit-scrollbar-track,
+        .layui-table-body::-webkit-scrollbar-track {
+            background-color: #1d386f;
+        }
+
+        /* --- 图表区域样式 --- */
+        .chart-block {
+            flex-grow: 1;
+            min-height: 0;
+        }
+        .bar-chart-wrapper { flex: 3; }
+        .pie-chart-wrapper { flex: 2; }
+        .chart-content { flex-grow: 1; }
+        
+        @media (max-width: 992px) {
+            .charts-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="card-block">
+    <div class="layui-form filter-bar" lay-filter="filter-form">
+        <div class="layui-form-item">
+        <div class="layui-inline" style="margin-right:20px;">
+            <label class="layui-form-label">年份</label>
+            <div class="layui-input-inline">
+            <input type="text"
+                   id="year-selector"
+                   class="layui-input"
+                   placeholder="请选择年份">
+            </div>
+        </div>
+        <div class="layui-inline">
+            <button id="search-btn" class="layui-btn">
+            <i class="layui-icon layui-icon-search"></i>
+            <span>查询</span>
+            </button>
+            <button id="export-btn" class="layui-btn layui-bg-orange">
+            <span>导出</span>
+            <i class="layui-icon layui-icon-print"></i>
+            </button>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    
+    <div class="main-content">
+        <div class="card-block table-block">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <div class="card-header-icon"></div>
+                    <span class="main-title">各区域用电量及占比统计</span>
+
+                </div>
+                <div class="header-controls">
+                    <span class="unit-label">电量单位（千瓦时）</span>
+                </div>
+            </div>
+            <div class="table-container" id="table-parent-container">
+                <table id="data-table" lay-filter="dataTableFilter"></table>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="card-block chart-block bar-chart-wrapper">
+                <div class="card-header" id="bar-chart-header"></div>
+                <div id="barChart" class="chart-content"></div>
+            </div>
+            <div class="card-block chart-block pie-chart-wrapper">
+                <div class="card-header" id="pie-chart-header"></div>
+                <div id="pieChart" class="chart-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入统一配置文件 -->
+<script src="../js/utils/energy-config-v2.js"></script>
+
+<script src="../js/layui.js"></script>
+<script>
+    // 1. 配置本地扩展目录并加载 excel 模块
+    layui.config({
+        base: '../js/layui_exts/' // 指向存放 excel.js 的目录
+    }).extend({
+        excel: 'excel' // 模块名，对应 excel.js
+    });
+
+    layui.use(['table', 'laydate', 'excel', 'layer', 'form'], function(){
+        const table = layui.table;
+        const laydate = layui.laydate;
+        const excel = layui.excel;
+        const layer = layui.layer;
+        const form = layui.form;
+        const $ = layui.jquery;
+
+        // ===================================================================
+        // 从 energy-config-v2.js 获取配置 (保持原有逻辑以获取数据库映射)
+        // ===================================================================
+        const Config = window.EnergyConfig;
+        if (!Config) {
+            console.error('❌ EnergyConfig 未加载');
+            layer.msg('配置文件加载失败', { icon: 2 });
+            return;
+        }
+        const pageConfig = Config.pages.regionalElecStats || Config.pages.regionalStats;
+        if (!pageConfig) {
+            layer.msg('页面配置加载失败', { icon: 2 });
+            return;
+        }
+
+        let barChartInstance, pieChartInstance;
+        let globalData = {};
+        let currentActiveIdentifier = '';
+
+        // 初始化年份选择器
+        laydate.render({
+            elem: '#year-selector',
+            type: 'year',
+            value: new Date()
+        });
+
+        // --- 1. 核心修改：静态化表头结构 (完全匹配图片) ---
+        function getAdaptiveCols() {
+            const container = $('#table-parent-container');
+            const containerWidth = container.width();
+            
+            // 基础列宽
+            const fixedWidth = 80;  // 月份
+            const tempWidth = 100;  // 温度
+            const remarkWidth = 100; // 备注
+            
+            // 计算数据列宽：(总宽 - 固定宽) / 12列 (4个区域 * 3个指标)
+            let dataColWidth = 80; 
+            if (containerWidth) {
+                const availableWidth = containerWidth - fixedWidth - tempWidth - remarkWidth - 20; // 20是滚动条预留
+                dataColWidth = Math.floor(availableWidth / 12); 
+                if (dataColWidth < 60) dataColWidth = 60; // 最小保底宽度
+            }
+
+            // 样式定义：电量列高亮显示，因为只有电量有数据
+            const elecStyle = 'color: #00eaff; font-weight: bold;'; 
+
+            return [
+                [
+                    // 第一行表头
+                    { field: 'month', title: '月份', rowspan: 2, fixed: 'left', width: fixedWidth, align: 'center' },
+                    { field: 'avg_temp', title: '月平均水温(℃)', rowspan: 2, fixed: 'left', width: tempWidth, align: 'center' },
+                    
+                    // 四大板块
+                    { title: '工厂', colspan: 3, align: 'center' }, 
+                    { title: '大办', colspan: 3, align: 'center' }, 
+                    { title: '研发', colspan: 3, align: 'center' }, 
+                    { title: '电机', colspan: 3, align: 'center' }, 
+                    
+                    { field: 'remark', title: '备注', rowspan: 2, width: remarkWidth, align: 'center' }
+                ],
+                [
+                    // 第二行表头 - 工厂
+                    { field: 'factory_heat', title: '热量MJ', align: 'center', width: dataColWidth },
+                    { field: 'factory_elec', title: '电量KWh', align: 'center', width: dataColWidth, style: elecStyle },
+                    { field: 'factory_eff', title: '能效', align: 'center', width: dataColWidth },
+
+                    // 第二行表头 - 大办
+                    { field: 'office_heat', title: '热量MJ', align: 'center', width: dataColWidth },
+                    { field: 'office_elec', title: '电量KWh', align: 'center', width: dataColWidth, style: elecStyle },
+                    { field: 'office_eff', title: '能效', align: 'center', width: dataColWidth },
+
+                    // 第二行表头 - 研发
+                    { field: 'rd_heat', title: '热量MJ', align: 'center', width: dataColWidth },
+                    { field: 'rd_elec', title: '电量KWh', align: 'center', width: dataColWidth, style: elecStyle },
+                    { field: 'rd_eff', title: '能效', align: 'center', width: dataColWidth },
+
+                    // 第二行表头 - 电机
+                    { field: 'motor_heat', title: '热量MJ', align: 'center', width: dataColWidth },
+                    { field: 'motor_elec', title: '电量KWh', align: 'center', width: dataColWidth, style: elecStyle },
+                    { field: 'motor_eff', title: '能效', align: 'center', width: dataColWidth }
+                ]
+            ];
+        }
+
+        // --- 2. 数据获取 (保持原有SQL逻辑，确保能查到电量) ---
+        async function sendSQL(strsql) {
+            try {
+                const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ sql: strsql })
+                });
+                if (!res.ok) return { data: [] };
+                return await res.json();
+            } catch (err) {
+                console.error('sendSQL Error:', err);
+                return { data: [] };
+            }
+        }
+
+        async function fetchAndProcessData(year) {
+            // 判断是否是今年
+            const currentYear = new Date().getFullYear();
+            const isCurrentYear = (year == currentYear);
+            
+            // 保持原有的动态SQL生成逻辑，防止后端查询报错
+            const caseClauses = [];
+            pageConfig.categories.forEach(cat => {
+                const includeNos = cat.includeNos || [];
+                const includeList = includeNos.length > 0 ? includeNos.join(',') : '-1';
+                const includeClause = `SUM(CASE WHEN sub.no IN (${includeList}) THEN sub.total_elec ELSE 0 END)`;
+                
+                const excludeNos = cat.excludeNos || [];
+                let fullClause;
+                if (excludeNos.length > 0) {
+                    const excludeList = excludeNos.join(',');
+                    const excludeClause = `SUM(CASE WHEN sub.no IN (${excludeList}) THEN sub.total_elec ELSE 0 END)`;
+                    fullClause = `(${includeClause} - ${excludeClause}) AS ${cat.key}_elec`;
+                } else {
+                    fullClause = `${includeClause} AS ${cat.key}_elec`;
+                }
+                caseClauses.push(fullClause);
+            });
+            
+            /*const sql = `
+                SELECT sub.month,
+                       ${caseClauses.join(',\n                      ')}
+                FROM (
+                    SELECT no, MONTH(\`date\`) AS month, SUM(sum_elec) AS total_elec
+                    FROM sum_elec_group_by_day
+                    WHERE YEAR(\`date\`) = ${year}
+                    GROUP BY no, MONTH(\`date\`)
+                ) AS sub
+                GROUP BY sub.month
+                ORDER BY sub.month
+            `.trim();*/
+			const sql = `
+                SELECT
+                DATE_FORMAT( DATE_ADD(DATE_FORMAT('${year}-01-01','%Y-01-01'),INTERVAL t.i month) , '%m月') AS month,
+								avg_temp,
+								round((sum_heat1 + sum_heat2 + sum_heat3)* 1000,1) as factory_heat,
+								(elec.sum_elec1 +elec.sum_elec2+elec.sum_elec3) as factory_elec,
+								ROUND(((sum_heat1 + sum_heat2 + sum_heat3) * 1000)/((elec.sum_elec1 +elec.sum_elec2+elec.sum_elec3)*3.6),3) as factory_eff,
+								
+								Round(sum_heat1 * 1000,1) as office_heat,
+								elec.sum_elec1 as office_elec,
+								ROUND((sum_heat1 * 1000)/(elec.sum_elec1*3.6),3) as office_eff,
+								
+								
+								Round(sum_heat2 * 1000,1) as rd_heat,
+								elec.sum_elec2 as rd_elec,
+								ROUND((sum_heat2 * 1000)/(elec.sum_elec2*3.6),3) as rd_eff,
+								
+								Round(sum_heat3 * 1000,1) as motor_heat,
+								elec.sum_elec3 as motor_elec,
+								ROUND((sum_heat3 * 1000)/(elec.sum_elec3*3.6),3) as motor_eff
+            FROM sys_ints t
+
+            -- 【电能数据】
+            LEFT JOIN (
+                 select 	DATE_FORMAT(r.jDay, '%Y-%m') as date,  
+									sum(case when elec_name in ('elec_420003','elec_420004','elec_420005','elec_420006','elec_420007','elec_420008','elec_420009','elec_420010','elec_420011','elec_420012','elec_420013','elec_420014','elec_420014','elec_420015','elec_320022','elec_320024') then sum_elec else 0 end) as sum_elec, 
+									sum(case when elec_name in ('elec_320022','elec_320024') then sum_elec else 0 end) AS sum_elec1,
+									sum(case when elec_name in ('elec_420003','elec_420004') then sum_elec else 0 end) as sum_elec2,   
+									sum(case when elec_name in ('elec_420005','elec_420006','elec_420007','elec_420008') then sum_elec else 0 end ) as sum_elec3    
+									from (  
+											select DATE_FORMAT(date, '%Y-%m-%d') as jDay  
+											,CONCAT('elec', '_', NO) as elec_name  
+											,sum_elec  
+											from sum_elec_group_by_day  	
+											where no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	 
+											and date <= '${year}-12-31'   
+											AND date >= '${year}-01-01'	
+											union all
+											SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
+											,CONCAT('elec', '_', NO) as elec_name	
+											,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec	
+											FROM data_all FORCE INDEX (date_no_KWH) 	
+											WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  
+											AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')	
+											and kwh != 0 and kwh != 99999999		
+											and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	
+											GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') 
+									) r 
+									group by DATE_FORMAT(r.jDay, '%Y-%m')
+
+            ) elec ON DATE_FORMAT( DATE_ADD(DATE_FORMAT('${year}-01-01','%Y-01-01'),INTERVAL t.i month) , '%Y-%m') = elec.date
+
+            -- 【热能数据】
+            LEFT JOIN (
+                 select 	DATE_FORMAT(r.jDay, '%Y-%m') as date,  
+								sum(case when heat_name in ('heat_420001','heat_420002','heat_420003','heat_420004','heat_420005','heat_420006','heat_420007','heat_420008','heat_420009','heat_420010','heat_420011','heat_420012','heat_420013','heat_420014','heat_420014','heat_420015') then sum_heat else 0 end) as sum_heat, 
+								sum(case when heat_name in ('heat_420001','heat_420002','heat_420009','heat_420010','heat_420011','heat_420012') then sum_heat else 0 end) AS sum_heat1,
+								sum(case when heat_name in ('heat_420003','heat_420004','heat_420013','heat_420014','heat_420015') then sum_heat else 0 end) as sum_heat2,   
+								sum(case when heat_name in ('heat_420005','heat_420006','heat_420007','heat_420008') then sum_heat else 0 end ) as sum_heat3    
+								from (  
+										${isCurrentYear ? `
+										-- 今年：分两部分查询
+										-- 汇总表：历史数据（到今天7点之前）
+										select DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
+										,CONCAT('heat', '_', NO) as heat_name	
+										,SUM(sum_heat) AS sum_heat
+										FROM sum_heat_group_by_hour
+										WHERE date < DATE_FORMAT(now(), '%Y-%m-%d 07:00:00')
+										AND date >= DATE_FORMAT('${year}-01-01' , '%Y-%m-%d 07:00:00')
+										and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)	
+										GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d')
+										
+										UNION ALL
+										
+										-- 原始表：今天7点到现在的数据
+										select DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
+										,CONCAT('heat', '_', NO) as heat_name	
+										,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(heat_quantity),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(heat_quantity))- MIN(heat_quantity) AS sum_heat	
+										FROM data_heat_quantity
+										WHERE date >= DATE_FORMAT(now(), '%Y-%m-%d 07:00:00')
+										AND date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
+										and heat_quantity != 0 and heat_quantity != 99999999		
+										and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)	
+										GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d')
+										` : `
+										-- 历史年份：全部从汇总表查询
+										select DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
+										,CONCAT('heat', '_', NO) as heat_name	
+										,SUM(sum_heat) AS sum_heat
+										FROM sum_heat_group_by_hour
+										WHERE date >= DATE_FORMAT('${year}-01-01' , '%Y-%m-%d 07:00:00')
+										AND date <= DATE_FORMAT(DATE_ADD('${year}-12-31',INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
+										and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)	
+										GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d')
+										`}
+								) r 
+								group by DATE_FORMAT(r.jDay, '%Y-%m')
+            ) heat ON DATE_FORMAT( DATE_ADD(DATE_FORMAT('${year}-01-01','%Y-01-01'),INTERVAL t.i month) , '%Y-%m') = heat.date
+						Left join (
+								select DATE_FORMAT(date, '%Y-%m') as date,
+								round(AVG(B_temp),1) as avg_temp
+								from data_temp
+								where no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)
+								group by DATE_FORMAT(date, '%Y-%m')
+						)temp on DATE_FORMAT( DATE_ADD(DATE_FORMAT('${year}-01-01','%Y-01-01'),INTERVAL t.i month) , '%Y-%m') = temp.date
+            WHERE t.i <= 11
+            ORDER BY t.i
+            `.trim();
+			debugger;
+            console.info(sql);
+            const apiResult = await sendSQL(sql);
+            const rawData = apiResult.data || [];
+            
+            /*// 将 API 返回的 flat 数据转为带 values 对象的数据
+            const monthlyData = rawData.map(item => {
+                const monthStr = `${item.month}月`;
+                const values = {};
+                pageConfig.categories.forEach(cat => {
+                    const apiKey = `${cat.key}_elec`;
+                    values[cat.title] = Number(item[apiKey]) || 0;
+                });
+                return { month: monthStr, values };
+            });
+            
+            return { categories: pageConfig.categories.map(c => c.title), monthlyData };*/
+			return apiResult.data;
+        }
+
+        // --- 3. 数据转换：将 Config 数据映射到 4 个固定区域 ---
+        function transformDataForLayui(data) {
+            const { monthlyData } = data;
+            const tableData = [];
+            
+            // 初始化合计
+            let sumElecFactory = 0, sumElecOffice = 0, sumElecRd = 0, sumElecMotor = 0;
+			let sumHeatFactory = 0, sumHeatOffice = 0, sumHeatRd = 0, sumHeatMotor = 0;
+			let sumRatioFactory = 0, sumRatioOffice = 0, sumRatioRd = 0, sumRatioMotor = 0;
+            //const dataMap = new Map(monthlyData.map(item => [item.month, item.values]));
+			debugger;
+			for(let i=0;i<data.length;i++){
+				tableData.push({
+					isClickable: true,
+					month: data[i].month, 
+					avg_temp: data[i].avg_temp == null ? "-":data[i].avg_temp, 
+					remark: '',
+					factory_heat : data[i].factory_heat == null ? "-":data[i].factory_heat, 
+					factory_elec : data[i].factory_elec == null ? "-":data[i].factory_elec, 
+					factory_eff : data[i].factory_eff == null ? "-":data[i].factory_eff,
+					office_heat : data[i].office_heat == null ? "-":data[i].office_heat, 
+					office_elec : data[i].office_elec == null ? "-":data[i].office_elec, 
+					office_eff : data[i].office_eff == null ? "-":data[i].office_eff,
+					rd_heat : data[i].rd_heat == null ? "-":data[i].rd_heat, 
+					rd_elec : data[i].rd_elec == null ? "-":data[i].rd_elec, 
+					rd_eff : data[i].rd_eff == null ? "-":data[i].rd_eff,
+					motor_heat : data[i].motor_heat == null ? "-":data[i].motor_heat, 
+					motor_elec : data[i].motor_elec == null ? "-":data[i].motor_elec, 
+					motor_eff : data[i].motor_eff == null ? "-":data[i].motor_eff,
+
+				});
+				// 累加合计
+                sumElecFactory += data[i].factory_elec;
+                sumElecOffice += data[i].office_elec;
+                sumElecRd += data[i].rd_elec;
+                sumElecMotor += data[i].motor_elec;
+				
+				sumHeatFactory += data[i].factory_heat;
+                sumHeatOffice += data[i].office_heat;
+                sumHeatRd += data[i].rd_heat;
+                sumHeatMotor += data[i].motor_heat;
+			}
+			
+			if(sumElecFactory != 0){
+				sumRatioFactory = Math.round((sumHeatFactory * 1000 )/(sumElecFactory * 3.6))/1000 ;
+				sumRatioOffice = Math.round((sumHeatOffice * 1000 )/(sumElecOffice * 3.6))/1000 ;
+				sumRatioRd = Math.round((sumHeatRd * 1000 )/(sumElecRd * 3.6))/1000 ;
+				sumRatioMotor = Math.round((sumHeatMotor * 1000 )/(sumElecMotor * 3.6))/1000 ;
+			}
+			// 合计行
+            tableData.push({
+                month: '合计', 
+				avg_temp: '-', 
+				remark: '', 
+				isTotal: true, 
+				isClickable: true,
+                factory_heat: sumHeatFactory.toFixed(1), 
+				factory_elec: sumElecFactory.toFixed(1), 
+				factory_eff: sumRatioFactory,
+                office_heat: sumHeatOffice.toFixed(1), 
+				office_elec: sumElecOffice.toFixed(1), 
+				office_eff: sumRatioOffice,
+                rd_heat: sumHeatRd.toFixed(1), 
+				rd_elec: sumElecRd.toFixed(1), 
+				rd_eff: sumRatioRd,
+                motor_heat: sumHeatMotor.toFixed(1), 
+				motor_elec: sumElecMotor.toFixed(1), 
+				motor_eff: sumRatioMotor
+            });
+            /*for (let i = 1; i <= 12; i++) {
+                const monthStr = `${i}月`;
+                const row = { month: monthStr, avg_temp: '-', remark: '' };
+
+                if (dataMap.has(monthStr)) {
+                    row.isClickable = true;
+                    const values = dataMap.get(monthStr);
+
+                    // --- 映射逻辑 (根据你的配置文件名称调整) ---
+                    // 1. 工厂 = 工厂 + (备用: 设备+辅助)
+                    const valFactory = (values['工厂'] || 0) + (values['设备'] || 0) + (values['辅助'] || 0);
+                    
+                    // 2. 大办 = 经营企划部 (或 大办)
+                    const valOffice = values['经营企划部'] || values['大办'] || 0;
+                    
+                    // 3. 研发 = 开发本部 (或 研发)
+                    const valRd = values['开发本部'] || values['研发'] || 0;
+                    
+                    // 4. 电机 = 动力设施课 (或 电机)
+                    const valMotor = values['动力设施课'] || values['电机'] || 0;
+
+                    // 填充行数据
+                    row.factory_heat = '-'; 
+					row.factory_elec = valFactory.toLocaleString(); 
+					row.factory_eff = '-';
+                    row.office_heat = '-'; 
+					row.office_elec = valOffice.toLocaleString(); 
+					row.office_eff = '-';
+                    row.rd_heat = '-'; 
+					row.rd_elec = valRd.toLocaleString(); 
+					row.rd_eff = '-';
+                    row.motor_heat = '-'; 
+					row.motor_elec = valMotor.toLocaleString(); 
+					row.motor_eff = '-';
+
+                    // 累加合计
+                    sumFactory += valFactory;
+                    sumOffice += valOffice;
+                    sumRd += valRd;
+                    sumMotor += valMotor;
+                } else {
+                    row.isClickable = false;
+                    ['factory', 'office', 'rd', 'motor'].forEach(p => {
+                        row[`${p}_heat`] = ''; row[`${p}_elec`] = ''; row[`${p}_eff`] = '';
+                    });
+                }
+                tableData.push(row);
+            }*/
+			
+
+            
+
+            return tableData;
+        }
+
+        // --- 4. 渲染表格 ---
+        window.renderLayuiTable = function(data) {
+            const tableData = transformDataForLayui(data);
+            
+            table.render({
+                elem: '#data-table',
+                height: 'full-20',
+                cols: getAdaptiveCols(),
+                data: tableData,
+                limit: tableData.length,
+                done: function(res, curr, count){
+                    const tableBody = this.elem.next().find('.layui-table-body tbody');
+                    const fixedBody = this.elem.next().find('.layui-table-fixed-l .layui-table-body tbody');
+                    
+                    const updateRowStyle = (rows) => {
+                        res.data.forEach((item, index) => {
+                            const tr = rows.find(`tr[data-index="${index}"]`);
+                            if(item.isClickable) tr.addClass('clickable-row');
+                            if(item.isTotal) tr.addClass('total-row');
+                            if(item.month === currentActiveIdentifier) tr.addClass('active-row');
+                        });
+                    };
+
+                    updateRowStyle(tableBody);
+                    if(fixedBody.length) updateRowStyle(fixedBody);
+                }
+            });
+        };
+
+        // 表格行点击联动
+        table.on('row(dataTableFilter)', function(obj){
+			debugger;
+            if(obj.data.isClickable){
+                updateDashboard(obj.data.month);
+            }
+        });
+
+        // --- 5. 导出功能 (更新为匹配新表头) ---
+        $('#export-btn').on('click', function() {
+            const tableData = layui.table.cache['data-table'];
+            if (!tableData || tableData.length === 0) {
+                layer.msg('无数据导出');
+                return;
+            }
+
+            const year = $('#year-selector').val();
+            const filename = `各区域用电统计_${year}.xlsx`;
+
+            // 构造 Excel 数据结构
+            // 表头1
+            const header1 = { 
+                month: '月份', avg_temp: '月平均水温', 
+                factory_heat: '工厂', factory_elec: '', factory_eff: '',
+                office_heat: '大办', office_elec: '', office_eff: '',
+                rd_heat: '研发', rd_elec: '', rd_eff: '',
+                motor_heat: '电机', motor_elec: '', motor_eff: '',
+                remark: '备注'
+            };
+            // 表头2
+            const header2 = { 
+                month: '', avg_temp: '', 
+                factory_heat: '热量', factory_elec: '电量', factory_eff: '能效',
+                office_heat: '热量', office_elec: '电量', office_eff: '能效',
+                rd_heat: '热量', rd_elec: '电量', rd_eff: '能效',
+                motor_heat: '热量', motor_elec: '电量', motor_eff: '能效',
+                remark: ''
+            };
+		
+            // 数据体
+            const body = tableData.map(row => ({
+                month: row.month, avg_temp: row.avg_temp,
+                factory_heat: row.factory_heat, factory_elec: row.factory_elec, factory_eff: row.factory_eff,
+                office_heat: row.office_heat, office_elec: row.office_elec, office_eff: row.office_eff,
+                rd_heat: row.rd_heat, rd_elec: row.rd_elec, rd_eff: row.rd_eff,
+                motor_heat: row.motor_heat, motor_elec: row.motor_elec, motor_eff: row.motor_eff,
+                remark: row.remark
+            }));
+			var colConf = excel.makeColConfig({
+				'A': 80,
+				'B': 100,
+				'C': 80,
+				'D': 80,
+				'E':80,
+				'F':80,
+				'G':80,
+				'H':80,
+				'I':80,
+				'J':80,
+				'K':80,
+				'L':80,
+				'M':80,
+				'N':80,
+				'O':80,
+				
+			}, 80);
+			excel.setExportCellStyle([header1, header2, ...body], '', {
+				s: {
+					
+					alignment: {
+						horizontal: 'center',
+						vertical: 'center'
+					}
+				}
+			}, function (cell, newCell, row, config, currentRow, currentCol, fieldKey) {
+				if(Object.prototype.toString.call(cell).slice(8,-1) == "Number"){
+					return {
+						v:cell,
+						t:'n',
+						s:newCell.s
+					};
+				}
+				return newCell;
+			})
+            // 合并规则
+            const merges = excel.makeMergeConfig([
+                ['A1', 'A2'], ['B1', 'B2'], // 月份, 温度
+                ['C1', 'E1'], // 工厂
+                ['F1', 'H1'], // 大办
+                ['I1', 'K1'], // 研发
+                ['L1', 'N1'], // 电机
+                ['O1', 'O2']  // 备注
+            ]);
+
+            excel.exportExcel([header1, header2, ...body], filename, 'xlsx', {
+                extend: { '!merges': merges ,'!cols': colConf}
+            });
+        });
+
+        // --- 6. 图表更新 (仅显示电量) ---
+        function updateCharts(identifier, values, allCategories) {
+			debugger;
+            const isTotal = identifier === '合计';
+            const titlePrefix = isTotal ? '全年总' : identifier;
+            
+            document.getElementById('bar-chart-header').innerHTML = 
+                `<div class="card-header-title"><div class="card-header-icon"></div><span>各区域月度能效对比情况（COP）</span></div>`;
+            document.getElementById('pie-chart-header').innerHTML = 
+                `<div class="card-header-title"><div class="card-header-icon"></div><span>${titlePrefix}用电占比</span></div>`;
+
+            // 固定四个图表分类
+            const chartCats = [ '大办', '研发', '电机'];
+			const chartCats1 = ['大办', '研发', '电机'];
+            const colors = [ '#fac858', '#91cc75', '#ee6666']; // 对应表头颜色风格
+			// 取值辅助函数 (复用映射逻辑)
+            const getElecVal = (src, catName) => {
+				debugger;
+                if (!src) return 0;
+                if (catName === '工厂') return src['factory_elec']||0;
+                if (catName === '大办') return src['office_elec'] || 0;
+                if (catName === '研发') return src['rd_elec'] || 0;
+                if (catName === '电机') return src['motor_elec'] || 0;
+                return 0;
+            };
+            // 取值辅助函数 (复用映射逻辑)
+            const getVal = (src, catName) => {
+				debugger;
+                if (!src) return 0;
+                if (catName === '工厂') return src['factory_eff']||0;
+                if (catName === '大办') return src['office_eff'] || 0;
+                if (catName === '研发') return src['rd_eff'] || 0;
+                if (catName === '电机') return src['motor_eff'] || 0;
+                return 0;
+            };
+
+            // 1. 曲线图
+            // 生成带前导0的月份格式，与SQL返回的格式一致（'01月', '02月', ...）
+            const months = Array.from({length: 12}, (_, i) => `${String(i+1).padStart(2, '0')}月`);
+            const lineSeries = chartCats.map((cat, i) => ({
+                name: cat,
+                type: 'line',
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                itemStyle: { color: colors[i] },
+                lineStyle: { width: 3 },
+                data: months.map(m => {
+                    const mData = globalData.find(d => d.month === m);
+                    return mData ? Math.round(getVal(mData, cat)*100)/100 : null;
+                })
+            }));
+
+            // 2. 饼图 - 显示工厂、大办、研发、电机
+            const pieData = chartCats1.map((cat, i) => ({
+                name: cat,
+                value: Math.round(getElecVal(values, cat)),
+                itemStyle: { color: colors[i] }
+            }));
+
+            const commonTextStyle = { color: '#ccc' };
+            
+            barChartInstance.setOption({
+                backgroundColor: 'transparent',
+                tooltip: { trigger: 'axis' },
+                legend: { data: chartCats, textStyle: commonTextStyle, top: 5 },
+                grid: { top: 40, bottom: 20, left: 50, right: 20, containLabel: true },
+                xAxis: { type: 'category', data: months, axisLabel: commonTextStyle, axisLine: { lineStyle: { color: '#2a6dc8' } } },
+                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: 'rgba(255,255,255,0.1)' } }, axisLabel: commonTextStyle },
+                series: lineSeries
+            }, true);
+
+            pieChartInstance.setOption({
+                backgroundColor: 'transparent',
+                tooltip: { trigger: 'item', formatter: '{b}: {c}KWH ({d}%)' },
+                legend: { bottom: 0, data: chartCats1, textStyle: commonTextStyle },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '65%'],
+                    center: ['50%', '45%'],
+                    data: pieData,
+                    label: { color: '#fff', formatter: '{b}\n{d}%' },
+                    itemStyle: { borderColor: '#1d386f', borderWidth: 2 }
+                }]
+            }, true);
+        }
+
+        // --- 7. 仪表盘联动与初始化 ---
+        function updateDashboard(activeIdentifier) {
+			debugger;
+            currentActiveIdentifier = activeIdentifier;
+            
+            // 高亮行
+            const tableBody = $('#data-table').next().find('.layui-table-body tbody');
+            const fixedBody = $('#data-table').next().find('.layui-table-fixed-l .layui-table-body tbody');
+            
+            const highlight = (body) => {
+                body.find('tr').removeClass('active-row');
+                // 找到对应的行索引并添加样式
+                const data = layui.table.cache['data-table'];
+                if(data){
+                    data.forEach((d, i) => {
+                        if(d.month === activeIdentifier) {
+                            body.find(`tr[data-index="${i}"]`).addClass('active-row');
+                        }
+                    });
+                }
+            };
+            highlight(tableBody);
+            if(fixedBody.length) highlight(fixedBody);
+
+            // 更新图表
+            if (activeIdentifier === '合计') {
+                const totalVals = {};
+                globalData.forEach(m => {
+                    for(let k in m) totalVals[k] = (totalVals[k]||0) + m[k];
+                });
+                updateCharts('合计', totalVals);
+            } else {
+                const monthData = globalData.find(d => d.month === activeIdentifier);
+                updateCharts(activeIdentifier, monthData ? monthData : {});
+                
+                // 让柱状图显示对应月份的 tooltip
+                const monthIdx = parseInt(activeIdentifier) - 1;
+                if(monthIdx >= 0) {
+                    barChartInstance.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: monthIdx });
+                }
+            }
+        }
+
+        async function reloadData() {
+            const btn = $('#search-btn');
+            btn.addClass('layui-btn-disabled');
+            try {
+                const year = $('#year-selector').val() || new Date().getFullYear();
+                globalData = await fetchAndProcessData(year);
+                debugger;
+                // 渲染表格
+                window.renderLayuiTable(globalData);
+                
+                // 默认选中当前月份
+                let defaultMonth = '合计';
+                const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0') + '月';
+                // 查找当前月份的数据
+                const currentMonthData = globalData.find(d => d.month === currentMonth);
+                if(currentMonthData) {
+                    defaultMonth = currentMonth;
+                } else if(globalData.length > 0) {
+                    // 如果当前月份没有数据，选择最后一条有数据的月份
+                    defaultMonth = globalData[globalData.length - 1].month;
+                }
+                updateDashboard(defaultMonth);
+            } catch(e) {
+                console.error(e);
+            } finally {
+                btn.removeClass('layui-btn-disabled');
+            }
+        }
+
+        function init() {
+            barChartInstance = echarts.init(document.getElementById('barChart'), 'dark');
+            pieChartInstance = echarts.init(document.getElementById('pieChart'), 'dark');
+
+            $('#search-btn').on('click', reloadData);
+            
+            // 初始加载
+            reloadData();
+
+            // 窗口调整
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    barChartInstance.resize();
+                    pieChartInstance.resize();
+                    if(globalData) window.renderLayuiTable(globalData);
+                }, 200);
+            });
+        }
+
+        init();
+    });
+</script>
+
+</body>
+</html>

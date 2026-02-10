@@ -1,0 +1,1356 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<!-- 页面字符编码设置 -->
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<!-- 响应式设计：禁用用户缩放，设置初始缩放比例和设备宽度 -->
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>空压机房管理系统</title>
+	
+	<!-- 样式表引入 -->
+	<!-- LayUI框架样式 - 用于界面组件 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<!-- 项目自定义样式 - 包含主题色彩和布局 -->
+	<link href="css/common-styles.css" rel="stylesheet">
+	<!-- 报表模块样式 - 独立可移植 -->
+	<link href="css/report-module.css" rel="stylesheet">
+	<!-- 曲线模块样式 - 独立可移植 -->
+	<link href="css/curve-module.css" rel="stylesheet">
+	<!-- 甘特图模块样式 - 独立可移植 -->
+	<link href="css/gantt-module.css" rel="stylesheet">
+	
+	<!-- JavaScript库引入 -->
+	<!-- ECharts图表库 - 用于绘制甘特图和数据可视化 -->
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<!-- JavaScript与C++交互函数 - 用于调用后端接口 -->
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<!-- C++调用JavaScript函数 - 用于接收后端回调 -->
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<!-- LayUI框架核心文件 - 提供UI组件功能 -->
+	<script type="text/javascript" src="../js/layui.js"></script>
+	<!-- 页面模块化管理文件 - 包含各功能页面的业务逻辑 -->
+	<script type="text/javascript" src="js/page-modules.js"></script>
+	<!-- 报表模块 - 独立可移植 -->
+	<script type="text/javascript" src="js/report-module.js"></script>
+	<!-- 曲线模块 - 独立可移植 -->
+	<script type="text/javascript" src="js/curve-module.js"></script>
+	<!-- 甘特图模块 - 独立可移植 -->
+	<script type="text/javascript" src="js/gantt-module.js"></script>
+	
+	<script type="text/javascript">
+		// LayUI框架配置
+		layui.config({
+			base: '../js/'  // 设置扩展模块的基础路径
+		}).extend({
+			excel: 'layui_exts/excel',  // Excel导入导出扩展
+			xmSelect: "xm-select"       // 多选下拉框扩展
+		});
+	</script>
+</head>
+<body>
+	<!-- ===========================================
+	     顶部导航栏区域
+	     功能：提供不同功能页面的导航切换
+	     =========================================== -->
+	<nav class="top-nav">
+		<div class="nav-container">
+		<!-- 导航菜单列表 -->
+		<ul class="nav-menu">
+			<!-- 低压页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="realtime">低压</a>
+			</li>
+		<!-- 台数控制器页面导航 -->
+		<li class="nav-item">
+			<a href="#" class="nav-link" data-page="unit-controller">台数控制器</a>
+		</li>
+		<!-- 高压页面导航 -->
+		<li class="nav-item">
+			<a href="#" class="nav-link" data-page="high-pressure">高压</a>
+		</li>
+			<!-- 详细报表页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="voltage-report">详细报表</a>
+			</li>
+			<!-- 压力曲线页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="voltage-curve">压力曲线</a>
+			</li>
+			<!-- 甘特图页面导航 -->
+			<li class="nav-item">
+				<a href="#" class="nav-link" data-page="gantt">甘特图</a>
+			</li>
+		</ul>
+		</div>
+	</nav>
+
+	<!-- ===========================================
+	     主内容区域
+	     功能：包含所有功能页面的主容器
+	     =========================================== -->
+	<div class="main-content">
+		<!-- ===========================================
+		     甘特图统计页面
+		     功能：显示空压机运行状态的甘特图
+		     默认激活状态
+		     =========================================== -->
+		<div id="gantt-page" class="page-container">
+			<!-- 甘特图模块容器 - 独立可移植 -->
+			<div class="gantt-container">
+				<div class="gantt-main">
+					<!-- 查询表单 -->
+					<div class="gantt-query-form">
+						<form class="layui-form">
+							<div class="layui-form-item">
+								<!-- 时间选择模式 -->
+								<div class="layui-inline" style="margin-right: 25px; float: left;">
+									<label class="layui-form-label" style="width: auto;">时间选择模式</label>
+									<div class="layui-input-inline">
+										<select id="gantt-time-mode" name="gantt-time-mode" lay-filter="gantt-time-mode">
+											<option value="day" selected>单日</option>
+											<option value="range">自定义范围</option>
+										</select>
+									</div>
+								</div>
+								
+								<!-- 日期选择 -->
+								<div class="layui-inline" style="margin-right: 20px; float: left;">
+									<label class="layui-form-label" style="width: auto;">日期选择</label>
+									<div class="layui-inline" id="gantt-date-rangeLinked">
+										<div class="layui-input-inline">
+											<input type="text" autocomplete="off" id="gantt-start-date" class="layui-input" placeholder="开始日期">
+										</div>
+										<div class="layui-form-mid" style="display: none;">-</div>
+										<div class="layui-input-inline" style="display: none;">
+											<input type="text" autocomplete="off" id="gantt-end-date" class="layui-input" placeholder="结束日期">
+										</div>
+									</div>
+								</div>
+								
+								<!-- 查询按钮 -->
+								<div class="layui-inline" style="margin-right: 0px; float: right;">
+									<button type="button" id="gantt-search-btn" class="layui-btn">
+										<i class="layui-icon layui-icon-search"></i>
+										<span style="margin-left: 5px;">查询</span>
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+					
+					<!-- 甘特图内容 -->
+					<div class="gantt-content">
+						<h2 class="gantt-title">空压机房运行时间甘特图</h2>
+						
+						<!-- 图表容器 -->
+						<div class="gantt-chart-wrapper">
+							<div id="gantt-chart"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ===========================================
+		     实时数据页面
+		     功能：显示空压机房实时运行数据
+		     =========================================== -->
+		<div id="realtime-page" class="page-container active">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">空压机房低压实时数据监控</h2>
+							</div>
+						</div>
+						<div class="report-content" style="height: calc(100% - 60px);">
+							<!-- 空压机房工艺图容器 -->
+							<div class="compressor-room-container">
+								<img src="assets/空压机房1720_1080.png" class="background-image" alt="空压机房工艺图" />
+								
+								<!-- 磨砂玻璃质感柱形图覆盖层 -->
+								<div class="glass-chart-overlay">
+									<div id="compressor-mini-chart" style="width: 100%; height: 100%;"></div>
+								</div>
+								
+								<!-- 数据浮窗显示层 -->
+								<div class="compressor-data-points-layer">
+									<!-- 大罐前压力 -->
+									<div class="data-point" style="top: 21%; left: 86%;">
+										<div class="point-label">大罐前压力</div>
+										<div class="point-value" id="tank-front-pressure">###</div>
+									</div>
+									
+									<!-- 大罐压力 -->
+									<div class="data-point" style="top: 49%; left: 81%;">
+										<div class="point-label">大罐压力</div>
+										<div class="point-value" id="tank-pressure">###</div>
+									</div>
+									
+									<!-- 出口压力 -->
+									<div class="data-point" style="top:83%; left:66%;">
+										<div class="point-label">出口压力</div>
+										<div class="point-value" id="outlet-pressure">###</div>
+									</div>
+									
+									<!-- 出口露点 -->
+									<div class="data-point" style="top: 83%; left: 77%;">
+										<div class="point-label">出口露点</div>
+										<div class="point-value" id="outlet-dewpoint">###</div>
+									</div>
+									
+									<!-- 出流量 -->
+									<div class="data-point" style="top:83%; left: 87%;">
+										<div class="point-label">出流量</div>
+										<div class="point-value" id="outlet-flow">###</div>
+									</div>
+								</div>
+								
+								<!-- 实时数据显示区域 -->
+								<div id="compressorDataDisplay">
+									<!-- 神钢1# -->
+									<div class="compressor-data-group" id="compressor-group-0" style="left: 20.5%; top: 7.5%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-0"></div>
+											<div class="compressor-title-text">神钢1#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-0">8.5</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-0">125</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-0">运行</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 神钢2# -->
+									<div class="compressor-data-group" id="compressor-group-1" style="left: 44.5%; top: 7.5%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-1"></div>
+											<div class="compressor-title-text">神钢2#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-1">8.2</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-1">120</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-1">运行</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 神钢3# -->
+									<div class="compressor-data-group" id="compressor-group-2" style="left: 69%; top: 7.5%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-2"></div>
+											<div class="compressor-title-text">神钢3#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-2">7.8</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-2">110</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-2">停机</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 神钢4# -->
+									<div class="compressor-data-group" id="compressor-group-3" style="left: 81%; top: 7.5%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-3"></div>
+											<div class="compressor-title-text">神钢4#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-3">8.9</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-3">135</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-3">故障</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 寿力2# -->
+									<div class="compressor-data-group" id="compressor-group-4" style="left: 10.1%; top: 25%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-4"></div>
+											<div class="compressor-title-text">寿力2#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-4">8.1</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-4">115</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-4">运行</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 寿力3# -->
+									<div class="compressor-data-group" id="compressor-group-5" style="left: 10.5%; top: 52%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-5"></div>
+											<div class="compressor-title-text">寿力3#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-5">7.9</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-5">105</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-5">停机</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 寿力4# -->
+									<div class="compressor-data-group" id="compressor-group-6" style="left: 57%; top: 7.5%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="indicator-6"></div>
+											<div class="compressor-title-text">寿力4#</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">压力</div>
+												<div class="compressor-data-value">
+													<span id="pressure-6">8.7</span>
+													<span class="compressor-data-unit">bar</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电流</div>
+												<div class="compressor-data-value">
+													<span id="current-6">130</span>
+													<span class="compressor-data-unit">A</span>
+												</div>
+											</div>
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">状态</div>
+												<div class="compressor-data-value">
+													<span id="status-6">运行</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 冷干机 -->
+									<div class="compressor-data-group" id="dryer-group" style="left: 50%; top: 71%; transform: translate(-50%, -50%);">
+										<div class="compressor-title-row">
+											<div class="compressor-status-indicator left" id="dryer-indicator"></div>
+											<div class="compressor-title-text">冷干机</div>
+										</div>
+										<div class="compressor-data-row">
+											<div class="compressor-data-item">
+												<div class="compressor-data-label">电量</div>
+												<div class="compressor-data-value">
+													<span id="dryer-power">0</span>
+													<span class="compressor-data-unit">kW</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									
+									<!-- 总用量浮窗 -->
+									<div class="total-usage-container">
+										<div class="usage-window" style="left: 75%; top: 32%;">
+											<div class="usage-title">今日总用量</div>
+											<div class="usage-value"><span id="today-usage-value">0</span> KWh</div>
+										</div>
+										<div class="usage-window" style="left: 75%; top: 58%;">
+											<div class="usage-title">昨日总用量</div>
+											<div class="usage-value"><span id="yesterday-usage-value">0</span> KWh</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+		</div>
+	</div>
+
+	<!-- ===========================================
+	     台数控制器页面
+	     功能：显示空压机台数控制器界面
+	     模仿KOBELCO控制面板风格
+	     =========================================== -->
+	<div id="unit-controller-page" class="page-container">
+		<div class="content-box">
+			<div class="content">
+				<div class="report">
+					<div class="report-head">
+						<div class=" layui-form" style="padding: 10px;">
+							<h2 style="text-align: center; color: #fff; margin: 0;">空压机房低压台数控制器</h2>
+						</div>
+					</div>
+					<div class="report-content" style="height: calc(100% - 60px);">
+						<!-- 台数控制器主容器 - 上下布局 -->
+						<div class="unit-controller-container">
+							<!-- 上方：表格区域 -->
+							<div class="unit-controller-top">
+								<!-- 左侧：状态表格 -->
+								<div class="unit-controller-left">
+								<div class="unit-status-table">
+									<!-- 表头 -->
+									<div class="unit-table-header">
+										<div class="unit-header-cell unit-col-name">设备</div>
+										<div class="unit-header-cell unit-col-auto">自动</div>
+										<div class="unit-header-cell unit-col-run">运行</div>
+										<div class="unit-header-cell unit-col-load">加载</div>
+										<div class="unit-header-cell unit-col-unload">故障</div>
+										<div class="unit-header-cell unit-col-fault">先发选择</div>
+									</div>
+									<!-- 表格内容 - 8行 -->
+									<div class="unit-table-body">
+										<!-- 第1行 - 神钢4# (NO.1) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">神钢4#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator" id="unit-1-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator unit-active" id="unit-1-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-1-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-1-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-1-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第2行 - 神钢3# (NO.2) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">神钢3#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator" id="unit-2-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator" id="unit-2-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-2-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-2-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-2-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第3行 - 寿力4# (NO.3) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">寿力4#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator" id="unit-3-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator" id="unit-3-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-3-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-3-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-3-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第4行 - 神钢1# (NO.4) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">神钢1#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator unit-active" id="unit-4-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator unit-active" id="unit-4-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-4-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-4-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-4-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第5行 - 寿力1# (NO.5) - 灰色无连接状态 -->
+										<div class="unit-table-row unit-disconnected">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">寿力1#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator unit-disabled" id="unit-5-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator unit-disabled" id="unit-5-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator unit-disabled" id="unit-5-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-disabled" id="unit-5-unload">无连接</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-disabled" id="unit-5-fault">--</div>
+											</div>
+										</div>
+										<!-- 第6行 - 神钢2# (NO.6) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">神钢2#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator unit-active" id="unit-6-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator" id="unit-6-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-6-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-6-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-6-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第7行 - 寿力2# (NO.7) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">寿力2#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator" id="unit-7-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator" id="unit-7-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-7-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-7-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-7-fault">OFF</div>
+											</div>
+										</div>
+										<!-- 第8行 - 寿力3# (NO.8) -->
+										<div class="unit-table-row">
+											<div class="unit-cell unit-col-name">
+												<span class="unit-name">寿力3#</span>
+											</div>
+											<div class="unit-cell unit-col-auto">
+												<div class="unit-indicator" id="unit-8-auto"></div>
+											</div>
+											<div class="unit-cell unit-col-run">
+												<div class="unit-indicator unit-active" id="unit-8-run"></div>
+											</div>
+											<div class="unit-cell unit-col-load">
+												<div class="unit-indicator" id="unit-8-load"></div>
+											</div>
+											<div class="unit-cell unit-col-unload">
+												<div class="unit-status-block unit-status-normal" id="unit-8-unload">正常</div>
+											</div>
+											<div class="unit-cell unit-col-fault">
+												<div class="unit-status-block unit-status-off" id="unit-8-fault">OFF</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								</div>
+								
+								<!-- 右侧：参数表格 -->
+								<div class="unit-controller-right">
+								<div class="unit-params-panel">
+									<!-- 压力参数组 -->
+									<div class="unit-param-group">
+										<div class="unit-param-row">
+											<span class="unit-param-label">PIH:</span>
+											<span class="unit-param-value" id="param-pih">0.580</span>
+											<span class="unit-param-unit">Mpa</span>
+										</div>
+										<div class="unit-param-row">
+											<span class="unit-param-label">PH:</span>
+											<span class="unit-param-value" id="param-ph">0.550</span>
+											<span class="unit-param-unit">Mpa</span>
+										</div>
+										<div class="unit-param-row">
+											<span class="unit-param-label">PL:</span>
+											<span class="unit-param-value" id="param-pl">0.520</span>
+											<span class="unit-param-unit">Mpa</span>
+										</div>
+										<div class="unit-param-row">
+											<span class="unit-param-label">PLL:</span>
+											<span class="unit-param-value" id="param-pll">0.505</span>
+											<span class="unit-param-unit">Mpa</span>
+											</div>
+									</div>
+									
+									<!-- 系统压力显示 -->
+									<div class="unit-system-pressure">
+										<span class="unit-system-pressure-label">系统压力:</span>
+										<div class="unit-system-pressure-value">
+											<span class="unit-system-pressure-number" id="system-pressure-value">0.523</span>
+											<span class="unit-system-pressure-unit">Mpa</span>
+										</div>
+									</div>
+								</div>
+								</div>
+							</div>
+							
+							<!-- 下方：横置压力条区域 -->
+							<div class="unit-controller-bottom">
+								<div class="horizontal-pressure-container">
+									<div class="horizontal-pressure-header">
+										<span class="horizontal-pressure-title">系统压力</span>
+										<div class="horizontal-pressure-value-display">
+											<span class="horizontal-pressure-value-number" id="horizontal-pressure-value">0.80</span>
+											<span class="horizontal-pressure-value-unit">Mpa</span>
+										</div>
+									</div>
+									<div class="horizontal-pressure-bar-wrapper">
+										<!-- 压力条轨道 -->
+										<div class="horizontal-pressure-bar-track">
+											<div class="horizontal-pressure-bar-fill" id="horizontal-pressure-bar-fill" style="width: 50%;"></div>
+										</div>
+										<!-- 刻度线容器（叠加在压力条上方） -->
+										<div class="horizontal-pressure-scale">
+											<div class="horizontal-scale-item" style="left: 0%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">0.00</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 12.5%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">0.20</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 25%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">0.40</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 37.5%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">0.60</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 50%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">0.80</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 62.5%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">1.00</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 75%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">1.20</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 87.5%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">1.40</div>
+											</div>
+											<div class="horizontal-scale-item" style="left: 100%;">
+												<div class="horizontal-scale-line"></div>
+												<div class="horizontal-scale-value">1.60</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ===========================================
+	     高压页面
+	     功能：显示高压系统的实时数据监控
+	     完全独立的数据系统、样式与低压分离
+	     =========================================== -->
+	<div id="high-pressure-page" class="page-container">
+		<div class="content-box">
+			<div class="content">
+				<div class="report">
+					<div class="report-head">
+						<div class=" layui-form" style="padding: 10px;">
+							<h2 style="text-align: center; color: #fff; margin: 0;">空压机房高压实时数据监控</h2>
+						</div>
+					</div>
+					<div class="report-content" style="height: calc(100% - 60px);">
+						<!-- 高压系统工艺图容器 - 独立CSS类 -->
+						<div class="high-pressure-room-container">
+							<img src="assets/高压组1720_1080.png" class="high-pressure-background-image" alt="高压系统工艺图" />
+							
+							<!-- 高压实时数据显示区域 -->
+							<div id="highPressureDataDisplay">
+								<!-- 1#活塞机标题浮窗 -->
+								<div class="piston-title-box" style="left: 14%; top: 4%;">
+									<span class="piston-number">1#</span>
+									<span class="piston-name">活塞机</span>
+								</div>
+								
+								<!-- 1#活塞机状态浮窗 -->
+								<div class="piston-status-panel" style="left: 3%; top: 9%;">
+									<div class="status-light running" id="piston-1-run">运行</div>
+									<div class="status-light normal" id="piston-1-normal">正常</div>
+									<div class="status-light auto" id="piston-1-mode">自动</div>
+									<div class="status-light interlock" id="piston-1-interlock">联锁</div>
+								</div>
+								
+								<!-- 1#活塞机运行时长浮窗 -->
+								<div class="piston-hours-box" style="left: 29%; top: 18%;">
+									<span class="hours-value" id="piston-1-hours">1533</span>
+									<span class="hours-unit">H</span>
+								</div>
+								
+								<!-- 2#活塞机标题浮窗 -->
+								<div class="piston-title-box" style="left: 14%; top: 26%;">
+									<span class="piston-number">2#</span>
+									<span class="piston-name">活塞机</span>
+								</div>
+								
+								<!-- 2#活塞机状态浮窗 -->
+								<div class="piston-status-panel" style="left: 3%; top: 30%;">
+									<div class="status-light stopped" id="piston-2-run">停止</div>
+									<div class="status-light normal" id="piston-2-normal">正常</div>
+									<div class="status-light auto" id="piston-2-mode">自动</div>
+									<div class="status-light interlock" id="piston-2-interlock">联锁</div>
+								</div>
+								
+								<!-- 2#活塞机运行时长浮窗 -->
+								<div class="piston-hours-box" style="left: 29%; top: 39%;">
+									<span class="hours-value" id="piston-2-hours">1343</span>
+									<span class="hours-unit">H</span>
+								</div>
+								
+								<!-- 3#活塞机标题浮窗 -->
+								<div class="piston-title-box" style="left: 14%; top: 47.5%;">
+									<span class="piston-number">3#</span>
+									<span class="piston-name">活塞机</span>
+								</div>
+								
+								<!-- 3#活塞机状态浮窗 -->
+								<div class="piston-status-panel" style="left: 3%; top: 51%;">
+									<div class="status-light stopped" id="piston-3-run">停止</div>
+									<div class="status-light normal" id="piston-3-normal">正常</div>
+									<div class="status-light auto" id="piston-3-mode">自动</div>
+									<div class="status-light interlock" id="piston-3-interlock">联锁</div>
+								</div>
+								
+								<!-- 3#活塞机运行时长浮窗 -->
+								<div class="piston-hours-box" style="left: 29%; top: 60%;">
+									<span class="hours-value" id="piston-3-hours">1440</span>
+									<span class="hours-unit">H</span>
+								</div>
+								
+								<!-- 4#活塞机标题浮窗 -->
+								<div class="piston-title-box" style="left: 14%; top: 69.5%;">
+									<span class="piston-number">4#</span>
+									<span class="piston-name">活塞机</span>
+								</div>
+								
+								<!-- 4#活塞机状态浮窗 -->
+								<div class="piston-status-panel" style="left: 3%; top: 73%;">
+									<div class="status-light running" id="piston-4-run">运行</div>
+									<div class="status-light normal" id="piston-4-normal">正常</div>
+									<div class="status-light auto" id="piston-4-mode">自动</div>
+									<div class="status-light interlock" id="piston-4-interlock">联锁</div>
+								</div>
+								
+								<!-- 4#活塞机运行时长浮窗 -->
+								<div class="piston-hours-box" style="left: 29%; top: 82%;">
+									<span class="hours-value" id="piston-4-hours">1526</span>
+									<span class="hours-unit">H</span>
+								</div>
+								
+								<!-- 系统参数与电能表综合浮窗 -->
+								<div class="system-power-panel" style="left: 54%; top: 32%;">
+									<!-- 系统参数部分 - 单列大参数 -->
+									<div class="main-param-row">
+										<span class="param-label">系统压力</span>
+										<span class="param-value" id="system-pressure">4.51</span>
+										<span class="param-unit">Mpa</span>
+									</div>
+									<div class="main-param-row">
+										<span class="param-label">瞬时流量</span>
+										<span class="param-value" id="instant-flow">860.7</span>
+										<span class="param-unit">Nm³/H</span>
+									</div>
+									<div class="main-param-row">
+										<span class="param-label">累积流量</span>
+										<span class="param-value" id="accumulated-flow">4888467.0</span>
+										<span class="param-unit">Nm³</span>
+									</div>
+									
+									<!-- 分隔线 -->
+									<div class="panel-divider"></div>
+									
+									<!-- 电压电流部分 - 双列小参数 -->
+									<div class="dual-param-row">
+										<div class="mini-param">
+											<span class="mini-label">Uab线电压</span>
+											<span class="mini-value" id="voltage-uab">379.6</span>
+											<span class="mini-unit">V</span>
+										</div>
+										<div class="mini-param">
+											<span class="mini-label">Ic线电流</span>
+											<span class="mini-value" id="current-ic">20.3</span>
+											<span class="mini-unit">A</span>
+										</div>
+									</div>
+									<div class="dual-param-row">
+										<div class="mini-param">
+											<span class="mini-label">Ubc线电压</span>
+											<span class="mini-value" id="voltage-ubc">378.5</span>
+											<span class="mini-unit">V</span>
+										</div>
+										<div class="mini-param">
+											<span class="mini-label">Ib线电流</span>
+											<span class="mini-value" id="current-ib">21.1</span>
+											<span class="mini-unit">A</span>
+										</div>
+									</div>
+									<div class="dual-param-row">
+										<div class="mini-param">
+											<span class="mini-label">Uca线电压</span>
+											<span class="mini-value" id="voltage-uca">381.8</span>
+											<span class="mini-unit">V</span>
+										</div>
+										<div class="mini-param">
+											<span class="mini-label">Ia线电流</span>
+											<span class="mini-value" id="current-ia">20.4</span>
+											<span class="mini-unit">A</span>
+										</div>
+									</div>
+									
+									<!-- 分隔线 -->
+									<div class="panel-divider"></div>
+									
+									<!-- 有功电能 - 单列大参数 -->
+									<div class="main-param-row energy-row">
+										<span class="param-label">有功电能</span>
+										<span class="param-value energy-value" id="active-energy">141716.7</span>
+										<span class="param-unit">kWh</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ===========================================
+	     通讯状态页面
+	     功能：监控设备通讯连接状态
+	     状态：待开发
+	     =========================================== -->
+	<div id="communication-page" class="page-container">
+			<div class="content-box">
+				<div class="content">
+					<div class="report">
+						<div class="report-head">
+							<div class=" layui-form" style="padding: 10px;">
+								<h2 style="text-align: center; color: #fff; margin: 0;">通讯状态监控</h2>
+							</div>
+						</div>
+						<div class="report-content">
+							<div class="layui-row layui-col-space10">
+								<div class="layui-col-md12">
+									<div class=" layui-form" style="height:100%;padding:20px;">
+										<p style="color: #fff; text-align: center; font-size: 18px;">通讯状态功能开发中...</p>
+										<!-- 这里可以添加通讯状态监控界面 -->
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ===========================================
+		     电压报表页面
+		     功能：分析和展示电压相关报表数据
+		     状态：待开发
+		     =========================================== -->
+		<div id="voltage-report-page" class="page-container">
+			<!-- 报表模块容器 - 独立可移植 -->
+			<div class="report-container">
+				<div class="report-main">
+					<!-- 查询表单 -->
+					<div class="report-query-form">
+						<form class="layui-form">
+							<div class="layui-form-item">
+								<!-- 日期类型 -->
+								<div class="layui-inline" style="margin-right: 25px; float: left;">
+									<label class="layui-form-label" style="width: auto;">日期类型</label>
+									<div class="layui-input-inline">
+										<select id="report-date-type" name="report-date-type" lay-filter="report-date-type">
+											<option value="day" selected>单日</option>
+											<option value="range">自定义范围</option>
+										</select>
+									</div>
+								</div>
+								
+								<!-- 日期选择 -->
+								<div class="layui-inline" style="margin-right: 20px; float: left;">
+									<label class="layui-form-label" style="width: auto;">日期选择</label>
+									<div class="layui-inline" id="report-date-rangeLinked">
+										<div class="layui-input-inline">
+											<input type="text" autocomplete="off" id="report-start-date" class="layui-input" placeholder="开始日期">
+										</div>
+										<div class="layui-form-mid" style="display: none;">-</div>
+										<div class="layui-input-inline" style="display: none;">
+											<input type="text" autocomplete="off" id="report-end-date" class="layui-input" placeholder="结束日期">
+										</div>
+									</div>
+								</div>
+								
+								<!-- 按钮组 -->
+								<div class="layui-inline" style="margin-right: 0px; float: right;">
+									<button type="button" id="report-search-btn" class="layui-btn">
+										<i class="layui-icon layui-icon-search"></i>
+										<span style="margin-left: 5px;">查询</span>
+									</button>
+									<button type="button" id="report-export-btn" class="layui-btn layui-btn-warm">
+										<span style="margin-right: 5px;">导出</span>
+										<i class="layui-icon layui-icon-print"></i>
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+					
+					<!-- 报表内容 -->
+					<div class="report-content">
+						<h2 class="report-title">空压机房统计明细报表</h2>
+						<div class="report-unit">
+							<label>单位:</label> <span>kW·h</span>
+						</div>
+						
+						<!-- 表格 -->
+						<div class="report-table-wrapper">
+							<table id="report-table" class="report-table">
+								<thead>
+									<tr>
+										<th>时间</th>
+										<th>A项电压</th>
+										<th>B项电压</th>
+										<th>C项电压</th>
+										<th>A项电流</th>
+										<th>B项电流</th>
+										<th>C项电流</th>
+										<th>AB线电压</th>
+										<th>BC线电压</th>
+										<th>CA线电压</th>
+										<th>无功功率</th>
+										<th>有功功率</th>
+										<th>视在功率</th>
+										<th>总功率因数</th>
+										<th>频率</th>
+									</tr>
+								</thead>
+								<tbody id="report-table-body">
+									<tr>
+										<td colspan="15" class="report-empty">请点击查询按钮获取数据</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ===========================================
+		     电压曲线页面
+		     功能：绘制和分析电压变化曲线
+		     状态：待开发
+		     =========================================== -->
+		<div id="voltage-curve-page" class="page-container">
+			<!-- 曲线模块容器 - 独立可移植 -->
+			<div class="curve-container">
+				<div class="curve-main">
+					<!-- 查询表单 -->
+					<div class="curve-query-form">
+						<form class="layui-form">
+							<div class="layui-form-item">
+								<!-- 时间选择模式 -->
+								<div class="layui-inline" style="margin-right: 25px; float: left;">
+									<label class="layui-form-label" style="width: auto;">时间选择模式</label>
+									<div class="layui-input-inline">
+										<select id="curve-time-mode" name="curve-time-mode" lay-filter="curve-time-mode">
+											<option value="day" selected>单日</option>
+											<option value="range">自定义范围</option>
+										</select>
+									</div>
+								</div>
+							
+							<!-- 日期选择 -->
+							<div class="layui-inline" style="margin-right: 20px; float: left;">
+								<label class="layui-form-label" style="width: auto;">日期选择</label>
+								<div class="layui-inline" id="curve-date-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="curve-start-date" class="layui-input" placeholder="开始日期">
+									</div>
+									<div class="layui-form-mid" style="display: none;">-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="curve-end-date" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							
+								<!-- 查询按钮 -->
+								<div class="layui-inline" style="margin-right: 0px; float: right;">
+									<button type="button" id="curve-search-btn" class="layui-btn">
+										<i class="layui-icon layui-icon-search"></i>
+										<span style="margin-left: 5px;">查询</span>
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+					
+					<!-- 曲线内容 -->
+					<div class="curve-content">
+						<h2 class="curve-title">空压机房压力曲线</h2>
+						<div class="curve-unit">
+							<label>单位:</label> <span>bar</span>
+						</div>
+						
+						<!-- 图表容器 -->
+						<div class="curve-chart-wrapper">
+							<div id="curve-chart"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	/* ===========================================
+	   页面管理器（PageManager）
+	   功能：管理多页面切换、模块初始化和导航状态
+	   =========================================== */
+	const PageManager = {
+		// 当前激活的页面ID（初始为空，避免showPage方法提前返回）
+		currentPage: '',
+		
+		/**
+		 * 初始化页面管理器
+		 * 绑定事件并显示默认页面
+		 */
+		init: function() {
+			this.bindEvents();
+			// 默认初始化实时数据页面
+			this.showPage('realtime');
+			// 设置默认导航菜单选中状态
+			this.updateNavigation('realtime');
+		},
+		
+		/**
+		 * 绑定页面相关事件
+		 * 主要处理导航菜单的点击事件
+		 */
+		bindEvents: function() {
+			const self = this;
+			
+			// 导航链接点击事件处理
+			$('.nav-link').on('click', function(e) {
+				e.preventDefault(); // 阻止默认链接跳转
+				const pageId = $(this).data('page'); // 获取页面ID
+				self.showPage(pageId); // 显示对应页面
+				self.updateNavigation(pageId); // 更新导航状态
+			});
+		},
+		
+		/**
+		 * 显示指定页面
+		 * @param {string} pageId - 页面ID
+		 */
+		showPage: function(pageId) {
+			console.log(`显示页面: ${pageId}, 当前页面: ${this.currentPage}`);
+			
+			// 如果已经是当前页面，则不重复操作
+			if (this.currentPage === pageId) {
+				console.log('页面已经是当前页面，跳过切换');
+				return;
+			}
+			
+			// 隐藏所有页面容器
+			$('.page-container').removeClass('active');
+			
+			// 显示选中的页面容器
+			$('#' + pageId + '-page').addClass('active');
+			console.log(`页面容器 ${pageId}-page 已激活`);
+			
+			// 如果是甘特图页面，先重置状态
+			if (pageId === 'gantt' && window.GanttModule && window.GanttModule.reset) {
+				console.log('重置甘特图模块状态');
+				window.GanttModule.reset();
+			}
+			
+			// 初始化页面对应的功能模块
+			this.initPageModule(pageId);
+			
+			// 更新当前页面记录
+			this.currentPage = pageId;
+		},
+		
+		/**
+		 * 初始化页面功能模块
+		 * 根据页面ID调用对应模块的初始化方法
+		 * @param {string} pageId - 页面ID
+		 */
+		initPageModule: function(pageId) {
+			// 确保页面切换动画完成后再初始化模块
+			setTimeout(() => {
+				console.log('正在初始化页面模块:', pageId);
+				
+				switch(pageId) {
+					case 'gantt':
+						// 初始化甘特图模块
+						if (window.GanttModule) {
+							window.GanttModule.init();
+						} else {
+							console.error('GanttModule模块未找到');
+						}
+						break;
+					case 'realtime':
+						// 初始化实时数据模块
+						if (window.RealtimeModule) {
+							window.RealtimeModule.init();
+							// 确保图表正确显示
+							setTimeout(() => {
+								if (window.RealtimeModule.chartInstance) {
+									window.RealtimeModule.chartInstance.resize();
+								}
+							}, 300);
+							// 从缓存恢复低压系统数据
+							if (window.CompressorSystemUpdate) {
+								window.CompressorSystemUpdate.restoreFromCache('lowPressure');
+							}
+						}
+						break;
+					case 'unit-controller':
+						// 初始化台数控制器模块
+						if (window.UnitControllerModule) {
+							window.UnitControllerModule.init();
+							// 从缓存恢复台数控制器数据
+							if (window.CompressorSystemUpdate) {
+								window.CompressorSystemUpdate.restoreFromCache('unitController');
+							}
+						} else {
+							console.error('UnitControllerModule模块未找到');
+						}
+						break;
+					case 'high-pressure':
+						// 初始化高压数据模块
+						if (window.HighPressureModule) {
+							window.HighPressureModule.init();
+							// 确保图表正确显示
+							setTimeout(() => {
+								if (window.HighPressureModule.chartInstance) {
+									window.HighPressureModule.chartInstance.resize();
+								}
+							}, 300);
+							// 从缓存恢复高压系统数据
+							if (window.CompressorSystemUpdate) {
+								window.CompressorSystemUpdate.restoreFromCache('highPressure');
+							}
+						} else {
+							console.error('HighPressureModule模块未找到');
+						}
+						break;
+					case 'communication':
+						// 初始化通讯状态模块
+						if (window.CommunicationModule) {
+							window.CommunicationModule.init();
+						}
+						break;
+					case 'voltage-report':
+						// 初始化报表模块
+						if (window.ReportModule) {
+							window.ReportModule.init();
+						} else {
+							console.error('ReportModule模块未找到');
+						}
+						break;
+					case 'voltage-curve':
+						// 初始化曲线模块
+						if (window.CurveModule) {
+							window.CurveModule.init();
+							// 确保图表正确显示
+							setTimeout(() => {
+								if (window.CurveModule.chartInstance) {
+									window.CurveModule.chartInstance.resize();
+								}
+							}, 300);
+						} else {
+							console.error('CurveModule模块未找到');
+						}
+						break;
+				}
+			}, 200); // 增加延迟时间到200ms，确保页面切换动画完成
+		},
+		
+		/**
+		 * 更新导航栏状态
+		 * 移除所有active类，为当前页面添加active类
+		 * @param {string} pageId - 页面ID
+		 */
+		updateNavigation: function(pageId) {
+			$('.nav-link').removeClass('active'); // 移除所有导航项的激活状态
+			$('.nav-link[data-page="' + pageId + '"]').addClass('active'); // 激活当前页面导航
+		}
+	};
+
+	/* ===========================================
+	   应用程序入口
+	   初始化LayUI组件并启动页面管理器
+	   =========================================== */
+	layui.use(['form', 'laydate', 'util', 'excel', 'xmSelect', 'element'], function() {
+		// 将layui实例暴露到全局作用域，供各模块使用
+		window.layui = layui;
+		// 将jQuery实例暴露到全局作用域，供各模块使用
+		window.$ = layui.$;
+		
+		console.log('LayUI组件加载完成，准备启动页面管理器');
+		
+		// 确保所有组件都已加载完成后再启动页面管理器
+		setTimeout(() => {
+			console.log('启动页面管理器');
+			PageManager.init();
+			
+			// 页面加载完成，显示统一数据更新接口帮助信息
+			setTimeout(() => {
+				if (window.CompressorSystemUpdate && window.CompressorSystemUpdate.help) {
+					window.CompressorSystemUpdate.help();
+				} else {
+					console.error('CompressorSystemUpdate 未找到，请检查 page-modules.js 是否正确加载');
+				}
+				
+				
+	
+				
+				
+			}, 1000);
+		}, 500); // 延迟500ms确保所有LayUI组件完全就绪
+		
+		
+
+		
+		
+	});
+</script>
+
+</body>
+</html>

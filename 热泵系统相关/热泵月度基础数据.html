@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+    <title>热泵月度基础数据</title>
+    <link rel="stylesheet" href="../js/css/layui.css">
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script src="./heatpump-report-config.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        }).extend({
+            excel: 'excel'
+        });
+    </script>
+    
+    <style>
+        /* ========== 基础样式 (严格复用深蓝模板) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 强制不换行 */
+        .nowrap-style { white-space: nowrap !important; }
+
+        /* ========== 顶部工具栏 (复用之前的样式) ========== */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 5px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            height: 50px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 18px; font-weight: bold; color: #fff7ca; white-space: nowrap; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 控件组 */
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-group label { color: #b9d3f4; white-space: nowrap; }
+        .control-group input, .control-group select {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid #3c8ce7;
+            color: white;
+            padding: 0 10px;
+            border-radius: 4px;
+            height: 28px;
+            line-height: 28px;
+            outline: none;
+            cursor: pointer;
+        }
+        .control-group select { width: 120px; }
+
+        /* 按钮样式 */
+        .layui-btn {
+            height: 28px; line-height: 28px; padding: 0 15px;
+            border-radius: 2px; border: none; background-color: #16baaa;
+            color: #fff; font-size: 13px; cursor: pointer; white-space: nowrap;
+        }
+        .layui-bg-orange { background-color: #ffb800 !important; }
+
+        /* ========== 表格区域 (全屏) ========== */
+        .table-section {
+            flex: 1;
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            padding: 5px;
+        }
+
+        .table-scroll {
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* 表格样式 (深蓝风格 + 还原列结构) */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #3c8ce7;
+            padding: 8px 6px;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .data-table thead th {
+            background: #0c6ed3;
+            color: #fff;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 10px 6px; /* 表头稍微高一点 */
+        }
+
+        .data-table tbody td { background: #1e4e89; color: #fff; }
+        .data-table tbody tr:hover td { background: rgba(48, 127, 190, 0.91); }
+
+        /* 底部合计行样式 */
+        .row-total td {
+            background: #2e4e7e !important;
+            font-weight: bold;
+            color: #fff7ca;
+        }
+
+        /* 红色文字 (如COP过低或异常) */
+        .text-red { color: #ff4d4f !important; font-weight: bold; }
+        
+        /* 绿色文字 (正常) */
+        .text-green { color: #52c41a !important; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%); border-radius: 6px; }
+        ::-webkit-scrollbar-track { background: #1d386f; }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar nowrap-style">
+            <div class="toolbar-left">
+                <div class="control-group">
+                    <label>统计月份</label>
+                    <input type="text" id="date-input" readonly style="width: 110px;">
+                </div>
+
+                <div class="control-group">
+                    <label>区域</label>
+                    <select id="area-select">
+                        <!-- 选项通过JS动态生成，根据配置文件 -->
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>机组</label>
+                    <select id="unit-select">
+                        <!-- 选项通过JS动态生成，根据选中的区域联动 -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="toolbar-center">
+                <span class="toolbar-title">热泵月度基础数据</span>
+            </div>
+
+            <div class="toolbar-right">
+                <button type="button" id="btn-search" class="layui-btn">
+                    <i class="layui-icon layui-icon-search"></i> 查询
+                </button>
+                <button type="button" id="btn-export" class="layui-btn layui-bg-orange">
+                    <i class="layui-icon layui-icon-export"></i> 导出
+                </button>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-scroll">
+                <table class="data-table" id="report-table">
+                    </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'excel'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        var excel = layui.excel;
+
+        // ========== 初始化下拉框 ==========
+        function initDropdowns() {
+            var areaSelect = $('#area-select');
+            var unitSelect = $('#unit-select');
+            var mapping = window.REPORT_CONFIG.areaUnitMapping;
+
+            // 1. 初始化区域下拉框
+            var firstAreaCode = null;
+            for (var code in mapping) {
+                if (mapping.hasOwnProperty(code)) {
+                    var area = mapping[code];
+                    areaSelect.append(`<option value="${code}">${area.areaName}</option>`);
+                    if (!firstAreaCode) firstAreaCode = code;
+                }
+            }
+
+            // 2. 初始化机组下拉框（默认选中第一个区域的机组）
+            if (firstAreaCode) {
+                updateUnitOptions(firstAreaCode);
+            }
+
+            // 3. 区域变更时联动机组下拉框
+            areaSelect.change(function() {
+                var selectedArea = $(this).val();
+                updateUnitOptions(selectedArea);
+            });
+        }
+
+        // 根据选中的区域更新机组选项
+        function updateUnitOptions(areaCode) {
+            var unitSelect = $('#unit-select');
+            var mapping = window.REPORT_CONFIG.areaUnitMapping;
+
+            unitSelect.empty(); // 清空现有选项
+
+            if (mapping[areaCode] && mapping[areaCode].units) {
+                var units = mapping[areaCode].units;
+                units.forEach(function(unit) {
+                    // 机组选项携带unitNo参数（在data属性中存储）
+                    unitSelect.append(
+                        `<option value="${unit.unitCode}" data-unit-no="${unit.unitNo}">${unit.unitName}</option>`
+                    );
+                });
+            }
+        }
+
+        // 获取当前选中机组的unitNo
+        function getSelectedUnitNo() {
+            var unitSelect = $('#unit-select');
+            var selectedOption = unitSelect.find('option:selected');
+            return selectedOption.attr('data-unit-no') || '';
+        }
+		
+		// 获取当前选中机组的名称
+        function getSelectedUnitName() {
+            var unitSelect = $('#unit-select');
+            var selectedOption = unitSelect.find('option:selected');
+            return selectedOption.text() || '';
+        }
+		
+		// 获取当前选中区域的名称
+        function getSelectedAreaName() {
+			debugger;
+            var unitSelect = $('#area-select');
+            var selectedOption = unitSelect.find('option:selected');
+            return selectedOption.text() || '';
+        }
+
+        // ========== 初始化日期选择器 ==========
+        laydate.render({
+            elem: '#date-input',
+            type: 'month',
+            value: new Date(),
+            theme: '#1e88e5'
+        });
+
+        // ========== 初始化下拉框 ==========
+        initDropdowns();
+
+        // ========== 初始加载数据 ==========
+        loadData();
+
+        // ========== 查询事件 ==========
+        $('#btn-search').click(function() {
+            loadData();
+        });
+
+        // ========== 数据加载函数 (调用SQL接口) ==========
+        function loadData() {
+            var unitNo = getSelectedUnitNo(); // 获取选中的机组编号
+			var unitName = getSelectedUnitName();
+			var AreaName = getSelectedAreaName();//获取选中的区域名称
+            var monthStr = $('#date-input').val(); // 获取选中的月份，格式: "2024-01"
+
+            if (!unitNo) {
+                layer.msg('艹！请先选择机组', {icon: 2});
+                return;
+            }
+
+            if (!monthStr) {
+                layer.msg('艹！请先选择月份', {icon: 2});
+                return;
+            }
+
+            var idx = layer.load(1, {shade: 0.1});
+
+            // 调用SQL查询接口（异步）
+            window.REPORT_CONFIG.fetchSQLData(unitNo, monthStr,AreaName,unitName)
+                .then(function(data) {
+                    renderTable(data);
+                    layer.close(idx);
+                })
+                .catch(function(err) {
+                    layer.close(idx);
+                    console.error('❌ SQL查询失败:', err);
+                    layer.msg('数据加载失败，请检查SQL接口配置', {icon: 2});
+                });
+        }
+
+        // ========== 渲染表格 (核心逻辑) ==========
+        function renderTable(data) {
+            var table = $('#report-table');
+            var columns = window.REPORT_CONFIG.columns;
+
+            // 1. 构建表头
+            var thead = '<thead><tr>';
+            columns.forEach(function(col) {
+                thead += `<th>${col.title}</th>`;
+            });
+            thead += '</tr></thead>';
+
+            // 2. 构建表体
+            var tbody = '<tbody>';
+
+            // 2.1 数据行
+            data.rows.forEach(function(row) {
+				debugger;
+                tbody += '<tr>';
+                columns.forEach(function(col) {
+                    var val = (row[col.field] == null) ?'':row[col.field];
+                    var cls = '';
+
+                    // 特殊样式处理 (如：室外温度<0标红)
+                    //if (col.field === 'tempOutdoor' && parseFloat(val) < 0) cls = 'text-red';
+                    // 能效比低也标红
+                    //if (col.field === 'cop' && val !== '热/电' && parseFloat(val) < 2.4) cls = 'text-red';
+
+                    tbody += `<td class="${cls}">${val}</td>`;
+                });
+                tbody += '</tr>';
+            });
+
+            // 2.2 合计/平均值行
+            var totalRow = data.totalRow;
+            tbody += '<tr class="row-total">';
+            columns.forEach(function(col) {
+                var val = totalRow[col.field] || (col.field === 'date' ? '合计/平均' : '');
+                tbody += `<td>${val}</td>`;
+            });
+            tbody += '</tr>';
+
+            tbody += '</tbody>';
+
+            table.html(thead + tbody);
+        }
+
+        // ========== 导出功能 ==========
+        $('#btn-export').click(function() {
+            try {
+                // 1. 获取表格数据
+                var table = $('#report-table');
+                var columns = window.REPORT_CONFIG.columns;
+
+                // 2. 构建导出数据（包含表头）
+                var dataArr = [];
+
+                // 2.1 添加表头行
+                var headerRow = {};
+                columns.forEach(function(col) {
+                    headerRow[col.field] = col.title;
+                });
+                dataArr.push(headerRow);
+
+                // 2.2 获取表格中的所有数据行
+                table.find('tbody tr').each(function() {
+                    var row = {};
+                    $(this).find('td').each(function(idx) {
+                        var field = columns[idx].field;
+                        var val = $(this).text().trim();
+                        row[field] = val;
+                    });
+                    dataArr.push(row);
+                });
+
+                // 3. 设置列宽（根据表格列数动态设置，默认宽度120）
+                var colConfig = {};
+                var columnWidths = {
+                    'date': 100,
+                    'timeSlot': 80,
+                    'tempOutdoor': 100,
+                    'tempInlet': 100,
+                    'tempOutlet': 100,
+                    'tempReturn': 100,
+                    'power': 100,
+                    'cop': 100,
+                    'heatQuantity': 100
+                };
+
+                for (var i = 0; i < columns.length; i++) {
+                    var colLetter = String.fromCharCode(65 + i); // A, B, C...
+                    var width = columnWidths[columns[i].field] || 120;
+                    colConfig[colLetter] = width;
+                }
+
+                var colConf = excel.makeColConfig(colConfig, 100);
+				// 保存原始字段顺序（从第二行表头获取，因为它包含所有字段）
+				const fieldOrder = Object.keys(dataArr[1]);
+				console.log("步骤8.1: 保存的字段顺序:", fieldOrder);
+                // 4. 设置单元格样式（居中对齐）
+                dataArr = excel.setExportCellStyle(dataArr, '', {
+                    s: {
+                        alignment: {
+                            horizontal: 'center',
+                            vertical: 'center'
+                        }
+                    }
+                }, function(cell, newCell) {
+                    // 保持数字类型
+                    if (Object.prototype.toString.call(cell).slice(8,-1) == "Number" || isStringNumber(cell) == true) {
+                        return {
+                            v: cell,
+                            t: 'n',
+                            s: newCell.s
+                        };
+                    }
+                    return newCell;
+                });
+				console.log("步骤9: 设置样式后的dataArr");
+				console.log("dataArr长度:", dataArr.length);
+				console.log("dataArr[0]字段顺序:", Object.keys(dataArr[0]));
+				console.log("dataArr[1]字段顺序:", Object.keys(dataArr[1]));
+				
+				// 步骤9.1: 按照原始字段顺序重新组织数据
+				console.log("步骤9.1: 按原始顺序重新组织数据");
+				const reorderedDataArr = [];
+				for(let i = 0; i < dataArr.length; i++) {
+					const reorderedRow = {};
+					for(let j = 0; j < fieldOrder.length; j++) {
+						const field = fieldOrder[j];
+						reorderedRow[field] = dataArr[i][field];
+					}
+					reorderedDataArr.push(reorderedRow);
+				}
+				console.log("重新排序后dataArr[0]字段顺序:", Object.keys(reorderedDataArr[0]));
+				console.log("重新排序后dataArr[1]字段顺序:", Object.keys(reorderedDataArr[1]));
+				
+				console.log("步骤10: 准备导出Excel");
+				console.log("列宽配置:", colConf);
+				
+				
+				
+				
+
+                // 5. 生成文件名（带时间戳）
+                var now = new Date();
+                var timestamp = now.getFullYear() +
+                    (now.getMonth() + 1).toString().padStart(2, '0') +
+                    now.getDate().toString().padStart(2, '0') +
+                    now.getHours().toString().padStart(2, '0') +
+                    now.getMinutes().toString().padStart(2, '0') +
+                    now.getSeconds().toString().padStart(2, '0');
+                var fileName = '热泵月度基础数据_' + timestamp + '.xlsx';
+
+                // 6. 执行导出
+                excel.exportExcel({
+                    sheet1: reorderedDataArr
+                }, fileName, 'xlsx', {
+                    extend: {
+                        sheet1: {
+                            '!cols': colConf
+                        }
+                    }
+                });
+
+                //layer.msg('导出成功！', {icon: 1});
+
+            } catch (err) {
+                console.error('❌ 导出失败:', err);
+                layer.msg('导出失败，请检查控制台', {icon: 2});
+            }
+			
+			function isStringNumber(str){
+				return /^-?\d+(\.\d+)?$/.test(str.trim());
+			}
+			
+        });
+		
+
+		
+		
+		
+		
+    });
+    </script>
+</body>
+</html>

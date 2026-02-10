@@ -1,0 +1,790 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>电能统计明细曲线_多表查询类型</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		/* background: #1f2f51; */
+		background: #0f266c;
+	}
+	.content {
+		
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+		
+	}
+	.report-content {
+		height: calc(100% - 72px);
+		margin-top : 10px;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder { /* 最新标准 */
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important; /* 使用 !important 来确保覆盖 */
+	}
+	
+	.layui-table-hover{
+		background-color: rgba(48, 127, 190, 0.91);
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(48, 127, 190, 0.91) !important; /* 调整后的背景色 */
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	
+	
+	
+	
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-head">
+					<div class=" layui-form" style="padding: 10px;" id = "top">
+									
+						<div class="layui-form-item">
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "width:auto" >日期范围</label>
+								<div class="layui-inline" id="ID-laydate-rangeLinked">
+									<div class="layui-input-inline">
+										<input type="text" autocomplete="off" id="ID-laydate-start-date-1" class="layui-input" placeholder="开始日期" >
+									</div>
+									<div class="layui-form-mid" style="display: none;" >-</div>
+									<div class="layui-input-inline" style="display: none;">
+										<input type="text" autocomplete="off" id="ID-laydate-end-date-1" class="layui-input" placeholder="结束日期">
+									</div>
+								</div>
+							</div>
+							
+							<div class="layui-inline" >
+								<label class="layui-form-label" style = "padding: 9px 0px; width:auto;">分类能耗：</label>
+								<div class="layui-input-inline" style = "">
+									<select name="classification" id = 'classification'  lay-filter="classification">
+										<option value="P_ABC" selected>功率</option>
+										<option value="A_A" >A项电流</option>
+										<option value="A_B" >B项电流</option>
+										<option value="A_C" >C项电流</option>
+									</select>
+								</div>
+							</div>
+							
+								
+							
+							<div class="layui-inline " style = " margin-right:0px; float:right">
+								<button type="button" id = "search" class="layui-btn"><i class="layui-icon layui-icon-search"></i><span style = "margin-left:5px">查询</span></button>
+								<!--<button type="button" class="layui-btn layui-bg-blue"><i class="layui-icon layui-icon-share"></i><span style = "margin-left:5px">图表</span></button>
+								<button type="button" id = "export" class="layui-btn layui-bg-orange"><span style = "margin-right:5px">导出</span><i class="layui-icon layui-icon-print"></i></button>-->
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="report-content"  >
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md2">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;overflow: auto;" >
+								<div id="ID-tree-demo-showLine" style = "padding:10px; height:calc(100% - 75px);"></div>
+							</div>
+						</div>
+						<div class="layui-col-md10">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<h2 style = "position: absolute;top: 0;left: 50%;transform: translateX(-50%);top:8px;">电能统计明细曲线</h2>
+								<div  class="all_unit">
+									<label >单位:</label> <span data-v-1520c17f="">kW·h</span>
+								</div>
+								<div id = "chart" style = "height:100%;padding:0 10 0 10" >
+								
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				
+				
+				
+				
+				
+				
+				
+			</div>
+		</div>
+		
+	</div>
+
+
+  
+
+<script>
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel; //导出逻辑
+		var table = layui.table;
+		var $ = layui.$;
+		let currentDay = new Date();
+		currentDay.setDate(1);
+		var dateValue = "day";
+		
+		
+		currentDay.setHours(7, 0, 0, 0);
+
+		// 加载日期
+		var datetest =  laydate.render({
+			type:"date",
+			elem: '#ID-laydate-start-date-1',
+			value: new Date(), // 设置初始日期
+		});
+		
+		// 树形图初始化
+		var data = [{title:'一号变电所',field:'123456',
+					id:'sum_elec1',
+					children:[
+						{title:'1#变压器主开关',id:'elec_51',no:51},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房',id:'elec_110002',no:110002},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;宿舍二三楼照明',id:'elec_110003',no:110003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;办公照明',id:'elec_110004',no:110004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发消防系统',id:'elec_110005',no:110005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装GCS',id:'elec_110006',no:110006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机9号',id:'elec_110007',no:110007},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M456',id:'elec_110008',no:110008},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M123',id:'elec_110009',no:110009},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_110010',no:110010},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_110011',no:110011},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装31#',id:'elec_110012',no:110012},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装照明',id:'elec_110013',no:110013},
+						
+						
+						{title:'2#变压器主开关',id:'elec_52',no:52},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120002',no:120002},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120003',no:120003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120004',no:120004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢4#',id:'elec_120005',no:120005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装32#',id:'elec_120006',no:120006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120007',no:120007},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;空压机照明辅助',id:'elec_120008',no:120008},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120009',no:120009},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢1#',id:'elec_120010',no:120010},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢3#',id:'elec_120011',no:120011},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120012',no:120012},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;组装空调',id:'elec_120013',no:120013},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R290风机',id:'elec_120014',no:120014},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所内用电',id:'elec_120015',no:120015},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CO2性能试验',id:'elec_120016',no:120016},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机13#柜',id:'elec_120017',no:120017},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_120018',no:120018},
+						
+					]},
+					{title:'二号变电所',
+					id:'sum_elec2',
+					children:[
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1#变压器主开关',id:'elec_12',no:12},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西',id:'elec_13',no:13},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS西并',id:'elec_14',no:14},
+						
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_210004',no:210004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_210005',no:210005},
+						
+						{title:'2#变压器主开关',id:'elec_16',no:16},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加GCS东',id:'elec_15',no:15},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_220003',no:220003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新电机绕线',id:'elec_220004',no:220004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子设备',id:'elec_220005',no:220005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;定转子照明',id:'elec_220006',no:220006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;机加工34',id:'elec_220007',no:220007},
+						
+						{title:'3#变压器主开关',id:'elec_17',no:17},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冷水机组、瑞星退火炉',id:'elec_18',no:18},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;冰山帕特',id:'elec_230003',no:230003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室',id:'elec_230004',no:230004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80KW实验室_1',id:'elec_230005',no:230005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力2#',id:'elec_230006',no:230006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力4#',id:'elec_230007',no:230007},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;神钢2#',id:'elec_230008',no:230008},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新碱清洗',id:'elec_230009',no:230009},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新磷化',id:'elec_230010',no:230010},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_230011',no:230011},
+						
+						{title:'4#变压器主开关',id:'elec_20',no:20},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新退火炉',id:'elec_19',no:19},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新壳体GCS柜',id:'elec_240003',no:240003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;食堂电锅',id:'elec_240004',no:240004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机8',id:'elec_240005',no:240005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机10',id:'elec_240006',no:240006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机7',id:'elec_240007',no:240007},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;电机11',id:'elec_240008',no:240008},
+						
+					]},
+					{title:'三号变电所',
+					id:'sum_elec3',
+					children:[
+						{title:'1#变压器主开关',id:'elec_1',no:1},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;变电所用电',id:'elec_2',no:2},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;污水处理',id:'elec_3',no:3},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;预留',id:'elec_6',no:6},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久实验室3#动力柜',id:'elec_4',no:4},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发中心GCS柜',id:'elec_5',no:5},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发大马力性能实验室',id:'elec_7',no:7},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久试验室2#柜',id:'elec_8',no:8},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久1#5#柜',id:'elec_9',no:9},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发堵转实验室左侧',id:'elec_10',no:10},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发预留',id:'elec_11',no:11},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_310012',no:310012},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_310013',no:310013},
+						
+						
+						{title:'2#变压器主开关',id:'elec_26',no:26},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320002',no:320002},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320003',no:320003},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IT新机房',id:'elec_320004',no:320004},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新成品',id:'elec_320005',no:320005},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320006',no:320006},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320007',no:320007},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;热水炉',id:'elec_320008',no:320008},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;研发290性能实验室',id:'elec_320009',no:320009},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;焓差试验室',id:'elec_320010',no:320010},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320011',no:320011},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320012',no:320012},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装凸焊机',id:'elec_320013',no:320013},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备1',id:'elec_320014',no:320014},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;25马力组装线设备2',id:'elec_320015',no:320015},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320016',no:320016},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;寿力3高压柜',id:'elec_320017',no:320017},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久4#、8#、9#动力柜',id:'elec_320018',no:320018},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久6#动力柜',id:'elec_320019',no:320019},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;耐久7#动力柜',id:'elec_320020',no:320020},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320021',no:320021},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B座大办冷水机组-左',id:'elec_320022',no:320022},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备用',id:'elec_320023',no:320023},
+						{title:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B座大办冷水机组-右',id:'elec_320024',no:320024},
+						
+					]},
+					{title:'变压器主开关级',
+					id:'sum_main',checked:true,
+					children:[
+						{title:'一号变电所&二号变电所之和',id:'sum_1_2',no:"51,52,12,16,17,20"},
+						{title:'一号变电所之和',id:'sum_1',no:"51,52"},
+						{title:'二号变电所之和',id:'sum_2',no:"12,16,17,20"},
+						{title:'三号变电所之和',id:'sum_3',no:"1,26"},
+						
+					]},
+					];
+					
+					
+					
+					
+		// 渲染
+		tree.render({
+			id:'tree',
+			elem: '#ID-tree-demo-showLine',
+			data: data,
+			showCheckbox: true,
+			height: $("#table_form").height()-1,
+			showLine: false  // 是否开启连接线
+		});
+		
+		
+		
+		$('#search').on('click', async function() {
+			debugger;
+			try {
+				//获取查询结果
+				var startdate ;
+				var enddate;
+				let classification = $('#classification').val();
+				startdate = $("#ID-laydate-start-date-1")[0].value;
+				let xAxisData = [];
+				let legendData = []; 	
+				let	seriesData = [];			
+				var checkedData = tree.getChecked('tree');
+				//console.info(checkedData);
+				var showData = [];
+				var noArr = [];
+				//先拼接name
+				var namesql = "case no \n";
+				for(let i=0;i<checkedData.length;i++){
+					if(checkedData[i].title == '变压器主开关级'){
+						continue;
+					}
+					showData.push(checkedData[i].id);
+					if(checkedData[i].children != undefined){
+						let children = checkedData[i].children;
+						for(let j=0;j<children.length;j++){
+							showData.push(children[j].id);
+							if(children[j].no != undefined){
+								noArr.push(children[j].no);
+								namesql += " when "+children[j].no+" then '"+checkedData[i].title+"_" +children[j].title.replaceAll('&nbsp;','') +"' \n";
+							}
+						}
+					}
+				}
+				namesql += " end as name, ";
+				console.info(noArr.join(','));
+				console.log("namesql",namesql);
+				
+				
+				//console.info(showData);
+				var sql = "";
+				if(noArr.length > 0){
+					sql += " select "+namesql+"DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as datetime,"+classification+" from data_all "
+					+ " where date >= DATE_FORMAT('"+startdate+"','%Y-%m-%d 7:00:00')"
+					+ "  and date <= DATE_ADD(DATE_FORMAT('"+startdate+"','%Y-%m-%d 7:00:00'),INTERVAL 1 day )   "
+					+ "  and no in ("+noArr.join(',')+")  group by name,datetime   " ;
+				}
+				
+				console.info(sql);
+				//再拼接查询项
+				for(let i=0;i<checkedData.length;i++){
+					if(checkedData[i].title == '变压器主开关级'&&checkedData[i].children != undefined){
+						let children = checkedData[i].children;
+						for(let j=0;j<children.length;j++){
+							if(sql != ""){
+								sql += "\n union all \n";
+							}
+							sql+=" select " 
+							+" '"+children[j].title +"' as name,  "
+							+" DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') as datetime, "
+							+" sum(case when no in ("+children[j].no+") then  "+classification+" end ) as  "+classification+" "
+							+" from data_all "
+							+" where date >= DATE_FORMAT('"+startdate+"','%Y-%m-%d 7:00:00')  and date <= DATE_ADD(DATE_FORMAT('"+startdate+"','%Y-%m-%d 7:00:00'),INTERVAL 1 day ) "
+							+" and no in ("+children[j].no+") "
+							+" group by DATE_FORMAT(date, '%Y-%m-%d %H:%i:%s') ";
+							
+							
+						}
+						
+					}
+				}
+				//sql += "order by FIELD(name,  '三号变电所_1#变压器主开关','一号变电所&二号变电所之和','一号变电所之和','二号变电所之和','三号变电所之和')  ";
+				sql += "order by name ,datetime  ";
+				const data = await sendSQL(sql);
+				console.info(data);
+				
+				debugger;
+				const now = new Date(startdate);
+
+				// 设置起始时间为当天早上7点
+				now.setHours(7, 0, 0, 0); // 小时，分钟，秒，毫秒
+				
+				// 计算第二天早上7点的时间
+				const nextDay = new Date(startdate);
+				nextDay.setDate(nextDay.getDate() + 1); // 将日期加一天
+				nextDay.setHours(7, 0, 0, 0); // 设置时间为早上7点
+				
+				// 循环遍历从当天早上7点到第二天早上7点之间的每个分钟
+				while (now <= nextDay) {
+					// 格式化时间为 年-月-日 时:分:秒 的形式
+					const formattedTime = now.toLocaleString().slice(0, 19).replaceAll('/', '-');
+					//console.log(formattedTime); // 输出格式化的时间字符串
+					xAxisData.push(formattedTime);
+					// 增加1分钟
+					now.setMinutes(now.getMinutes() + 1);
+				}
+				console.info(xAxisData)
+				if(data.data.length > 0){
+					let name = data.data[0].name;
+					let firstname = data.data[0].name;
+					let datas = [];
+					//重置datas
+					for(let i=0;i<xAxisData.length;i++){
+						datas.push("");
+					}
+					for(let i =0;i< data.data.length;i++){
+						/*if(data.data[i].name == firstname){
+							let tempdate = new Date(data.data[i].datetime);
+							xAxisData.push((tempdate.getHours()>=10?tempdate.getHours():"0"+tempdate.getHours())+":"+(tempdate.getMinutes() >= 10?tempdate.getMinutes():"0"+tempdate.getMinutes())+":"+(tempdate.getSeconds()>=10?tempdate.getSeconds():"0"+tempdate.getSeconds()));
+						}*/
+						let thisdata = "";
+						for(let j=0;j<xAxisData.length;j++){
+							if(xAxisData[j] == data.data[i]["datetime"]){
+								datas[j] = data.data[i][classification];
+								
+								break;
+							}
+						}
+						//datas.push(thisdata);
+						if(data.data[i].name == name){
+							
+							
+						}else{
+							//更新名称并作阶段性处理
+							legendData.push(name);
+							//$('#classification').find("option:selected").text()
+							seriesData.push(
+								{
+									name: name,
+									type: 'line',
+									markPoint: {
+										data: [
+											{ type: 'max', name: '最大值' },
+											{ type: 'min', name: '最小值' }
+										]
+									},
+									data: datas,
+									smooth: 0.5 // 设置折线弧度
+								}
+							);
+							datas = [];
+							//重置datas
+							for(let j=0;j<xAxisData.length;j++){
+								datas.push("");
+							}
+							name = data.data[i].name;
+						}
+					}
+					//更新名称并作阶段性处理
+					legendData.push(name);
+					//$('#classification').find("option:selected").text()
+					seriesData.push(
+						{
+							name: name,
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: datas,
+							smooth: 0.5 // 设置折线弧度
+						}
+					);
+				}
+				/*//在第一次循环的时候确立时间x轴
+				
+				if(i==0){
+					for(let j =0;j< data.data.length;j++){
+						let tempdate = new Date(data.data[j].datetime);
+						//datas.push(data.data[j][classification]);
+						//console.info((tempdate.getHours()>=10?tempdate.getHours():"0"+tempdate.getHours())+":"+(tempdate.getMinutes() >= 10?tempdate.getMinutes():"0"+tempdate.getMinutes())+":"+(tempdate.getSeconds()>=10?tempdate.getSeconds():"0"+tempdate.getSeconds()));
+						xAxisData.push((tempdate.getHours()>=10?tempdate.getHours():"0"+tempdate.getHours())+":"+(tempdate.getMinutes() >= 10?tempdate.getMinutes():"0"+tempdate.getMinutes())+":"+(tempdate.getSeconds()>=10?tempdate.getSeconds():"0"+tempdate.getSeconds()));
+						
+					}
+				}
+				//循环确立legend名称
+				if(data.data.length>0){
+					for(let j =0;j< data.data.length;j++){
+						datas.push(data.data[j][classification]);
+					}
+					let tempdate = new Date(data.data[0].datetime);
+					legendData.push(tempdate.getFullYear() + "-"+( (tempdate.getMonth() + 1) >= 10 ? (tempdate.getMonth() + 1):"0"+(tempdate.getMonth() + 1)) + "-" + (tempdate.getDate()>=10 ? tempdate.getDate() :"0"+tempdate.getDate())+$('#classification').find("option:selected").text());
+					//$('#classification').find("option:selected").text()
+					seriesData.push(
+						{
+							name: tempdate.getFullYear() + "-"+( (tempdate.getMonth() + 1) >= 10 ? (tempdate.getMonth() + 1):"0"+(tempdate.getMonth() + 1)) + "-" + (tempdate.getDate()>=10 ? tempdate.getDate() :"0"+tempdate.getDate())+$('#classification').find("option:selected").text(),
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: datas,
+							smooth: 0.5 // 设置折线弧度
+						}
+					);
+				}	*/
+				
+				
+				console.info(legendData);
+				
+				
+				// 在这里继续处理查询结果，比如渲染表格
+				// renderTable(data);
+				var myChart = echarts.init(document.getElementById('chart'));
+				var option = {
+					//backgroundColor: 'rgb(8, 15, 51)',
+					//title: {
+					//  text: '历史曲线图'
+					//},
+					tooltip: {
+						trigger: 'axis'
+					},
+					legend: {
+						data: legendData,
+						right: '10%',
+						top: '5%',
+						orient:'vertical',
+						textStyle: {
+							color: "#fff",
+						},
+					},
+					grid: {
+						left: '3%',
+						right: '4%',
+						top: '15%',
+						bottom: '3%',
+						containLabel: true
+					},
+					xAxis: {
+						type: 'category',
+						boundaryGap: false,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						data: xAxisData
+					},
+					yAxis: {
+						type: 'value',
+						scale: true,
+						nameTextStyle:{
+							color:"#fff"
+						},
+						axisLine:{
+							show:false,
+							lineStyle:{
+								color:"#fff"
+							}
+						},
+						splitLine: {
+							show: true,
+							lineStyle: {
+								color: '#ffff',
+								//width: 2,
+							},
+						},
+					},
+					series: seriesData
+					/*[
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						},
+						{
+							name: '',
+							type: 'line',
+							markPoint: {
+								data: [
+									{ type: 'max', name: '最大值' },
+									{ type: 'min', name: '最小值' }
+								]
+							},
+							data: [],
+							smooth: 0.5 // 设置折线弧度
+						}
+					]*/
+				};
+				
+				if (option && typeof option === "object") {
+					myChart.setOption(option, true);
+				}
+				
+				
+				
+			} catch (err) {
+				console.error('查询出错：', err);
+			}
+		});
+		
+		
+		async function sendSQL(strsql) {
+			const sql = strsql;
+			console.info(sql);
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const data = await res.json();
+			return data;
+			
+			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
+		}
+	
+	});
+	
+	</script>
+	
+</body>
+</html>

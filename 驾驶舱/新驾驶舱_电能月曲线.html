@@ -1,0 +1,150 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+
+
+    <meta charset="utf-8" />
+    <title> New Document </title>
+    <meta NAME="Generator" CONTENT="EditPlus">
+    <meta NAME="Author" CONTENT="">
+    <meta NAME="Keywords" CONTENT="">
+    <meta NAME="Description" CONTENT="">
+    <meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width" />
+    <!--<link>-->
+    <script type="text/javascript" src="../js/echarts.js"></script>
+    <script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+    <script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+</head>
+<body style="height:100%;margin:0;background-size:cover;background-color:rgba(255,255,255,0.5);overflow:hidden;">
+    <div id="main" style="height: 100%"></div>
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        option = {
+            backgroundColor: 'rgb(10, 30, 84)',
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(17,95,182,0.5)',
+                borderColor: '',
+                borderWidth: 0,
+                textStyle: {
+                    color: "#fff"
+                },
+                formatter: function (params) {
+                    console.log(params, '====')
+                    let str = '';
+                    for (let i = 0; i < params.length; i++) {
+                        str = str + '时间:' + (params[i].axisValue + '   值:' + params[i].data) + '<br/>';
+                    }
+                    return str;
+                },
+            },
+
+            grid: {
+                left: '2%',
+                right: '4%',
+                bottom: '2%',
+                top: '16%',
+                containLabel: true
+            },
+            legend: {
+                show: true,
+                top: 10,
+                right: 50,
+                itemGap: 20,
+                textStyle: {
+                    color: '#fff',
+                },
+            },
+
+            xAxis:
+            {
+                //name:'ss',
+                type: 'category',
+                data: [/*'05-01', '05-02', '05-03', '05-04', '05-05', '05-06', '05-07', '05-08', '05-09', '05-10', '05-11', '05-12',*/],
+                //axisTick: {
+                //    alignWithLabel: true,
+                //},
+                axisLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+                axisLabel: {          //坐标轴字体颜色
+                    textStyle: {
+                        color: '#9eaaba'
+                    }
+                },
+     
+            },
+
+            yAxis:
+            {
+               
+                type: 'value',
+           
+                axisLabel: {          //坐标轴字体颜色
+                    textStyle: {
+                        color: '#9eaaba'
+                    }
+                },
+                axisTick: {
+                    show: false,
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#394458',
+                    },
+                },
+            },
+            series: [
+                {
+                    name: '电能',
+                    type: 'line', //bar
+                    smooth: true,
+                    barWidth: '15%',
+                    showSymbol: false,
+                    itemStyle: {
+                        opacity: 0.8,
+                        color: '#10FEFF'
+                    },
+                    //itemStyle: {
+                    //    normal: {
+                    //        color: 'rgba(255, 204, 0,.3)',
+                    //        //borderColor: '#ffcc00',
+                    //    },
+                    //},
+                    data: [/*31571, 18010, 31100, 47119, 30110, 26118, 78119, 40011, 30110, 17311, 41010, 30101*/],
+                    //areaStyle: {}
+                }
+
+                //{
+                //    name: '昨日',
+                //    type: 'line',
+                //    smooth: true,
+                //    barWidth: '15%',
+                //    showSymbol: false,
+                //    itemStyle: {
+                //        opacity: 0.8,
+                //        color: '#FFC710'
+                //    },
+                //    data: [4020, 2120, 7200, 2480, 1410, 2415, 6528, 8930, 2435, 3638, 3732, 7215],
+                //    //areaStyle: {}
+                //}
+            ]
+        };
+
+
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    </script>
+</body>
+</html>

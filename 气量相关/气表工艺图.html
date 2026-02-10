@@ -1,0 +1,818 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>气表工艺图</title>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallJsFunc.js"></script>
+	<script type="text/javascript">
+		// 气表数据配置
+		const gasMeterConfig = {
+			// 12组数据的位置配置 (x, y 为容器内的百分比位置，0-100)
+			positions: [
+				{ x: 43, y: 19 },  // 第1组位置
+				{ x: 47.1, y: 30 },  // 第2组位置
+				{ x: 35.8, y: 36 },  // 第3组位置
+				{ x: 31.5, y: 15.5 },  // 第4组位置
+				{ x: 13.7, y: 55.5 },  // 第5组位置
+				{ x: 78.4, y: 52 },  // 第6组位置
+				{ x: 15.1, y: 15.3 },  // 第7组位置
+                { x: 54, y: 58 },  // 第8组位置
+                { x: 70, y: 60.1 },  // 第9组位置
+                { x: 10, y: 72 },  // 第10组位置 - 氮气
+                { x: 25, y: 72 },  // 第11组位置 - 氩气
+                { x: 40, y: 72 },  // 第12组位置 - 氧气
+			],
+
+		// 每组数据的标题和指示灯配置
+		titles: [
+			{ title: "1#", indicatorPosition: "right" },   // 第1组：主管路压缩空气
+			{ title: "2#", indicatorPosition: "right" },   // 第2组：维修室
+			{ title: "3#", indicatorPosition: "right" },  // 第3组：清晰磷化
+			{ title: "4#", indicatorPosition: "right" },   // 第4组：大马力
+			{ title: "5#", indicatorPosition: "left" },  // 第5组：三坐标外墙
+			{ title: "6#", indicatorPosition: "right" },   // 第6组：组装车间东墙
+			{ title: "7#", indicatorPosition: "left" },  // 第7组：研发中心
+            { title: "8#", indicatorPosition: "left" },  // 第8组：组装车间
+            { title: "9#", indicatorPosition: "left" },  // 第9组：CS车间
+            { title: "氮气", indicatorPosition: "left" },  // 第10组
+            { title: "氩气", indicatorPosition: "left" },  // 第11组
+            { title: "氧气", indicatorPosition: "left" },  // 第12组
+		],
+
+			// 数据初始值
+			data: {
+				instantFlow: [7, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0],     // 12个瞬时流量
+				totalFlow: [7, 0, 0, 0, 0, 0, 3, 4, 0, 0, 0, 0]        // 12个累计流量
+			}
+		};
+
+		// 初始化数据显示
+		function initDataDisplay() {
+			const container = document.getElementById('dataDisplay');
+			container.innerHTML = '';
+
+		for (let i = 0; i < 12; i++) {
+			const group = document.createElement('div');
+			group.className = 'data-group';
+			group.id = `data-group-${i}`;
+
+			// 根据索引添加颜色类
+			if (i <= 8) {
+				// 索引0-8: 压缩空气表，使用铂金灰色
+				group.className += ' platinum-gray';
+			} else if (i === 11) {
+				// 索引11: 氧气表，使用蓝色
+				group.className += ' blue';
+			}
+			// 索引9-10: 氮气和氩气，保持橘黄色（默认样式）
+
+			// 设置位置
+			const pos = gasMeterConfig.positions[i];
+			group.style.left = pos.x + '%';
+			group.style.top = pos.y + '%';
+			group.style.transform = 'translate(-50%, -50%)';
+
+				// 获取标题配置
+				const titleConfig = gasMeterConfig.titles[i];
+
+				// 创建标题行
+				const titleRow = document.createElement('div');
+				titleRow.className = 'title-row';
+
+				// 创建指示灯
+				const indicator = document.createElement('div');
+				indicator.className = `status-indicator ${titleConfig.indicatorPosition}`;
+
+				// 创建标题文本
+				const titleText = document.createElement('div');
+				titleText.className = 'title-text';
+				titleText.textContent = titleConfig.title;
+
+				// 根据指示灯位置排列
+				if (titleConfig.indicatorPosition === 'left') {
+					titleRow.appendChild(indicator);
+					titleRow.appendChild(titleText);
+				} else {
+					titleRow.appendChild(titleText);
+					titleRow.appendChild(indicator);
+				}
+
+				// 创建数据行
+				const dataRow = document.createElement('div');
+				dataRow.className = 'data-row';
+
+				// 瞬时流量显示
+				const instantDiv = document.createElement('div');
+				instantDiv.className = 'data-item instant';
+				instantDiv.innerHTML = `
+					<div class="data-label">瞬时</div>
+					<div class="data-value">
+						<span id="instant-${i}">无连接</span>
+						<span class="data-unit">m³/h</span>
+					</div>
+				`;
+
+				// 累计流量显示
+				const totalDiv = document.createElement('div');
+				totalDiv.className = 'data-item total';
+				totalDiv.innerHTML = `
+					<div class="data-label">当日累计</div>
+					<div class="data-value">
+						<span id="total-${i}">无连接</span>
+						<span class="data-unit">m³</span>
+					</div>
+				`;
+
+				dataRow.appendChild(instantDiv);
+				dataRow.appendChild(totalDiv);
+
+				group.appendChild(titleRow);
+				group.appendChild(dataRow);
+				container.appendChild(group);
+			}
+		}
+
+		// 更新单个或多个数据点（仅更新瞬时流量）
+		// 注意：当日累计量由数据库自动查询，不允许手动更新
+		// 使用方式：
+		// 单个：updateMeterData('主管路压缩空气', 12.5)
+		// 批量（包含全部12个表）：updateMeterData(['主管路压缩空气','成品车间','机加工','新成品','定转子','电机绕线车间','研发中心','组装车间','CS车间','氮气','氩气','氧气'], [11.11, 12.12, 31.31, 41.41, 51.51, 61.61, 71.71, 81.81, 91.91, 101.1, 111.1, 121.1])
+		
+		function updateMeterData(meterNames, instantValues) {
+			// 支持单个数据更新
+			if (typeof meterNames === 'string') {
+				meterNames = [meterNames];
+				instantValues = [instantValues];
+			}
+
+			// 数据长度检查
+			if (meterNames.length !== instantValues.length) {
+				console.error('变量名和瞬时流量的长度必须一致');
+				return;
+			}
+
+			// 更新每个数据点
+			for (let i = 0; i < meterNames.length; i++) {
+				const meterName = meterNames[i];
+				const instantValue = instantValues[i];
+
+				// 查找对应的气表索引
+				const meterIndex = findMeterIndex(meterName);
+				if (meterIndex === -1) {
+					console.warn(`未找到气表: ${meterName}`);
+					continue;
+				}
+
+				// 只更新瞬时流量，不更新累计流量
+				updateInstantFlow(meterIndex, instantValue);
+			}
+		}
+
+		// 根据变量名查找气表索引
+		function findMeterIndex(meterName) {
+			// 变量名映射表 - 支持多种格式调用同一组数据
+			const meterMap = {
+				// ============ 标准meter变量名 ============
+				'meter1': 0, 'meter2': 1, 'meter3': 2, 'meter4': 3, 'meter5': 4, 'meter6': 5, 'meter7': 6, 'meter8': 7, 'meter9': 8, 'meter10': 9, 'meter11': 10, 'meter12': 11,
+
+				// ============ 新版标题变量名（推荐使用）===========
+				// 压缩空气类（第1-9组）
+				'主管路压缩空气': 0,          // 第1组：主管路压缩空气
+				'成品车间': 1,                // 第2组：成品车间
+				'机加工': 2,                  // 第3组：机加工
+				'新成品': 3,                  // 第4组：新成品
+				'定转子': 4,                  // 第5组：定转子
+				'电机绕线车间': 5,            // 第6组：电机绕线车间
+				'研发中心': 6,                // 第7组：研发中心
+				'组装车间': 7,                // 第8组：组装车间
+				'CS车间': 8,                  // 第9组：CS车间
+
+				// 工业气体类（第10-12组）
+				'氮气': 9,                   // 第10组：氮气
+				'氩气': 10,                  // 第11组：氩气
+				'氧气': 11,                  // 第12组：氧气
+
+				// ============ 旧版变量名（向后兼容）===========
+				'空压机房主压缩空气': 0,
+				'技术课维修库房压缩空气': 1,
+				'清洗与机加工通道': 2,
+				'新成品GCS柜压缩空气': 3,
+				'葛铭玖工作站压缩空气': 4,
+				'组装C与电机参观通道南侧': 5,
+				'壳体变电所棚顶': 6,
+				'机加工GCS柜南侧': 7,
+				'2楼变电所出入门': 8,
+
+				// ============ 简化变量名（快速调用）===========
+				'空压机房': 0,    '维修室': 1,   'C上支撑附近': 2,    '大马力车间': 3,
+				'三坐标附近': 4,     '氦检附近': 5,
+
+				// 工业气体类简化版
+				'氮': 9,         '氩': 10,      '氧': 11
+			};
+
+			return meterMap[meterName] !== undefined ? meterMap[meterName] : -1;
+		}
+
+		// 更新瞬时流量（内部函数 - 仅允许更新瞬时流量）
+		function updateInstantFlow(meterIndex, instantFlow) {
+			if (meterIndex < 0 || meterIndex >= 12) {
+				console.error('气表索引必须在0-11之间');
+				return;
+			}
+
+			// 更新配置数据
+			gasMeterConfig.data.instantFlow[meterIndex] = instantFlow;
+
+			// 更新显示
+			const instantElement = document.getElementById(`instant-${meterIndex}`);
+			if (instantElement) {
+				instantElement.textContent = instantFlow !== null && instantFlow !== undefined ? parseFloat(instantFlow).toFixed(2) : '无连接';
+			}
+		}
+
+		// 批量更新所有瞬时流量（兼容旧版本）
+		function updateAllData(instantFlows) {
+			if (instantFlows.length !== 12) {
+				console.error('瞬时流量数组长度必须为12');
+				return;
+			}
+
+			for (let i = 0; i < 12; i++) {
+				updateInstantFlow(i, instantFlows[i]);
+			}
+		}
+
+		// 修改数据组位置
+		function updateDataPosition(groupIndex, x, y) {
+			if (groupIndex < 0 || groupIndex >= 12) {
+				console.error('组索引必须在0-11之间');
+				return;
+			}
+
+			gasMeterConfig.positions[groupIndex] = { x, y };
+
+			const group = document.getElementById(`data-group-${groupIndex}`);
+			if (group) {
+				group.style.left = x + '%';
+				group.style.top = y + '%';
+			}
+		}
+
+	// gas_id 到气表索引的映射（根据实际情况调整）
+	const gasIdToMeterIndexMap = {
+		1: 0,   // gas_id 1 -> meter 1# (主管路压缩空气)
+		2: 1,   // gas_id 2 -> meter 2# (新成品)
+		3: 2,   // gas_id 3 -> meter 7# (研发中心)
+		4: 3,   // gas_id 4 -> meter 4# (机加工)
+		5: 4,   // gas_id 5 -> meter 5# (定转子)
+		6: 5,   // gas_id 6 -> meter 6# (成品车间)
+		7: 6,   // gas_id 7 -> meter 8# (组装车间)
+		8: 7,   // gas_id 8 -> meter 9# (CS车间)
+		9: 8,   // gas_id 9 -> meter 3# (电机绕线车间)
+		10: 9,  // gas_id 10 -> meter 10# (氮气)
+		11: 10, // gas_id 11 -> meter 11# (氩气)
+		12: 11  // gas_id 12 -> meter 12# (氧气)
+	};
+
+	// 查询当日累计量
+	async function queryDailyCumulative() {
+		const sql = `SELECT 
+    gas_id, 
+    MAX(FLOW_total) - MIN(FLOW_total) AS total_usage
+FROM 
+    \`sy\`.\`data_gas\`
+WHERE 
+    gas_id BETWEEN 1 AND 12
+    AND \`date\` >= CASE 
+        WHEN DATE_FORMAT(NOW(), '%H:%i:%s') < '07:00:00' 
+        THEN CONCAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), ' 07:00:00')
+        ELSE CONCAT(CURDATE(), ' 07:00:00')
+    END
+    AND \`date\` <= NOW()
+GROUP BY 
+    gas_id;`;
+
+		try {
+			console.info('查询当日累计量:', sql);
+			
+			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({ sql })
+			});
+
+			const response = await res.json();
+			
+			// 检查返回的数据格式：{success: true, data: Array}
+			if (response && response.success && Array.isArray(response.data) && response.data.length > 0) {
+				const data = response.data;
+				
+				// 处理查询结果
+				data.forEach(row => {
+					const gasId = row.gas_id;
+					const totalUsage = row.total_usage;
+					
+					// 映射 gas_id 到气表索引
+					const meterIndex = gasIdToMeterIndexMap[gasId];
+					
+					if (meterIndex !== undefined) {
+						// 只更新累计流量，不更新瞬时流量
+						const totalElement = document.getElementById(`total-${meterIndex}`);
+						if (totalElement) {
+							totalElement.textContent = totalUsage !== null && totalUsage !== undefined 
+								? parseFloat(totalUsage).toFixed(2) 
+								: '无连接';
+							
+							// 更新配置数据
+							gasMeterConfig.data.totalFlow[meterIndex] = totalUsage;
+						}
+					}
+				});
+				console.log('当日累计量更新成功:', data);
+			} else {
+				console.warn('查询结果为空或格式错误:', response);
+			}
+		} catch (error) {
+			console.error('查询当日累计量失败:', error);
+		}
+	}
+
+	// 定时器变量
+	let dailyCumulativeTimer = null;
+
+	// 启动定时查询
+	function startDailyCumulativeQuery() {
+		// 立即执行一次
+		queryDailyCumulative();
+		
+		// 每5分钟查询一次
+		dailyCumulativeTimer = setInterval(queryDailyCumulative, 5 * 60 * 1000);
+		console.log('当日累计量定时查询已启动（每5分钟）');
+	}
+
+	// 停止定时查询
+	function stopDailyCumulativeQuery() {
+		if (dailyCumulativeTimer) {
+			clearInterval(dailyCumulativeTimer);
+			dailyCumulativeTimer = null;
+			console.log('当日累计量定时查询已停止');
+		}
+	}
+
+	// 页面加载完成后初始化
+	window.onload = async function() {
+		initDataDisplay();
+		printConsoleGuide();
+		// 立即执行一次查询
+		await queryDailyCumulative();
+		// 启动当日累计量定时查询（每5分钟）
+		startDailyCumulativeQuery();
+	};
+
+	// 打印控制台使用说明
+	function printConsoleGuide() {
+		console.clear();
+		console.log('%c===== 气表工艺图数据更新指南 =====', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+		console.log('');
+		
+		console.log('%c【自动功能】当日累计量自动查询:', 'color: #00ff00; font-size: 13px; font-weight: bold;');
+		console.log('• 页面已启动自动查询当日累计量功能');
+		console.log('• 查询间隔: 每5分钟一次');
+		console.log('• 统计时间: 每天早上7:00至当前时间');
+		console.log('• 控制函数: startDailyCumulativeQuery() - 启动自动查询');
+		console.log('           stopDailyCumulativeQuery() - 停止自动查询');
+		console.log('           queryDailyCumulative() - 手动执行一次查询');
+		console.log('');
+		
+		console.log('%c【方式1】一次更新全部12个表的瞬时流量:', 'color: #ffff00; font-size: 13px; font-weight: bold;');
+		console.log('%cupdateAllData(instantFlows)', 'color: #00ffff; font-size: 12px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 5px;');
+		console.log('参数说明:');
+		console.log('  • instantFlows: 数组，长度为12，代表12个表的瞬时流量（m³/h）');
+		console.log('%c  注意：当日累计量由数据库自动查询，不允许手动更新', 'color: #ff6666;');
+		console.log('');
+		console.log('%c使用示例:', 'color: #ffff00; font-size: 12px;');
+		console.log('updateAllData([11.11, 12.12, 31.31, 41.41, 51.51, 61.61, 71.71, 81.81, 91.91, 101.1, 111.1, 121.1]);');
+		console.log('');
+		
+		console.log('%c【方式2】更新单个表的瞬时流量:', 'color: #ffff00; font-size: 13px; font-weight: bold;');
+		console.log('%cupdateMeterData(meterName, instantValue)', 'color: #00ffff; font-size: 12px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 5px;');
+		console.log('参数说明:');
+		console.log('  • meterName: 字符串，气表的名称（参见下方编号对照表）');
+		console.log('  • instantValue: 数字，瞬时流量值（m³/h）');
+		console.log('%c  注意：当日累计量由数据库自动查询，不允许手动更新', 'color: #ff6666;');
+		console.log('');
+		console.log('%c使用示例:', 'color: #ffff00; font-size: 12px;');
+		console.log('updateMeterData("主管路压缩空气", 12.5);');
+		console.log('updateMeterData("1#", 12.5);  // 也支持编号');
+		console.log('updateMeterData("氧气", 5.5);');
+		console.log('');
+
+		console.log('%c【方式3】批量更新多个表的瞬时流量:', 'color: #ffff00; font-size: 13px; font-weight: bold;');
+		console.log('%cupdateMeterData([meter1, meter2, ...], [instant1, instant2, ...])', 'color: #00ffff; font-size: 12px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 5px;');
+		console.log('参数说明: 同上，但参数都是数组形式');
+		console.log('');
+		console.log('%c使用示例:', 'color: #ffff00; font-size: 12px;');
+		console.log('updateMeterData(');
+		console.log('  ["主管路压缩空气", "新成品", "氧气"],');
+		console.log('  [12.5, 8.3, 5.5]');
+		console.log(');');
+		console.log('');
+
+		console.log('%c【气表编号对照表】', 'color: #ff00ff; font-size: 13px; font-weight: bold;');
+		console.log('');
+		console.log('编号    新名称              旧名称                        简化名称');
+		console.log('─────────────────────────────────────────────────────────────────');
+		console.log('1#      主管路压缩空气      空压机房主压缩空气');
+		console.log('2#      新成品              新成品GCS柜压缩空气');
+		console.log('3#      研发中心            研发中心压缩空气');
+		console.log('4#      机加工              清洗与机加工通道');
+		console.log('5#      定转子              葛铭玖工作站压缩空气');
+		console.log('6#      成品车间            技术课维修库房压缩空气');
+		console.log('7#      组装车间            机加工GCS柜南侧');
+		console.log('8#      CS车间              2楼变电所出入门');
+		console.log('9#      电机绕线车间        组装C与电机参观通道南侧');
+		console.log('10#     氮气                氮气');
+		console.log('11#     氩气                氩气');
+		console.log('12#     氧气                氧气');
+		console.log('');
+
+		console.log('%c【颜色说明】', 'color: #ff00ff; font-size: 13px; font-weight: bold;');
+		console.log('%c■ 1#-9# (压缩空气):    铂金灰色', 'color: #c0c0c0;');
+		console.log('%c■ 10# (氮气):          橘黄色', 'color: #ff9632;');
+		console.log('%c■ 11# (氩气):          橘黄色', 'color: #ff9632;');
+		console.log('%c■ 12# (氧气):          蓝色', 'color: #64b4ff;');
+		console.log('');
+
+		console.log('%c【单位说明】', 'color: #ff00ff; font-size: 13px; font-weight: bold;');
+		console.log('瞬时流量: m³/h (立方米每小时) - 可通过控制台更新');
+		console.log('当日累计: m³ (立方米) - 仅由数据库自动查询更新');
+		console.log('');
+		
+		console.log('%c【重要提示】', 'color: #ff6666; font-size: 13px; font-weight: bold;');
+		console.log('• 当日累计量数据由数据库自动查询，不允许通过控制台手动更新');
+		console.log('• 所有更新函数仅支持修改瞬时流量');
+		console.log('• 如需手动触发累计量查询，请使用: queryDailyCumulative()');
+		console.log('');
+
+		console.log('%c========================================', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+	}
+	</script>
+</head>
+<style>
+	body{
+		margin: 0;
+		padding: 0;
+		height: 100vh;
+		width: 100vw;
+		overflow: hidden;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+		background: #0f266c;
+	}
+
+	.container {
+		position: relative;
+		width: 1720px;
+		height: 1080px;
+		margin: 0;
+		padding: 0;
+		background: #0f266c;
+		overflow: hidden;
+	}
+
+	.background-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		z-index: 2;
+	}
+
+	/* 数据显示样式 */
+	#dataDisplay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 3;
+		pointer-events: none;
+	}
+
+	.data-group {
+		position: absolute;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		transform: translate(-50%, -50%);
+		background: rgba(255, 150, 50, 0.15);
+		border: 1px solid rgba(255, 150, 50, 0.6);
+		border-radius: 8px;
+		padding: 8px 10px;
+		box-shadow:
+			0 0 15px rgba(255, 150, 50, 0.4),
+			0 0 25px rgba(255, 150, 50, 0.3),
+			inset 0 0 10px rgba(255, 150, 50, 0.1);
+	}
+
+	/* 铂金灰色样式 - 压缩空气表（1#-9#，索引0-8） */
+	.data-group.platinum-gray {
+		background: rgba(169, 169, 169, 0.15);
+		border: 1px solid rgba(192, 192, 192, 0.6);
+		box-shadow:
+			0 0 15px rgba(192, 192, 192, 0.4),
+			0 0 25px rgba(192, 192, 192, 0.3),
+			inset 0 0 10px rgba(192, 192, 192, 0.1);
+	}
+
+	.data-group.platinum-gray .title-text {
+		text-shadow: 0 0 4px rgba(192, 192, 192, 0.6);
+	}
+
+	.data-group.platinum-gray .status-indicator {
+		background: rgba(192, 192, 192, 0.9);
+		box-shadow:
+			0 0 12px rgba(192, 192, 192, 0.7),
+			0 0 20px rgba(192, 192, 192, 0.5),
+			0 0 30px rgba(192, 192, 192, 0.3);
+	}
+
+	.data-group.platinum-gray .data-item {
+		border: 1px solid rgba(192, 192, 192, 0.3);
+	}
+
+	.data-group.platinum-gray .data-item:hover {
+		border-color: rgba(192, 192, 192, 0.6);
+	}
+
+	/* 蓝色样式 - 氧气表（索引11） */
+	.data-group.blue {
+		background: rgba(50, 150, 255, 0.15);
+		border: 1px solid rgba(100, 180, 255, 0.6);
+		box-shadow:
+			0 0 15px rgba(100, 180, 255, 0.4),
+			0 0 25px rgba(100, 180, 255, 0.3),
+			inset 0 0 10px rgba(100, 180, 255, 0.1);
+	}
+
+	.data-group.blue .title-text {
+		text-shadow: 0 0 4px rgba(100, 180, 255, 0.6);
+	}
+
+	.data-group.blue .status-indicator {
+		background: rgba(100, 180, 255, 0.9);
+		box-shadow:
+			0 0 12px rgba(100, 180, 255, 0.7),
+			0 0 20px rgba(100, 180, 255, 0.5),
+			0 0 30px rgba(100, 180, 255, 0.3);
+	}
+
+	.data-group.blue .data-item {
+		border: 1px solid rgba(100, 180, 255, 0.3);
+	}
+
+	.data-group.blue .data-item:hover {
+		border-color: rgba(100, 180, 255, 0.6);
+	}
+
+	.title-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding: 2px 4px;
+		min-width: 140px;
+		background: transparent;
+	}
+
+	.title-text {
+		font-size: 13px;
+		font-weight: 600;
+		color: rgba(255, 255, 255, 0.95);
+		text-shadow: 0 0 4px rgba(255, 150, 50, 0.6);
+		flex: 1;
+		text-align: center;
+	}
+
+	.status-indicator {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: rgba(255, 150, 50, 0.9);
+		box-shadow:
+			0 0 12px rgba(255, 150, 50, 0.7),
+			0 0 20px rgba(255, 150, 50, 0.5),
+			0 0 30px rgba(255, 150, 50, 0.3);
+	}
+
+	.status-indicator.left {
+		order: -1;
+	}
+
+	.status-indicator.right {
+		order: 1;
+	}
+
+	.data-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px;
+		width: 100%;
+	}
+
+	
+	.data-item {
+		background: rgba(40, 60, 100, 0.5);
+		border: 1px solid rgba(255, 180, 120, 0.3);
+		border-radius: 4px;
+		padding: 3px 5px;
+		color: #ffffff;
+		font-size: 11px;
+		font-weight: 500;
+		text-align: center;
+		min-width: 70px;
+		backdrop-filter: blur(6px);
+		transition: all 0.3s ease;
+		flex: 1;
+	}
+
+	.data-item:hover {
+		border-color: rgba(255, 200, 150, 0.6);
+		background: rgba(60, 80, 120, 0.7);
+		transform: scale(1.03);
+	}
+
+	
+	.data-label {
+		font-size: 9px;
+		color: rgba(200, 220, 255, 0.9);
+		margin-bottom: 2px;
+		font-weight: 600;
+		text-shadow: 0 0 3px rgba(100, 150, 255, 0.6);
+	}
+
+	.data-value {
+		font-size: 12px;
+		font-weight: bold;
+		color: rgba(150, 255, 220, 0.95);
+		text-shadow: 0 0 3px rgba(100, 200, 255, 0.5);
+	}
+
+	.data-unit {
+		font-size: 9px;
+		color: rgba(180, 230, 255, 0.9);
+		margin-left: 1px;
+		font-weight: 500;
+	}
+
+	/* 页面标题样式 */
+	.page-header {
+		position: absolute;
+		top: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 10;
+		text-align: center;
+	}
+
+	.page-title {
+		font-size: 30px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.95);
+		text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+		margin: 0;
+		padding: 10px 0;
+		letter-spacing: 8px;
+	}
+
+	/* 图例框样式 */
+	.legend-box {
+		position: absolute;
+		bottom: 59px;
+		left: 69px;
+		z-index: 10;
+		background: rgba(20, 40, 80, 0.85);
+		border: 2px solid rgba(192, 192, 192, 0.6);
+		border-radius: 12px;
+		padding: 15px 20px;
+		box-shadow:
+			0 0 20px rgba(192, 192, 192, 0.3),
+			inset 0 0 15px rgba(0, 0, 0, 0.3);
+		backdrop-filter: blur(10px);
+	}
+
+	.legend-title {
+		font-size: 16px;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.95);
+		text-shadow: 0 0 3px rgba(192, 192, 192, 0.6);
+		margin-bottom: 12px;
+		text-align: center;
+		letter-spacing: 2px;
+		border-bottom: 1px solid rgba(192, 192, 192, 0.3);
+		padding-bottom: 8px;
+	}
+
+	.legend-content {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px 15px;
+	}
+
+	.legend-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.legend-number {
+		font-weight: 700;
+		color: rgba(200, 220, 255, 0.95);
+		min-width: 28px;
+		text-align: center;
+		background: rgba(192, 192, 192, 0.2);
+		padding: 2px 6px;
+		border-radius: 4px;
+		border: 1px solid rgba(192, 192, 192, 0.3);
+	}
+
+	.legend-name {
+		color: rgba(255, 255, 255, 0.85);
+		font-weight: 500;
+	}
+
+	</style>
+<body>
+	<!-- 页面大标题 -->
+	<div class="page-header">
+		<h1 class="page-title">冰山松洋压缩机(大连)有限公司压缩空气流量图</h1>
+	</div>
+
+	<div class="container">
+		<img src="白色透明底V2.png" class="background-image" alt="气表工艺图" />
+
+		<!-- 数据显示区域 -->
+		<div id="dataDisplay">
+			<!-- 9组数据，每组包含瞬时流量和累计流量 -->
+		</div>
+
+		<!-- 编号图例 -->
+		<div class="legend-box">
+			<div class="legend-title">编号说明</div>
+			<div class="legend-content">
+				<div class="legend-item">
+					<span class="legend-number">1#</span>
+					<span class="legend-name">主管路压缩空气</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">2#</span>
+					<span class="legend-name">维修室</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">3#</span>
+					<span class="legend-name">清洗磷化</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">4#</span>
+					<span class="legend-name">大马力车间</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">5#</span>
+					<span class="legend-name">三坐标外墙</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">6#</span>
+					<span class="legend-name">组装车间东墙</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">7#</span>
+					<span class="legend-name">研发中心</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">8#</span>
+					<span class="legend-name">组装配电室</span>
+				</div>
+				<div class="legend-item">
+					<span class="legend-number">9#</span>
+					<span class="legend-name">二楼变电所出入门棚顶</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

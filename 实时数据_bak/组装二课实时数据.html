@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta NAME="Generator" CONTENT="EditPlus">
+	<meta NAME="Author" CONTENT="">
+	<meta NAME="Keywords" CONTENT="">
+	<meta NAME="Description" CONTENT="">
+	<meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
+	<title>组装二课实时数据</title>
+	<!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+	<link href="../js/css/layui.css" rel="stylesheet">
+	<script type="text/javascript" src="../js/echarts.js"></script>
+	<script type="text/javascript" src="../js/JsCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/CppCallCppFunc.js"></script>
+	<script type="text/javascript" src="../js/layui.js"></script> 
+	<script type="text/javascript">
+		layui.config({
+			base: '../js/layui_exts/'
+		}).extend({
+			excel: 'excel'
+		});
+	</script>
+</head>
+<style>
+	body{
+		height:100%;
+		font-family: 'PingFang SC', "Helvetica Neue", Helvetica, "microsoft yahei", arial, STHeiTi, sans-serif;
+	}
+	.content-box {
+		position: absolute;
+		width: 100%;
+		right: 0;
+		top: 0px;
+		bottom: 0;
+		padding-bottom: 10px;
+		-webkit-transition: left .3s ease-in-out;
+		transition: left .3s ease-in-out;
+		background: #0f266c;
+	}
+	.content {
+		height: 100%;
+		padding: 10px;
+		padding-top: 8px;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.report {
+		height: 100%;
+	}
+	.report-content {
+		height: 100%;
+		overflow: hidden;
+	}
+	div {
+		display: block;
+		unicode-bidi: isolate;
+	}
+	
+	.layui-form {
+		background: #1d386f;
+		border: 1px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-col-md12 .layui-form .layui-form .layui-form{
+		padding:0 0 0 0 ;
+	}
+	
+	.layui-col-md2 .layui-form .layui-form {
+		background: #1d386f;
+		border: 0px solid #2a6dc8;
+		color: #fff;
+		padding: 10px 0 10px 0;
+	}
+	
+	.layui-form-item .layui-input-inline{
+		margin-right :0px;
+	}
+	
+	.layui-input-inline input {
+		background-color: rgba(40, 80, 167, 1);
+		border-color: rgba(40, 80, 167, 0);
+		color:white;
+	}
+	input ::placeholder {
+		color:white;
+	}
+	
+	.layui-input:hover,
+	.layui-textarea:hover {
+		border-color: rgba(40, 80, 167, 0) !important
+	}
+	
+	.layui-input:focus,
+	.layui-textarea:focus {
+		border-color: #409eff !important;
+		box-shadow: 0 0 0 3px rgba(40, 80, 167, .08)
+	}
+	
+	.layui-form-select dl dd.layui-this
+	{
+		background-color: #f8f8f8;
+		color: #409eff;
+		font-weight: 700;
+	}
+	
+	.layui-input-prefix .layui-icon{
+		color: #C0C4CC;
+	}
+	
+	.layui-form-item .layui-inline{
+		margin-bottom: 0px;
+	}
+	
+	.layui-form-item {
+		margin-bottom: 0px;
+	}
+	
+	.layui-tree-txt {
+		display: inline-block;
+		vertical-align: middle;
+		color: #fff;
+	}
+	
+	.layui-tree-entry:hover {
+		background-color: rgba(30, 160, 225)
+	}
+	
+	.all_unit {
+		float: right;
+		font-size: 14px;
+		margin-bottom: 5px;
+		margin-right: 15px;
+	}
+	.layui-table {
+		width: 100%;
+		margin: 10px 0;
+		background-color: rgba(29, 56, 111);
+		color: #b9d3f4
+	}
+	
+	.layui-table th {
+		text-align: left;
+		font-weight: 600;
+		background-color: #ffffff;
+	}
+	
+	.layui-table-mend {
+		background-color: #fff
+	}
+	
+	.layui-table thead tr th {
+		background-color: rgba(12, 110, 211) !important;
+	}
+	
+	.layui-table-hover{
+		background-color: transparent;
+	}
+	.layui-table[lay-even] tbody tr:nth-child(even):hover {
+		background-color: rgba(36, 68, 125) !important;
+	}
+	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color: rgba(36, 68, 125);
+	}
+	
+	.layui-table td,
+	.layui-table th,
+	.layui-table-col-set,
+	.layui-table-fixed-r,
+	.layui-table-grid-down,
+	.layui-table-mend,
+	.layui-table-page,
+	.layui-table-tips-main,
+	.layui-table-tool,
+	.layui-table-total,
+	.layui-table-view,
+	.layui-table[lay-skin=line],
+	.layui-table[lay-skin=row] {
+		border-width: 1px;
+		border-style: solid;
+		border-color: rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-table-header{
+		border-bottom: 1px solid rgba(29, 56, 111);
+		font-family: "Microsoft YaHei"
+	}
+	
+	.layui-form-mid{
+		margin-left:10px;
+	}
+	
+	/* 表格容器样式 - 确保表格在卡片内滚动 */
+	#table_form {
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+	
+	/* Layui表格容器 */
+	.layui-table-view {
+		margin: 0 !important;
+	}
+	
+	/* 表格主体区域滚动 */
+	.layui-table-body {
+		overflow-y: auto !important;
+		overflow-x: hidden !important;
+	}
+	
+	/* 自定义滚动条样式 */
+	.layui-table-body::-webkit-scrollbar {
+		width: 8px;
+		background-color: rgba(29, 56, 111, 0.3);
+	}
+	
+	.layui-table-body::-webkit-scrollbar-thumb {
+		background-color: rgba(12, 110, 211, 0.6);
+		border-radius: 4px;
+	}
+	
+	.layui-table-body::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(12, 110, 211, 0.8);
+	}
+	
+	/* 确保表格不会溢出 */
+	.layui-table-box {
+		overflow: hidden !important;
+	}
+</style>
+<body style="height:100%;background: rgba(0, 91, 160)">
+	<div class="content-box">
+		<div class="content">
+			<div class="report">
+				<div class="report-content">
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md12">
+							<div class=" layui-form" style = "height:100%;padding-bottom:0px;" >
+								<div class=" layui-form" id = "table_form" style = "height:calc(100% - 11px);margin:0px 10px 0px 10px;padding:0 0 0 0 ;" >
+									<table id="test" lay-filter="test"></table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+<script>
+	var tableData = [];
+	
+	// 组装二课数据更新函数 - 9个电表
+	function setTableData(
+		E490001_A项电压,E490001_B项电压,E490001_C项电压,E490001_AB线电压,E490001_BC线电压,E490001_CA线电压,E490001_A项电流,E490001_B项电流,E490001_C项电流,E490001_三项无功功率,E490001_三项有功功率,E490001_三项视在功率,E490001_总功率因数,E490001_频率,
+		E490002_A项电压,E490002_B项电压,E490002_C项电压,E490002_AB线电压,E490002_BC线电压,E490002_CA线电压,E490002_A项电流,E490002_B项电流,E490002_C项电流,E490002_三项无功功率,E490002_三项有功功率,E490002_三项视在功率,E490002_总功率因数,E490002_频率,
+		E490003_A项电压,E490003_B项电压,E490003_C项电压,E490003_AB线电压,E490003_BC线电压,E490003_CA线电压,E490003_A项电流,E490003_B项电流,E490003_C项电流,E490003_三项无功功率,E490003_三项有功功率,E490003_三项视在功率,E490003_总功率因数,E490003_频率,
+		E490004_A项电压,E490004_B项电压,E490004_C项电压,E490004_AB线电压,E490004_BC线电压,E490004_CA线电压,E490004_A项电流,E490004_B项电流,E490004_C项电流,E490004_三项无功功率,E490004_三项有功功率,E490004_三项视在功率,E490004_总功率因数,E490004_频率,
+		E490005_A项电压,E490005_B项电压,E490005_C项电压,E490005_AB线电压,E490005_BC线电压,E490005_CA线电压,E490005_A项电流,E490005_B项电流,E490005_C项电流,E490005_三项无功功率,E490005_三项有功功率,E490005_三项视在功率,E490005_总功率因数,E490005_频率,
+		E490006_A项电压,E490006_B项电压,E490006_C项电压,E490006_AB线电压,E490006_BC线电压,E490006_CA线电压,E490006_A项电流,E490006_B项电流,E490006_C项电流,E490006_三项无功功率,E490006_三项有功功率,E490006_三项视在功率,E490006_总功率因数,E490006_频率,
+		E490007_A项电压,E490007_B项电压,E490007_C项电压,E490007_AB线电压,E490007_BC线电压,E490007_CA线电压,E490007_A项电流,E490007_B项电流,E490007_C项电流,E490007_三项无功功率,E490007_三项有功功率,E490007_三项视在功率,E490007_总功率因数,E490007_频率,
+		E490008_A项电压,E490008_B项电压,E490008_C项电压,E490008_AB线电压,E490008_BC线电压,E490008_CA线电压,E490008_A项电流,E490008_B项电流,E490008_C项电流,E490008_三项无功功率,E490008_三项有功功率,E490008_三项视在功率,E490008_总功率因数,E490008_频率,
+		E490009_A项电压,E490009_B项电压,E490009_C项电压,E490009_AB线电压,E490009_BC线电压,E490009_CA线电压,E490009_A项电流,E490009_B项电流,E490009_C项电流,E490009_三项无功功率,E490009_三项有功功率,E490009_三项视在功率,E490009_总功率因数,E490009_频率
+	){
+		tableData = [{
+			name:"组装一号表",
+			V_A:Math.round(E490001_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490001_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490001_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490001_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490001_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490001_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490001_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490001_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490001_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490001_总功率因数 * 100)/100,
+			Hz:Math.round(E490001_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490001_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490001_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490001_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"组装二号表",
+			V_A:Math.round(E490002_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490002_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490002_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490002_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490002_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490002_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490002_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490002_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490002_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490002_总功率因数 * 100)/100,
+			Hz:Math.round(E490002_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490002_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490002_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490002_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"前处理电表",
+			V_A:Math.round(E490003_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490003_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490003_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490003_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490003_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490003_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490003_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490003_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490003_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490003_总功率因数 * 100)/100,
+			Hz:Math.round(E490003_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490003_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490003_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490003_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"固化炉电表",
+			V_A:Math.round(E490004_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490004_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490004_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490004_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490004_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490004_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490004_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490004_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490004_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490004_总功率因数 * 100)/100,
+			Hz:Math.round(E490004_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490004_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490004_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490004_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"氢检线电表",
+			V_A:Math.round(E490005_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490005_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490005_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490005_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490005_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490005_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490005_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490005_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490005_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490005_总功率因数 * 100)/100,
+			Hz:Math.round(E490005_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490005_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490005_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490005_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"输送线电表一号表",
+			V_A:Math.round(E490006_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490006_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490006_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490006_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490006_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490006_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490006_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490006_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490006_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490006_总功率因数 * 100)/100,
+			Hz:Math.round(E490006_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490006_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490006_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490006_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"输送线电表二号表",
+			V_A:Math.round(E490007_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490007_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490007_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490007_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490007_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490007_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490007_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490007_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490007_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490007_总功率因数 * 100)/100,
+			Hz:Math.round(E490007_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490007_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490007_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490007_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"操作线电表一号表",
+			V_A:Math.round(E490008_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490008_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490008_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490008_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490008_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490008_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490008_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490008_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490008_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490008_总功率因数 * 100)/100,
+			Hz:Math.round(E490008_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490008_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490008_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490008_三项视在功率 * 100)/100 + "KVA",
+		},{
+			name:"操作线电表二号表",
+			V_A:Math.round(E490009_A项电压 * 10)/10 + "V",
+			V_B:Math.round(E490009_B项电压 * 10)/10 + "V",
+			V_C:Math.round(E490009_C项电压 * 10)/10 + "V",
+			A_A:Math.round(E490009_A项电流 * 10)/10 + "A",
+			A_B:Math.round(E490009_B项电流 * 10)/10 + "A",
+			A_C:Math.round(E490009_C项电流 * 10)/10 + "A",
+			V_AB:Math.round(E490009_AB线电压 * 10)/10 + "V",
+			V_BC:Math.round(E490009_BC线电压 * 10)/10 + "V",
+			V_CA:Math.round(E490009_CA线电压 * 10)/10 + "V",
+			COS:Math.round(E490009_总功率因数 * 100)/100,
+			Hz:Math.round(E490009_频率 * 10)/10 + "Hz",
+			P_ABC:Math.round(E490009_三项有功功率 * 100)/100 + "KW",
+			Q_ABC:Math.round(E490009_三项无功功率 * 100)/100 + "Kvar",
+			S_ABC:Math.round(E490009_三项视在功率 * 100)/100 + "KVA",
+		}];
+	}
+
+	layui.use(['form', 'laydate', 'util','excel'],function() {
+		var form = layui.form;
+		var layer = layui.layer;
+		var laydate = layui.laydate;
+		var util = layui.util;
+		var tree = layui.tree;
+		var excel = layui.excel;
+		var table = layui.table;
+		var $ = layui.$;
+		
+		var cols = [[
+			{field: 'name',title: '电表名称',align:"left",width:200},
+			{field: 'A_A',title: 'A相电流',align:"center"},
+			{field: 'A_B', title: 'B相电流', align:"center" },
+			{field: 'A_C', title: 'C相电流',align:"center"},
+			{field: 'COS', title: '功率因数',align:"center"},
+			{field: 'P_ABC', title: '有功功率', align:"center" },
+			{field: 'Q_ABC',title: '无功功率',align:"center"},
+			{field: 'S_ABC', title: '视在功率',align:"center"},
+			{field: 'V_A',title: 'A相电压',align:"center"},
+			{field: 'V_B', title: 'B相电压', align:"center" },
+			{field: 'V_C', title: 'C相电压',align:"center"},
+			{field: 'V_AB',title: 'AB线电压',align:"center"},
+			{field: 'V_BC', title: 'BC线电压', align:"center" },
+			{field: 'V_CA', title: 'CA线电压',align:"center"},
+			{field: 'Hz', title: '频率',align:"center"},
+		]];
+
+		table.render({
+			elem: '#test',
+			cols: cols,
+			data: [],
+			height: $("#table_form").height()-1,
+			even: true,
+		});
+			
+		// 每1秒刷新一次表格数据
+		setInterval(function() {
+			table.reloadData('test', {
+				data: tableData,
+				scrollPos: 'fixed'
+			});
+		}, 1000);
+	});
+	</script>
+	
+</body>
+</html>
