@@ -477,7 +477,7 @@
             padding: 5px 12px 3px 12px;
             text-align: center;
             color: rgba(255, 255, 255, 0.7);
-            font-size: clamp(9px, 2.3vw, 11px);
+            font-size: clamp(10px, 2.8vw, 12px);
             display: none; /* 默认隐藏 */
             position: relative;
         }
@@ -513,16 +513,19 @@
         
         /* 底部厂牌标识 */
         .company-badge {
-            padding: 4px 0px;
+            padding: 1px 0px;
             text-align: center;
         }
         
         .badge-line {
             color: rgba(255, 255, 255, 0.3);
-            font-size: clamp(10px, 3.5vw, 16px);
+            font-size: clamp(8px, 2.5vw, 14px);
             letter-spacing: 0.5px;
             line-height: 1.6;
             margin: 2px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
@@ -570,7 +573,8 @@
             </div>
             <!-- 厂牌标识 -->
             <div class="company-badge">
-                <div class="badge-line">数智方案 大连盛云科技有限公司</div>
+                <!-- <div class="badge-line">数智方案 大连盛云科技有限公司</div> -->
+                <div class="badge-line"></div>
                 <div class="badge-line">技术支持 1234567891234</div>
             </div>
         </div>
