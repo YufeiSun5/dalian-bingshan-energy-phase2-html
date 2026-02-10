@@ -324,30 +324,31 @@ elec_final_view AS (
         END AS group_name,
         CASE 
             WHEN cfg.NO = 420010 THEN 
-                 GREATEST(0, COALESCE((SELECT hourly_usage FROM (
-                     SELECT no, query_date, SUM(sum_elec) AS hourly_usage 
-                     FROM sum_elec_group_by_hour 
-                     WHERE no = 320022 AND date >= '${adjustedStartDate}' AND date <= '${adjustedEndDate}'
-                     GROUP BY no, ${dateFormatExpr}
-                 ) t WHERE query_date = calc_data.query_date), 0) - 
-                 COALESCE((SELECT hourly_usage FROM (
-                     SELECT no, query_date, SUM(sum_elec) AS hourly_usage 
-                     FROM sum_elec_group_by_hour 
-                     WHERE no = 420001 AND date >= '${adjustedStartDate}' AND date <= '${adjustedEndDate}'
-                     GROUP BY no, ${dateFormatExpr}
-                 ) t WHERE query_date = calc_data.query_date), 0) -
-                 COALESCE((SELECT hourly_usage FROM (
-                     SELECT no, query_date, SUM(sum_elec) AS hourly_usage 
-                     FROM sum_elec_group_by_hour 
-                     WHERE no = 420002 AND date >= '${adjustedStartDate}' AND date <= '${adjustedEndDate}'
-                     GROUP BY no, ${dateFormatExpr}
-                 ) t WHERE query_date = calc_data.query_date), 0) -
-                 COALESCE((SELECT hourly_usage FROM (
-                     SELECT no, query_date, SUM(sum_elec) AS hourly_usage 
-                     FROM sum_elec_group_by_hour 
-                     WHERE no = 420009 AND date >= '${adjustedStartDate}' AND date <= '${adjustedEndDate}'
-                     GROUP BY no, ${dateFormatExpr}
-                 ) t WHERE query_date = calc_data.query_date), 0)
+                 GREATEST(0, 
+                     COALESCE((SELECT SUM(sum_elec)
+                              FROM sum_elec_group_by_hour 
+                              WHERE no = 320022 
+                                AND ${dateFormatExpr} = calc_data.query_date
+                                AND date >= '${adjustedStartDate}' 
+                                AND date <= '${adjustedEndDate}'), 0) - 
+                     COALESCE((SELECT SUM(sum_elec)
+                              FROM sum_elec_group_by_hour 
+                              WHERE no = 420001 
+                                AND ${dateFormatExpr} = calc_data.query_date
+                                AND date >= '${adjustedStartDate}' 
+                                AND date <= '${adjustedEndDate}'), 0) -
+                     COALESCE((SELECT SUM(sum_elec)
+                              FROM sum_elec_group_by_hour 
+                              WHERE no = 420002 
+                                AND ${dateFormatExpr} = calc_data.query_date
+                                AND date >= '${adjustedStartDate}' 
+                                AND date <= '${adjustedEndDate}'), 0) -
+                     COALESCE((SELECT SUM(sum_elec)
+                              FROM sum_elec_group_by_hour 
+                              WHERE no = 420009 
+                                AND ${dateFormatExpr} = calc_data.query_date
+                                AND date >= '${adjustedStartDate}' 
+                                AND date <= '${adjustedEndDate}'), 0)
                 )
             ELSE COALESCE(calc_data.hourly_usage, 0)
         END AS elec_val
