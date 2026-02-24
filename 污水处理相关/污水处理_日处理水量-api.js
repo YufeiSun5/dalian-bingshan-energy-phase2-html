@@ -365,11 +365,11 @@ window.addEventListener('DOMContentLoaded', function() {
         // 2. 启动自动更新（会立即加载一次数据）
         dataManager.startAutoUpdate();
         
-        // 3. 设置预警线（使用 HTML 中的方法）
+        // 3. 设置预警线(使用 HTML 中的方法)
         /*setTimeout(() => {
             if (window.chartControl && window.chartControl.setMarkLine) {
                 window.chartControl.setMarkLine([
-                    { value: 105, name: '预警值', color: '#ff0000', width: 2 }
+                    { value: 105, name: '预警值', color: '#ff0000', width: 2, type: 'dashed', unit: 'm³' }
                 ]);
             }
         }, 500);*/

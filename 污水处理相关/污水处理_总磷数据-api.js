@@ -323,8 +323,8 @@ window.addEventListener('DOMContentLoaded', function() {
         // setTimeout(() => {
         //     if (window.chartControl && window.chartControl.setMarkLine) {
         //         window.chartControl.setMarkLine([
-        //             { value: 0.5, name: '排放限值', color: '#ff7675', width: 2, type: 'dashed' },
-        //             { value: 0.3, name: '警戒线', color: '#ffeaa7', width: 1 }
+        //             { value: 0.5, name: '排放限值', color: '#ff7675', width: 2, type: 'dashed', unit: 'mg/L' },
+        //             { value: 0.3, name: '警戒线', color: '#ffeaa7', width: 1, type: 'solid', unit: 'mg/L' }
         //         ]);
         //     }
         // }, 500);

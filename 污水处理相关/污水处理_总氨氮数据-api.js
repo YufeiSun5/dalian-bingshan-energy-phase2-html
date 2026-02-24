@@ -319,21 +319,22 @@ window.addEventListener('DOMContentLoaded', function() {
         // 2. 启动
         dataManager.startAutoUpdate();
 
-        // 3. 设置环保预警线 (例如氨氮超标线 5.0 mg/L)
+        // 3. 暂时不设置预警线,等待数据收集完善
+        // setTimeout(() => {
+        //     if (window.chartControl && window.chartControl.setMarkLine) {
+        //         window.chartControl.setMarkLine([
+        //             { value: 5.0, name: '排放限值', color: '#ff7675', width: 2, type: 'dashed', unit: 'mg/L' },
+        //             { value: 2.0, name: '警戒线', color: '#ffeaa7', width: 1, type: 'solid', unit: 'mg/L' }
+        //         ]);
+        //     }
+        // }, 500);
+        
+        // 4. 延迟启动 tooltip 自动播放,确保图表完全加载后再启动
         setTimeout(() => {
-            if (window.chartControl && window.chartControl.setMarkLine) {
-                window.chartControl.setMarkLine([
-                    { value: 5.0, name: '排放限值', color: '#ff7675', width: 2, type: 'dashed' },
-                    { value: 2.0, name: '警戒线', color: '#ffeaa7', width: 1 }
-                ]);
+            if (window.chartControl && window.chartControl.startAutoPlay) {
+                window.chartControl.startAutoPlay();
             }
-            // 4. 延迟启动 tooltip 自动播放，确保图表完全加载后再启动
-            setTimeout(() => {
-                if (window.chartControl && window.chartControl.startAutoPlay) {
-                    window.chartControl.startAutoPlay();
-                }
-            }, 1000);
-        }, 500);
+        }, 1000);
 
     }, 100);
 });

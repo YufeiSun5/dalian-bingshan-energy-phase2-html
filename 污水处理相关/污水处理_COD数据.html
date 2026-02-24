@@ -353,12 +353,12 @@
                         name: mark.name || '',
                         label: {
                             show: true,
-                            position: 'end',
-                            formatter: mark.name || `${mark.value}`,
+                            position: 'insideEndTop',  // 改为图表内部,避免溢出
+                            formatter: mark.name ? `${mark.name}:${mark.value}${mark.unit || ''}` : `${mark.value}${mark.unit || ''}`,
                             color: mark.color || '#999'
                         },
                         lineStyle: {
-                            type: 'dashed',
+                            type: mark.type || 'dashed',  // 支持自定义线型
                             color: mark.color || '#999',
                             width: mark.width || 2
                         }
