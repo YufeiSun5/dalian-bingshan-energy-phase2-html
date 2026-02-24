@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能开发中 - 敬请期待</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <style>
+        /* ========== 沿用原全局样式 ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* ========== 保持原有的科技感容器样式 ========== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1e4e89 0%, #0f266c 70%);
+            border: 1px solid #2a6dc8;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 装饰用背景线 - 保持一致 */
+        .main-content::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(42, 109, 200, 0.1) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(42, 109, 200, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        /* ========== 敬请期待专用样式 ========== */
+        .coming-soon-box {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .icon-box {
+            font-size: 80px;
+            color: #5ba3ff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(91, 163, 255, 0.6);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff7ca;
+            letter-spacing: 4px;
+            margin-bottom: 15px;
+        }
+
+        .sub-title {
+            font-size: 18px;
+            color: #8eb1de;
+            letter-spacing: 1px;
+        }
+
+        .progress-decoration {
+            margin-top: 30px;
+            width: 300px;
+            height: 4px;
+            background: rgba(42, 109, 200, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .progress-bar {
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #5ba3ff, transparent);
+            animation: flow 2s infinite linear;
+        }
+
+        /* 动画定义 */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        @keyframes flow {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+
+        /* 底部版权/提示 */
+        .footer-info {
+            position: absolute;
+            bottom: 20px;
+            color: rgba(142, 177, 222, 0.5);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="main-content">
+            <div class="coming-soon-box">
+                <div class="icon-box">
+                    <i class="layui-icon layui-icon-engine" style="font-size: 80px;"></i>
+                </div>
+                <h1 class="title">功能开发中</h1>
+                <p class="sub-title">COMING SOON</p>
+                <p class="sub-title" style="margin-top: 10px; font-size: 14px; opacity: 0.7;">该模块正在进行调试与优化，敬请期待</p>
+                
+                <div class="progress-decoration">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="footer-info">
+                © 大连盛云科技有限公司
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/layui.js"></script>
+</body>
+</html>
