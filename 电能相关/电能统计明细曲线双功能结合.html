@@ -2158,7 +2158,7 @@
 		}
 		
 		
-		async function sendSQL(strsql) {
+		async function sendSQL(strsql, enableFallback = true) {
 			const sql = strsql;
 			console.info(sql);
 			const res = await fetch('http://192.168.7.229:8004/api/sql/run-sql', {
@@ -2171,6 +2171,32 @@
 			});
 
 			const data = await res.json();
+			
+			// 回退机制：如果表不存在且启用回退，则替换为data_all主表重试
+			if (!data.success && enableFallback) {
+				// 兼容两种错误信息结构：data.message 和 data.error.message
+				const errorMessage = data.message || (data.error && data.error.message) || '';
+				
+				if (errorMessage.includes("doesn't exist")) {
+					console.warn('⚠️ 分表不存在，启动回退机制，使用 data_all 主表查询');
+					
+					// 提取不存在的表名
+					const tableMatch = errorMessage.match(/data_all_(\d{6})/);
+					if (tableMatch) {
+						const missingTable = tableMatch[0];
+						console.log('❌ 不存在的表：', missingTable);
+						console.log('🔄 回退到主表：data_all');
+						
+						// 将分表名替换为 data_all
+						const fallbackSql = sql.replace(new RegExp(missingTable, 'g'), 'data_all');
+						console.log('🔄 回退SQL：', fallbackSql);
+						
+						// 递归调用，但禁用回退避免无限循环
+						return await sendSQL(fallbackSql, false);
+					}
+				}
+			}
+			
 			return data;
 			
 			//document.getElementById('responseBox').textContent = JSON.stringify(data, null, 2);
