@@ -95,7 +95,7 @@ window.HEATPUMP_CONFIG = {
                     return result;
                 }
             },
-            legend: { data: data.series.map(s => s.name), textStyle: { color: '#b9d3f4' }, top: 5 },
+            legend: { data: data.series.map(s => s.name), textStyle: { color: '#b9d3f4' }, top: 5, right: 100 },
             grid: { top: 35, left: 50, right: 30, bottom: 20, containLabel: true },
             xAxis: {
                 type: 'category', 
@@ -308,9 +308,21 @@ elec_final_view AS (
 ),
 ` : `
 -- 查询不包含今天：全部从汇总表
+elec_from_summary AS (
+    SELECT
+        no,
+        ${dateFormatExpr} AS query_date,
+        SUM(sum_elec) AS hourly_usage
+    FROM sum_elec_group_by_hour
+    WHERE no IN (320022, 420001, 420002, 420003, 420004, 420005, 420006, 420007, 420008, 420009, 420011, 420012, 420013, 420014, 420015)
+      AND date >= '${adjustedStartDate}'
+      AND date <= '${adjustedEndDate}'
+    GROUP BY no, ${dateFormatExpr}
+),
+
 elec_final_view AS (
     SELECT 
-        calc_data.query_date,
+        ec.query_date,
         cfg.NO AS no,
         cfg.name AS item_name,
         CASE 
@@ -324,46 +336,15 @@ elec_final_view AS (
         END AS group_name,
         CASE 
             WHEN cfg.NO = 420010 THEN 
-                 GREATEST(0, 
-                     COALESCE((SELECT SUM(sum_elec)
-                              FROM sum_elec_group_by_hour 
-                              WHERE no = 320022 
-                                AND ${dateFormatExpr} = calc_data.query_date
-                                AND date >= '${adjustedStartDate}' 
-                                AND date <= '${adjustedEndDate}'), 0) - 
-                     COALESCE((SELECT SUM(sum_elec)
-                              FROM sum_elec_group_by_hour 
-                              WHERE no = 420001 
-                                AND ${dateFormatExpr} = calc_data.query_date
-                                AND date >= '${adjustedStartDate}' 
-                                AND date <= '${adjustedEndDate}'), 0) -
-                     COALESCE((SELECT SUM(sum_elec)
-                              FROM sum_elec_group_by_hour 
-                              WHERE no = 420002 
-                                AND ${dateFormatExpr} = calc_data.query_date
-                                AND date >= '${adjustedStartDate}' 
-                                AND date <= '${adjustedEndDate}'), 0) -
-                     COALESCE((SELECT SUM(sum_elec)
-                              FROM sum_elec_group_by_hour 
-                              WHERE no = 420009 
-                                AND ${dateFormatExpr} = calc_data.query_date
-                                AND date >= '${adjustedStartDate}' 
-                                AND date <= '${adjustedEndDate}'), 0)
-                )
-            ELSE COALESCE(calc_data.hourly_usage, 0)
+                 GREATEST(0, COALESCE((SELECT hourly_usage FROM elec_from_summary WHERE no = 320022 AND query_date = ec.query_date), 0) - 
+                             COALESCE((SELECT hourly_usage FROM elec_from_summary WHERE no = 420001 AND query_date = ec.query_date), 0) -
+                             COALESCE((SELECT hourly_usage FROM elec_from_summary WHERE no = 420002 AND query_date = ec.query_date), 0) -
+                             COALESCE((SELECT hourly_usage FROM elec_from_summary WHERE no = 420009 AND query_date = ec.query_date), 0)
+                        )
+            ELSE COALESCE(ec.hourly_usage, 0)
         END AS elec_val
     FROM info_config cfg
-    JOIN (
-        SELECT
-            no,
-            ${dateFormatExpr} AS query_date,
-            SUM(sum_elec) AS hourly_usage
-        FROM sum_elec_group_by_hour
-        WHERE no IN (320022, 420001, 420002, 420003, 420004, 420005, 420006, 420007, 420008, 420009, 420011, 420012, 420013, 420014, 420015)
-          AND date >= '${adjustedStartDate}'
-          AND date <= '${adjustedEndDate}'
-        GROUP BY no, ${dateFormatExpr}
-    ) calc_data ON cfg.NO = calc_data.no OR (cfg.NO = 420010 AND calc_data.no = 320022)
+    JOIN elec_from_summary ec ON cfg.NO = ec.no OR (cfg.NO = 420010 AND ec.no = 320022)
     WHERE cfg.NO BETWEEN 420001 AND 420015
 ),
 `}

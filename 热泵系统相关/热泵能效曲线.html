@@ -182,6 +182,7 @@
             flex-direction: column;
             overflow: hidden;
             min-height: 0;
+            position: relative;
         }
 
         .chart-body {
@@ -189,6 +190,35 @@
             width: 100%;
             height: 100%;
             position: relative;
+        }
+
+        /* 图例控制按钮 */
+        .legend-control-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            z-index: 100;
+            padding: 4px 12px;
+            border: 1px solid #2a6dc8;
+            background: rgba(29, 56, 111, 0.85);
+            color: #b9d3f4;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            backdrop-filter: blur(5px);
+        }
+
+        .legend-control-btn:hover {
+            background: rgba(30, 136, 229, 0.9);
+            border-color: #1e88e5;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
+        }
+
+        .legend-control-btn:active {
+            transform: translateY(1px);
         }
 
         /* 表格区 (下) */
@@ -353,6 +383,9 @@
 
         <div class="content-area">
             <div class="charts-section">
+                <button class="legend-control-btn" id="btn-clear-legend" title="取消所有图例选中">
+                    <i class="layui-icon layui-icon-close"></i> 清空图例
+                </button>
                 <div id="main-chart" class="chart-body"></div>
             </div>
 
@@ -489,6 +522,37 @@
         // 参数切换监听
         $('#param-select').on('change', function() {
             loadData();
+        });
+
+        // 清空图例按钮
+        $('#btn-clear-legend').on('click', function() {
+            if (window.HEATPUMP_CONFIG && window.HEATPUMP_CONFIG.chartInstance) {
+                var chart = window.HEATPUMP_CONFIG.chartInstance;
+                var option = chart.getOption();
+                
+                // 获取所有系列名称
+                if (option && option.legend && option.legend[0] && option.legend[0].data) {
+                    var legendData = option.legend[0].data;
+                    var selected = {};
+                    
+                    // 将所有图例设置为未选中
+                    legendData.forEach(function(name) {
+                        selected[name] = false;
+                    });
+                    
+                    // 更新图例状态
+                    chart.dispatchAction({
+                        type: 'legendAllSelect'
+                    });
+                    
+                    // 先全选，然后再取消所有选中
+                    chart.dispatchAction({
+                        type: 'legendInverseSelect'
+                    });
+                    
+                    layer.msg('已清空所有图例', { time: 1000 });
+                }
+            }
         });
 
         // 获取查询参数
