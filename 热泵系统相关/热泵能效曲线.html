@@ -7,6 +7,7 @@
     <link href="../js/css/layui.css" rel="stylesheet">
     <script type="text/javascript" src="../js/echarts.js"></script>
     <script type="text/javascript" src="../js/layui.js"></script>
+    <script type="text/javascript" src="../js/xlsx.full.min.js"></script>
     <script src="./heatpump-config.js"></script>
     
     <style>
@@ -519,6 +520,11 @@
 
         $('#btn-search').click(function() { loadData(); });
 
+        // 导出按钮
+        $('#btn-export').click(function() {
+            exportToExcel();
+        });
+
         // 参数切换监听
         $('#param-select').on('change', function() {
             loadData();
@@ -658,6 +664,61 @@
             });
             html += '</tbody>';
             $('#analysis-table').html(html);
+        }
+
+        // 导出到Excel
+        function exportToExcel() {
+            // 检查是否有XLSX库
+            if (typeof XLSX === 'undefined') {
+                layer.msg('Excel导出库未加载，请检查xlsx.full.min.js文件', {icon: 2});
+                return;
+            }
+
+            // 获取表格数据
+            var table = document.getElementById('analysis-table');
+            if (!table || table.rows.length === 0) {
+                layer.msg('没有数据可导出', {icon: 0});
+                return;
+            }
+
+            try {
+                // 创建工作簿
+                var wb = XLSX.utils.book_new();
+                
+                // 从HTML表格创建工作表
+                var ws = XLSX.utils.table_to_sheet(table);
+                
+                // 设置列宽
+                var colWidths = [];
+                var firstRow = table.rows[0];
+                for (var i = 0; i < firstRow.cells.length; i++) {
+                    colWidths.push({wch: 15});
+                }
+                ws['!cols'] = colWidths;
+                
+                // 添加工作表到工作簿
+                var params = getQueryParams();
+                var sheetName = '热泵能效数据';
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                
+                // 生成文件名
+                var paramName = {
+                    'cop': '能效COP',
+                    'power': '耗电量',
+                    'heat': '热量'
+                }[params.param] || '数据';
+                
+                var modeLabel = currentMode === 'equipment' ? '按设备' : '按时间';
+                var fileName = `热泵${paramName}_${modeLabel}_${params.startDate}_${params.endDate}.xlsx`;
+                
+                // 导出文件
+                XLSX.writeFile(wb, fileName);
+                
+                layer.msg('导出成功！', {icon: 1, time: 1500});
+            } catch(error) {
+                console.error('导出失败:', error);
+                layer.msg('导出失败: ' + error.message, {icon: 2});
+            }
         }
 
         window.addEventListener('resize', () => window.HEATPUMP_CONFIG.resize());
