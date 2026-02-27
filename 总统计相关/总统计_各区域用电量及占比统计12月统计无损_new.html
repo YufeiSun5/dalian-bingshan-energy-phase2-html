@@ -598,10 +598,10 @@
                 system_nos: [230004, 230005, 7, 10, 320009, 4,8,9,320018,320019,320020, 320010],  // 不包括5（研发中心GCS柜，需要单独处理）
                 gcs_no: 5,  // 研发中心（GCS柜）的NO，需要减去扣除项
                 deduction_system_nos: [24, 25],  // 系统采集的扣除项组成部分
-                special_nos: [420005, 420006, 420007, 420008],  // 冷热机组*2/3
-                special_ratio: 2/3,
+                rebeng_nos: [420005, 420006, 420007, 420008],  // 冷热机组*1/3（扣除项）
+                rebeng_ratio: 1/3,
                 manual_nos_positive: [60001],  // 委托品质本部实验
-                // 扣除项合计 = 90003 + 80001 + 80002 + 24 + 25（不再使用60002）
+                // 扣除项合计 = 90003 + 80001 + 80002 + 24 + 25 + 冷热机组*1/3
                 deduction_manual_nos: [90003, 80001, 80002]  // 人工录入的扣除项组成部分
             },
             planning_dept: {
@@ -745,10 +745,10 @@
                 }
             } else if (config.type === 'mixed_with_deduction') {
                 // 特殊处理：开发本部（需要计算扣除项）
-                // 合计电量 = [NO.4 - 扣除项合计] + 其他系统采集 + 委托品质本部实验(60001)
-                // 扣除项合计 = 人工录入(90003+80001+80002) + 系统采集(24+25)
+                // 合计电量 = [NO.5 - 扣除项合计] + 其他系统采集 + 委托品质本部实验(60001)
+                // 扣除项合计 = 人工录入(90003+80001+80002) + 系统采集(24+25) + 冷热机组*1/3
                 
-                // 1. 查询NO.4（研发中心GCS柜）的数据
+                // 1. 查询NO.5（研发中心GCS柜）的数据
                 const gcsSql = buildGcsSql(config.gcs_no, startDate, endDate, needTodayData);
                 const gcsResult = await sendSQL(gcsSql);
                 
@@ -760,7 +760,7 @@
                 const deductionManualSql = buildDeductionManualSql(config.deduction_manual_nos, year);
                 const deductionManualResult = await sendSQL(deductionManualSql);
                 
-                // 4. 查询其他系统采集数据（不包括NO.4）
+                // 4. 查询其他系统采集数据（不包括NO.5）
                 const systemSql = buildSystemSql(config, startDate, endDate, needTodayData);
                 const systemResult = await sendSQL(systemSql);
                 
@@ -768,7 +768,14 @@
                 const weituoSql = buildManualSql(config, year);
                 const weituoResult = await sendSQL(weituoSql);
                 
-                // 6. 合并数据
+                // 6. 查询冷热机组（420005~420008）* 1/3（扣除项）
+                const rebengSql = config.rebeng_nos ? buildDeductionSystemSql(
+                    config.rebeng_nos, startDate, endDate, needTodayData,
+                    config.rebeng_ratio
+                ) : null;
+                const rebengResult = rebengSql ? await sendSQL(rebengSql) : { data: [] };
+                
+                // 7. 合并数据
                 // 首先加上其他系统采集数据
                 if (systemResult.data) {
                     systemResult.data.forEach(row => {
@@ -776,7 +783,7 @@
                     });
                 }
                 
-                // 加上NO.4的数据
+                // 加上NO.5的数据
                 if (gcsResult.data) {
                     gcsResult.data.forEach(row => {
                         const currentVal = resultMap.get(row.month) || 0;
@@ -797,6 +804,14 @@
                     deductionManualResult.data.forEach(row => {
                         const currentVal = resultMap.get(row.month) || 0;
                         resultMap.set(row.month, currentVal - (row.manual_elec || 0));
+                    });
+                }
+                
+                // 减去冷热机组 * 1/3
+                if (rebengResult.data) {
+                    rebengResult.data.forEach(row => {
+                        const currentVal = resultMap.get(row.month) || 0;
+                        resultMap.set(row.month, currentVal - (row.total_elec || 0));
                     });
                 }
                 
@@ -1154,14 +1169,16 @@
         
         // ========================================================================
         // 构建扣除项系统采集数据SQL（开发本部专用）
+        // ratio 可选，默认为1（不乘比例），传入1/3时用于冷热机组
         // ========================================================================
-        function buildDeductionSystemSql(deductionNos, startDate, endDate, needTodayData) {
+        function buildDeductionSystemSql(deductionNos, startDate, endDate, needTodayData, ratio) {
             if (!deductionNos || deductionNos.length === 0) return null;
+            const ratioExpr = (ratio !== undefined && ratio !== 1) ? ` * ${ratio}` : '';
             
             let sql = "WITH base_data AS (\n";
             
             // 历史数据
-            sql += `    SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, sum_elec\n`;
+            sql += `    SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, sum_elec${ratioExpr} as sum_elec\n`;
             sql += `    FROM sum_elec_group_by_day\n`;
             sql += `    WHERE date >= '${startDate}' AND date <= '${endDate}'\n`;
             sql += `        AND no IN (${deductionNos.join(',')})\n`;
@@ -1170,7 +1187,7 @@
             if (needTodayData) {
                 sql += `    UNION ALL\n`;
                 sql += `    SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay,\n`;
-                sql += `           SUM(d_elec) AS sum_elec\n`;
+                sql += `           SUM(d_elec)${ratioExpr} AS sum_elec\n`;
                 sql += `    FROM (\n`;
                 sql += `        SELECT \`NO\`, (MAX(\`KWH\`) - MIN(\`KWH\`)) AS d_elec\n`;
                 sql += `        FROM \`data_all\` FORCE INDEX (date_no_KWH)\n`;

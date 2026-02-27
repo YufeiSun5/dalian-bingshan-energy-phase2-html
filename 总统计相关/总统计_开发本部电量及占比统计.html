@@ -1004,82 +1004,84 @@
 			
 			let itemSum = 0;
 			
-			// 判断是否是扣除项相关的项目（不显示占比）
-			const isKouchuRelated = kouchuRelatedItems.includes(item.name);
-			// 判断是否是扣除项合计（显示负数）
-			const isKouchuTotal = (item.key === 'elec_kouchu');
+		// 判断是否是扣除项相关的项目（不显示占比）
+		const isKouchuRelated = kouchuRelatedItems.includes(item.name);
+		// 判断是否是扣除项合计（显示负数）
+		const isKouchuTotal = (item.key === 'elec_kouchu');
+		// 判断是否是冷热机组（显示为负数）
+		const isRebeng = (item.key === 'elec_rebeng');
+		
+		for (let m = 1; m <= 12; m++) {
+			const monthVal = row[`month${m}_elec`] || 0;
+			const monthTotal = totalRow[`month${m}_elec`] || 0;
 			
-			for (let m = 1; m <= 12; m++) {
-				const monthVal = row[`month${m}_elec`] || 0;
-				const monthTotal = totalRow[`month${m}_elec`] || 0;
+			if (monthVal > 0) {
+				itemSum += monthVal;
 				
-				if (monthVal > 0) {
-					itemSum += monthVal;
-					
-					// 【修复】先四舍五入，再用四舍五入后的值计算百分比
-					const roundedMonthVal = Math.round(monthVal);
-					const roundedMonthTotal = Math.round(monthTotal);
-					
-					const tdVal = document.getElementById(`${item.key}_m${m}_val`);
-					const tdPct = document.getElementById(`${item.key}_m${m}_pct`);
-					
-					// 扣除项合计显示负数
-					if (tdVal) {
-						if (isKouchuTotal) {
-							tdVal.textContent = '-' + roundedMonthVal.toLocaleString();
-						} else {
-							tdVal.textContent = roundedMonthVal.toLocaleString();
-						}
-					}
-					
-					// 扣除项及其相关项目不显示占比
-					if (tdPct) {
-						if (isKouchuRelated) {
-							tdPct.textContent = ''; // 不显示占比
-						} else if (isKouchuTotal) {
-							// 扣除项显示负占比
-							const actualVal = -roundedMonthVal;
-							const monthRatio = roundedMonthTotal > 0 ? (actualVal / roundedMonthTotal * 100).toFixed(2) + '%' : '';
-							tdPct.textContent = monthRatio;
-						} else {
-							// 其他项目正常显示占比
-							const monthRatio = roundedMonthTotal > 0 ? (roundedMonthVal / roundedMonthTotal * 100).toFixed(2) + '%' : '';
-							tdPct.textContent = monthRatio;
-						}
-					}
-				}
-			}
-			
-			const tdTotal = document.getElementById(`${item.key}_total`);
-			const tdTotalPct = document.getElementById(`${item.key}_total_pct`);
-			if (tdTotal && itemSum > 0) {
 				// 【修复】先四舍五入，再用四舍五入后的值计算百分比
-				const roundedItemSum = Math.round(itemSum);
-				const roundedTotalSum = Math.round(totalSum);
+				const roundedMonthVal = Math.round(monthVal);
+				const roundedMonthTotal = Math.round(monthTotal);
 				
-				// 扣除项合计显示负数
-				if (isKouchuTotal) {
-					tdTotal.textContent = '-' + roundedItemSum.toLocaleString();
-				} else {
-					tdTotal.textContent = roundedItemSum.toLocaleString();
-				}
+				const tdVal = document.getElementById(`${item.key}_m${m}_val`);
+				const tdPct = document.getElementById(`${item.key}_m${m}_pct`);
 				
-				// 扣除项及其相关项目不显示占比
-				if (tdTotalPct) {
-					if (isKouchuRelated) {
-						tdTotalPct.textContent = ''; // 不显示占比
-					} else if (isKouchuTotal) {
-						// 扣除项显示负占比
-						const actualSum = -roundedItemSum;
-						const totalPct = roundedTotalSum > 0 ? (actualSum / roundedTotalSum * 100).toFixed(2) + '%' : '';
-						tdTotalPct.textContent = totalPct;
+				// 扣除项合计和冷热机组显示负数
+				if (tdVal) {
+					if (isKouchuTotal || isRebeng) {
+						tdVal.textContent = '-' + roundedMonthVal.toLocaleString();
 					} else {
-						// 其他项目正常显示占比
-						const totalPct = roundedTotalSum > 0 ? (roundedItemSum / roundedTotalSum * 100).toFixed(2) + '%' : '';
-						tdTotalPct.textContent = totalPct;
+						tdVal.textContent = roundedMonthVal.toLocaleString();
 					}
 				}
+				
+			// 扣除项及其相关项目不显示占比
+			if (tdPct) {
+				if (isKouchuRelated) {
+					tdPct.textContent = ''; // 不显示占比
+				} else if (isKouchuTotal || isRebeng) {
+					// 扣除项合计和冷热机组显示负占比
+					const actualVal = -roundedMonthVal;
+					const monthRatio = roundedMonthTotal > 0 ? (actualVal / roundedMonthTotal * 100).toFixed(2) + '%' : '';
+					tdPct.textContent = monthRatio;
+				} else {
+					// 其他项目正常显示占比
+					const monthRatio = roundedMonthTotal > 0 ? (roundedMonthVal / roundedMonthTotal * 100).toFixed(2) + '%' : '';
+					tdPct.textContent = monthRatio;
+				}
 			}
+			}
+		}
+		
+		const tdTotal = document.getElementById(`${item.key}_total`);
+		const tdTotalPct = document.getElementById(`${item.key}_total_pct`);
+		if (tdTotal && itemSum > 0) {
+			// 【修复】先四舍五入，再用四舍五入后的值计算百分比
+			const roundedItemSum = Math.round(itemSum);
+			const roundedTotalSum = Math.round(totalSum);
+			
+			// 扣除项合计和冷热机组显示负数
+			if (isKouchuTotal || isRebeng) {
+				tdTotal.textContent = '-' + roundedItemSum.toLocaleString();
+			} else {
+				tdTotal.textContent = roundedItemSum.toLocaleString();
+			}
+			
+			// 扣除项及其相关项目不显示占比
+			if (tdTotalPct) {
+				if (isKouchuRelated) {
+					tdTotalPct.textContent = ''; // 不显示占比
+				} else if (isKouchuTotal || isRebeng) {
+					// 扣除项合计和冷热机组显示负占比
+					const actualSum = -roundedItemSum;
+					const totalPct = roundedTotalSum > 0 ? (actualSum / roundedTotalSum * 100).toFixed(2) + '%' : '';
+					tdTotalPct.textContent = totalPct;
+				} else {
+					// 其他项目正常显示占比
+					const totalPct = roundedTotalSum > 0 ? (roundedItemSum / roundedTotalSum * 100).toFixed(2) + '%' : '';
+					tdTotalPct.textContent = totalPct;
+				}
+			}
+		}
 		});
 		
 		if (latestMonth > 0) {
@@ -1149,7 +1151,7 @@
 			// ├── R290性能实验室 (320009) - 系统采集
 			// ├── 耐久实验室 (5) - 系统采集
 			// ├── 焓差实验室 (320010) - 系统采集
-			// ├── 冷热机组*-1/3 (420005, 420006, 420007, 420008) * -1/3 - 系统采集
+			// ├── 冷热机组*-1/3 (420005, 420006, 420007, 420008) * 1/3 - 系统采集（归入扣除项，显示为负数）
 			// ├── 开发本部委托品质本部实验 (60001) - 人工录入（标红）（正数，显示比例）
 			// └── 扣除项合计(计算值无no) =委托焓差实验室营业本部 (90003) + 委托实验室（大马力性能） (80001) + 委托实验室（耐久） (80002) + 二楼研发报告厅、喷泉（NO: 24）+ A座研发4楼照明（NO: 25） - 人工录入 加 人工录入 加 人工录入 加 系统采集 加 系统采集
 			//
@@ -1222,11 +1224,11 @@
 				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
 				+" 		AND no IN (320010) \n"
 				+" 		UNION ALL \n"
-			// 冷热机组（420005、420006、420007、420008）* -1/3
-			+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '冷热机组*-1/3' as elec_name, sum_elec * -1/3 as sum_elec \n"
-			+" 		FROM sum_elec_group_by_day \n"
-			+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
-			+" 		AND no IN (420005, 420006, 420007, 420008) \n"
+		// 冷热机组（420005、420006、420007、420008）* 1/3
+		+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '冷热机组*-1/3' as elec_name, sum_elec * 1/3 as sum_elec \n"
+		+" 		FROM sum_elec_group_by_day \n"
+		+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
+		+" 		AND no IN (420005, 420006, 420007, 420008) \n"
 			+" 		UNION ALL \n"
 			// 二楼研发报告厅、喷泉（24）- 用于计算扣除项
 			+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '二楼研发报告厅、喷泉' as elec_name, sum_elec \n"
@@ -1327,11 +1329,11 @@
 					+" 		        AND `NO` IN (320010) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
 					+" 		    GROUP BY `NO` \n"
 					+" 		) AS hancha_data \n"
-				// 今日数据 - 冷热机组 * -1/3
-				+" 		UNION ALL \n"
-				+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
-				+" 		       '冷热机组*-1/3' as elec_name, \n"
-				+" 		       SUM(CASE WHEN `NO` IN (420005, 420006, 420007, 420008) THEN `d_elec` ELSE 0 END) * -1/3 AS sum_elec \n"
+			// 今日数据 - 冷热机组 * 1/3
+			+" 		UNION ALL \n"
+			+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
+			+" 		       '冷热机组*-1/3' as elec_name, \n"
+			+" 		       SUM(CASE WHEN `NO` IN (420005, 420006, 420007, 420008) THEN `d_elec` ELSE 0 END) * 1/3 AS sum_elec \n"
 				+" 		FROM ( \n"
 				+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
 				+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
@@ -1521,7 +1523,8 @@
 			'委托实验室（大马力性能）',
 			'委托实验室（耐久）',
 			'二楼研发报告厅、喷泉',
-			'A座研发4楼照明'
+			'A座研发4楼照明',
+			'冷热机组*-1/3'
 		];
 		
 		for (let m = 1; m <= 12; m++) {
@@ -1580,6 +1583,7 @@
 			'委托实验室（耐久）',
 			'二楼研发报告厅、喷泉',
 			'A座研发4楼照明',
+			'冷热机组*-1/3',
 			'开发本部委托品质本部实验',
 			'扣除项合计'
 		];
@@ -1636,8 +1640,8 @@
 						// 扣除项相关的项目不显示占比
 						if (kouchuRelatedItems.includes(finalData.data[j].elec_name)) {
 							finalData.data[j][`month${i}_ratio`] = "";
-						} else if (finalData.data[j].elec_name === '扣除项合计') {
-							// 扣除项合计显示负占比
+						} else if (finalData.data[j].elec_name === '扣除项合计' || finalData.data[j].elec_name === '冷热机组*-1/3') {
+							// 扣除项合计和冷热机组显示负占比
 							finalData.data[j][`month${i}_ratio`] = (Math.round(-finalData.data[j][`month${i}_elec`] * 10000/sum_elec) / 100)+"%";
 						} else {
 							// 其他项目正常显示占比
@@ -1654,8 +1658,8 @@
 					// 扣除项相关的项目不显示占比
 					if (kouchuRelatedItems.includes(finalData.data[j].elec_name)) {
 						finalData.data[j]["sum_ratio"] = "";
-					} else if (finalData.data[j].elec_name === '扣除项合计') {
-						// 扣除项合计显示负占比
+					} else if (finalData.data[j].elec_name === '扣除项合计' || finalData.data[j].elec_name === '冷热机组*-1/3') {
+						// 扣除项合计和冷热机组显示负占比
 						finalData.data[j]["sum_ratio"] = (Math.round(-finalData.data[j]["sum_elec"] * 10000/sum_elec) / 100)+"%";
 					} else {
 						// 其他项目正常显示占比
