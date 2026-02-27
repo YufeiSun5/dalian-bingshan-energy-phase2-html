@@ -579,7 +579,7 @@
 					textStyle: { color: '#d0d2e0' },
 					top: 10
 				},
-				grid: { left: 60, right: 40, bottom: 40, top: 80 },
+				grid: { left: 60, right: 40, bottom: 40, top: 60 },
 				xAxis: {
 					type: 'category',
 					data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
@@ -813,7 +813,7 @@
 			{ key: 'elec_r290', name: 'R290性能实验室', isManualInput: false },
 			{ key: 'elec_naijiu', name: '耐久实验室', isManualInput: false },
 			{ key: 'elec_hancha', name: '焓差实验室', isManualInput: false },
-			{ key: 'elec_rebeng', name: '冷热机组*-1/3', isManualInput: false },
+			{ key: 'elec_rebeng', name: '冷热机组*2/3', isManualInput: false },
 			{ key: 'elec_weituo', name: '开发本部委托品质本部实验', isManualInput: true },
 			{ key: 'elec_kouchu', name: '扣除项合计', isManualInput: true }
 		];
@@ -1110,7 +1110,7 @@
 				'R290性能实验室': 'elec_r290',
 				'耐久实验室': 'elec_naijiu',
 				'焓差实验室': 'elec_hancha',
-				'冷热机组*-1/3': 'elec_rebeng',
+				'冷热机组*2/3': 'elec_rebeng',
 				'开发本部委托品质本部实验': 'elec_weituo',
 				'扣除项合计': 'elec_kouchu'
 			};
@@ -1149,7 +1149,7 @@
 			// ├── R290性能实验室 (320009) - 系统采集
 			// ├── 耐久实验室 (5) - 系统采集
 			// ├── 焓差实验室 (320010) - 系统采集
-			// ├── 冷热机组*-1/3 (420005, 420006, 420007, 420008) * -1/3 - 系统采集
+			// ├── 冷热机组*2/3 (420005, 420006, 420007, 420008) * 2/3 - 系统采集
 			// ├── 开发本部委托品质本部实验 (60001) - 人工录入（标红）（正数，显示比例）
 			// └── 扣除项合计(计算值无no) =委托焓差实验室营业本部 (90003) + 委托实验室（大马力性能） (80001) + 委托实验室（耐久） (80002) + 二楼研发报告厅、喷泉（NO: 24）+ A座研发4楼照明（NO: 25） - 人工录入 加 人工录入 加 人工录入 加 系统采集 加 系统采集
 			//
@@ -1210,11 +1210,11 @@
 				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
 				+" 		AND no IN (320009) \n"
 				+" 		UNION ALL \n"
-				// 耐久实验室（4,8,9,320018,320019,320020）
+				// 耐久实验室（5）
 				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '耐久实验室' as elec_name, sum_elec \n"
 				+" 		FROM sum_elec_group_by_day \n"
 				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
-				+" 		AND no IN (4,8,9,320018,320019,320020) \n"
+				+" 		AND no IN (5) \n"
 				+" 		UNION ALL \n"
 				// 焓差实验室（320010）
 				+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '焓差实验室' as elec_name, sum_elec \n"
@@ -1222,8 +1222,8 @@
 				+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
 				+" 		AND no IN (320010) \n"
 				+" 		UNION ALL \n"
-			// 冷热机组（420005、420006、420007、420008）* -1/3
-			+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '冷热机组*-1/3' as elec_name, sum_elec * -1/3 as sum_elec \n"
+			// 冷热机组（420005、420006、420007、420008）* 2/3
+			+" 		SELECT DATE_FORMAT(date, '%Y-%m-%d') as jDay, '冷热机组*2/3' as elec_name, sum_elec * 2 / 3 as sum_elec \n"
 			+" 		FROM sum_elec_group_by_day \n"
 			+" 		WHERE date <= '"+enddate+"' AND date >= '"+startdate+"' \n"
 			+" 		AND no IN (420005, 420006, 420007, 420008) \n"
@@ -1247,12 +1247,12 @@
 					+" 		UNION ALL \n"
 					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
 					+" 		       '研发中心（GCS柜）' as elec_name, \n"
-					+" 		       SUM(CASE WHEN `NO` IN (5) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		       SUM(CASE WHEN `NO` IN (4) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
 					+" 		FROM ( \n"
 					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
 					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
 					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
-					+" 		        AND `NO` IN (5) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		        AND `NO` IN (4) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
 					+" 		    GROUP BY `NO` \n"
 					+" 		) AS yanfa_data \n"
 					// 今日数据 - 80KW实验室
@@ -1307,12 +1307,12 @@
 					+" 		UNION ALL \n"
 					+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
 					+" 		       '耐久实验室' as elec_name, \n"
-					+" 		       SUM(CASE WHEN `NO` IN (4,8,9,320018,320019,320020) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
+					+" 		       SUM(CASE WHEN `NO` IN (5) THEN `d_elec` ELSE 0 END) AS sum_elec \n"
 					+" 		FROM ( \n"
 					+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
 					+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"
 					+" 		    WHERE `date` >= IF(HOUR(NOW()) >= 7, DATE_ADD(CURDATE(), INTERVAL 7 HOUR), DATE_ADD(DATE_SUB(CURDATE(), INTERVAL 1 DAY), INTERVAL 7 HOUR)) \n"
-					+" 		        AND `NO` IN (4,8,9,320018,320019,320020) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
+					+" 		        AND `NO` IN (5) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
 					+" 		    GROUP BY `NO` \n"
 					+" 		) AS naijiu_data \n"
 					// 今日数据 - 焓差实验室
@@ -1327,11 +1327,11 @@
 					+" 		        AND `NO` IN (320010) AND `KWH` > 0 AND `KWH` < 9999999999 \n"
 					+" 		    GROUP BY `NO` \n"
 					+" 		) AS hancha_data \n"
-				// 今日数据 - 冷热机组 * -1/3
+				// 今日数据 - 冷热机组 * 2/3
 				+" 		UNION ALL \n"
 				+" 		SELECT IF(HOUR(NOW()) >= 7, CURDATE(), DATE_SUB(CURDATE(), INTERVAL 1 DAY)) AS jDay, \n"
-				+" 		       '冷热机组*-1/3' as elec_name, \n"
-				+" 		       SUM(CASE WHEN `NO` IN (420005, 420006, 420007, 420008) THEN `d_elec` ELSE 0 END) * -1/3 AS sum_elec \n"
+				+" 		       '冷热机组*2/3' as elec_name, \n"
+				+" 		       SUM(CASE WHEN `NO` IN (420005, 420006, 420007, 420008) THEN `d_elec` ELSE 0 END) * 2 / 3 AS sum_elec \n"
 				+" 		FROM ( \n"
 				+" 		    SELECT `NO`, (MAX(`KWH`) - MIN(`KWH`)) AS `d_elec` \n"
 				+" 		    FROM `data_all` FORCE INDEX (date_no_KWH) \n"

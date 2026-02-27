@@ -5,7 +5,7 @@
     <!-- head部分包含文档的元数据，是浏览器和搜索引擎读取的信息，不直接在页面显示。 -->
     <meta charset="UTF-8"> <!-- 指定文档的字符编码为UTF-8，以正确显示包括中文在内的多语言字符。 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 视口元标签，确保页面在移动设备上以设备宽度进行渲染，并设置初始缩放为1.0，是响应式设计的关键。 -->
-    <title>动力实施课电量占比及统计</title> <!-- 文档标题，将显示在浏览器标签页上。 -->
+    <title>动力设施课电量占比及统计</title> <!-- 文档标题，将显示在浏览器标签页上。 -->
     
     <!-- === 外部资源依赖 === -->
     <link rel="stylesheet" href="../js/css/layui.css">
@@ -399,7 +399,7 @@
 						</div>
 
         <!-- 中部标题 -->
-        <div class="top-bar-title">动力实施课电量占比及统计</div>
+        <div class="top-bar-title">动力设施课电量占比及统计</div>
 
         <!-- 右侧操作按钮区 -->
         <div class="layui-form" lay-filter="filter-form-right">
@@ -866,7 +866,7 @@
 			let compareDate = new Date(now.getFullYear()+"-"+(now.getMonth()+1)+"-"+now.getDate());
 			
             // ========================================================================
-            // 【动力实施课数据结构配置说明】
+            // 【动力设施课数据结构配置说明】
             // ========================================================================
             // 合计电量 = 空压机 + 污水处理区 + 变电所 + 冷热机组 + 维修室
             // ├── 空压机 (410001, 410003, 410004, 120010, 410002, 120011, 120005, 410007) - 系统采集
@@ -894,7 +894,7 @@
             console.log('\n');
             console.log('████████████████████████████████████████████████████████████████');
             console.log('█                                                              █');
-            console.log('█          动力实施课电量占比及统计 - SQL查询日志              █');
+            console.log('█          动力设施课电量占比及统计 - SQL查询日志              █');
             console.log('█                                                              █');
             console.log('████████████████████████████████████████████████████████████████');
             console.log('📅 查询时间范围:');
@@ -1206,7 +1206,7 @@
             const monthElec = totalRow[`month${month}_elec`] || 0;
             
             if (monthElec === 0) {
-                $('#header-summary-text').html(`动力实施课<span style="color: red;">${month}</span>月份无用电数据`);
+                $('#header-summary-text').html(`动力设施课<span style="color: red;">${month}</span>月份无用电数据`);
                 return;
             }
 
@@ -1216,7 +1216,7 @@
                 : '0.00';
 
             // 使用模板字符串和toLocaleString()格式化输出 // <-- 【调整】使用 Math.round() 去掉小数点
-            const summaryHtml = `动力实施课<span style="color: red;">${month}</span>月用电电量<span style="color: red;">${Math.round(monthElec).toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>。`;
+            const summaryHtml = `动力设施课<span style="color: red;">${month}</span>月用电电量<span style="color: red;">${Math.round(monthElec).toLocaleString()}</span>千瓦时，占公司总电量比<span style="color: red;">${percentageOfCompanyTotal}%</span>。`;
             $('#header-summary-text').html(summaryHtml);
         }
 
@@ -1340,7 +1340,7 @@
         $('#export-btn').on('click', function() {
             try {
                 const year = $('#year-selector').val() || new Date().getFullYear();
-                const filename = `动力实施课电量占比及统计_${year}.xlsx`;
+                const filename = `动力设施课电量占比及统计_${year}.xlsx`;
                 
                 const table = document.getElementById('data-table');
                 const ws = XLSX.utils.table_to_sheet(table, {raw: true});
