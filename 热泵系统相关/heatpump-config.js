@@ -2,6 +2,25 @@ window.HEATPUMP_CONFIG = {
     chartInstance: null,
     apiBaseUrl: 'http://192.168.7.229:8004',
 
+    // 机组列表：no 与 名称 对应，供下拉框等使用
+    unitList: [
+        { no: 420001, name: '大办_天加02', group: '1-天加组' },
+        { no: 420002, name: '大办_天加01', group: '1-天加组' },
+        { no: 420003, name: '电机_冷机', group: '2-冷机组' },
+        { no: 420007, name: '研发_冷机1', group: '2-冷机组' },
+        { no: 420008, name: '研发_欧亚1', group: '2-冷机组' },
+        { no: 420010, name: '大办_冷机', group: '2-冷机组' },
+        { no: 420004, name: '电机_欧亚', group: '3-欧亚组' },
+        { no: 420005, name: '研发_冷机2', group: '3-欧亚组' },
+        { no: 420006, name: '研发_欧亚2', group: '3-欧亚组' },
+        { no: 420011, name: '大办_欧亚', group: '3-欧亚组' },
+        { no: 420009, name: '大办_冰山2', group: '4-冰山2组' },
+        { no: 420012, name: '大办_冰山', group: '5-冰山组' },
+        { no: 420015, name: '电机_冰山', group: '5-冰山组' },
+        { no: 420013, name: '电机_扬子1', group: '6-扬子组' },
+        { no: 420014, name: '电机_扬子2', group: '6-扬子组' }
+    ],
+
     init: function(domId) {
         var dom = document.getElementById(domId);
         if(dom) this.chartInstance = echarts.init(dom);
@@ -722,24 +741,8 @@ ORDER BY
         paramType = paramType || 'cop'; // 默认为COP
         dateMode = dateMode || 'day';   // 默认为日模式
         
-        // 定义所有设备配置（包括可能没有数据的设备）
-        const allEquipments = [
-            { no: 420001, name: '大办_天加02', group: '1-天加组' },
-            { no: 420002, name: '大办_天加01', group: '1-天加组' },
-            { no: 420003, name: '电机_冷机', group: '2-冷机组' },
-            { no: 420007, name: '研发_冷机1', group: '2-冷机组' },
-            { no: 420008, name: '研发_欧亚1', group: '2-冷机组' },
-            { no: 420010, name: '大办_冷机', group: '2-冷机组' },
-            { no: 420004, name: '电机_欧亚', group: '3-欧亚组' },
-            { no: 420005, name: '研发_冷机2', group: '3-欧亚组' },
-            { no: 420006, name: '研发_欧亚2', group: '3-欧亚组' },
-            { no: 420011, name: '大办_欧亚', group: '3-欧亚组' },
-            { no: 420009, name: '大办_冰山2', group: '4-冰山2组' },
-            { no: 420012, name: '大办_冰山', group: '5-冰山组' },
-            { no: 420015, name: '电机_冰山', group: '5-冰山组' },
-            { no: 420013, name: '电机_扬子1', group: '6-扬子组' },
-            { no: 420014, name: '电机_扬子2', group: '6-扬子组' }
-        ];
+        // 使用全局 unitList 作为设备配置
+        const allEquipments = this.unitList;
         
         // 初始化所有设备的 equipmentMap
         const equipmentMap = {};
