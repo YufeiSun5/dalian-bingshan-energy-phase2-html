@@ -124,7 +124,7 @@
         }
 
         .switch-btn, .date-mode-btn {
-            padding: 5px 14px;
+            padding: 5px 10px;
             border: 1px solid #2a6dc8;
             background: transparent;
             color: #b9d3f4;
@@ -196,7 +196,7 @@
         /* 图例控制按钮 */
         .legend-control-btn {
             position: absolute;
-            top: 10px;
+            top: 25px;
             right: 15px;
             z-index: 100;
             padding: 4px 12px;
@@ -329,6 +329,7 @@
             <div class="toolbar-left">
                 <div class="switch-group">
                     <button class="switch-btn active" data-mode="equipment">按设备</button>
+                    <button class="switch-btn" data-mode="region">按区域</button>
                     <button class="switch-btn" data-mode="time">按时间</button>
                 </div>
 
@@ -494,6 +495,11 @@
                 unitSelect.prop('disabled', true);
                 unitSelect.css('color', '#aaa'); // 视觉禁用
                 title.text('热泵能效对比 (多设备)');
+            } else if(currentMode === 'region') {
+                unitSelect.html('<option value="all">全部区域 (默认)</option>');
+                unitSelect.prop('disabled', true);
+                unitSelect.css('color', '#aaa'); // 视觉禁用
+                title.text('热泵能效对比 (按区域)');
             } else {
                 unitSelect.prop('disabled', false);
                 unitSelect.css('color', '#fff'); // 恢复颜色
@@ -614,6 +620,9 @@
                 var data;
                 if(currentMode === 'equipment') {
                     data = await window.HEATPUMP_CONFIG.getMockData_ByEquipment(params);
+                } else if(currentMode === 'region') {
+                    var regionMethod = window.HEATPUMP_CONFIG.getMockData_ByRegion || window.HEATPUMP_CONFIG.getMockData_ByEquipment;
+                    data = await regionMethod.call(window.HEATPUMP_CONFIG, params);
                 } else {
                     data = await window.HEATPUMP_CONFIG.getMockData_ByTime(params);
                 }
@@ -708,7 +717,7 @@
                     'heat': '热量'
                 }[params.param] || '数据';
                 
-                var modeLabel = currentMode === 'equipment' ? '按设备' : '按时间';
+                var modeLabel = currentMode === 'equipment' ? '按设备' : (currentMode === 'region' ? '按区域' : '按时间');
                 var fileName = `热泵${paramName}_${modeLabel}_${params.startDate}_${params.endDate}.xlsx`;
                 
                 // 导出文件

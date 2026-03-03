@@ -284,6 +284,7 @@ elec_final_view AS (
         ec.query_date,
         cfg.NO AS no,
         cfg.name AS item_name,
+        SUBSTRING_INDEX(IFNULL(cfg.name, ''), '_', 1) AS location,
         CASE 
             WHEN cfg.NO IN (420001, 420002) THEN '1-天加组'
             WHEN cfg.NO IN (420003, 420007, 420008, 420010) THEN '2-冷机组'
@@ -325,6 +326,7 @@ elec_final_view AS (
         ec.query_date,
         cfg.NO AS no,
         cfg.name AS item_name,
+        SUBSTRING_INDEX(IFNULL(cfg.name, ''), '_', 1) AS location,
         CASE 
             WHEN cfg.NO IN (420001, 420002) THEN '1-天加组'
             WHEN cfg.NO IN (420003, 420007, 420008, 420010) THEN '2-冷机组'
@@ -405,6 +407,7 @@ heat_final_view AS (
         hc.query_date,
         cfg.NO AS no,
         cfg.name AS item_name,
+        SUBSTRING_INDEX(IFNULL(cfg.name, ''), '_', 1) AS location,
         CASE 
             WHEN cfg.NO IN (420001, 420002) THEN '1-天加组'
             WHEN cfg.NO IN (420003, 420007, 420008, 420010) THEN '2-冷机组'
@@ -426,6 +429,7 @@ heat_final_view AS (
         calc_data.query_date,
         cfg.NO AS no,
         cfg.name AS item_name,
+        SUBSTRING_INDEX(IFNULL(cfg.name, ''), '_', 1) AS location,
         CASE 
             WHEN cfg.NO IN (420001, 420002) THEN '1-天加组'
             WHEN cfg.NO IN (420003, 420007, 420008, 420010) THEN '2-冷机组'
@@ -456,9 +460,9 @@ heat_final_view AS (
 -- 部分 3: 数据合并
 -- =========================================================
 combined_data AS (
-    SELECT query_date, group_name, item_name, no, elec_val AS electricity, 0 AS heat FROM elec_final_view
+    SELECT query_date, group_name, item_name, no, location, elec_val AS electricity, 0 AS heat FROM elec_final_view
     UNION ALL
-    SELECT query_date, group_name, item_name, no, 0 AS electricity, heat_val AS heat FROM heat_final_view
+    SELECT query_date, group_name, item_name, no, location, 0 AS electricity, heat_val AS heat FROM heat_final_view
 )
 
 -- =========================================================
@@ -472,6 +476,7 @@ SELECT
         WHEN stats.group_name IS NULL THEN '---'
         ELSE stats.item_name
     END AS name_display,
+    MAX(stats.location) AS location,
     stats.no,
     SUM(stats.electricity) AS elec_kwh,
     SUM(stats.heat) AS heat_qty,
@@ -569,6 +574,107 @@ ORDER BY
             console.error('查询失败:', error);
             throw error;
         }
+    },
+
+    // 按区域查询（使用相同数据，按 location 聚合）
+    getMockData_ByRegion: async function(params) {
+        if (!params || !params.startDate || !params.endDate) {
+            var axis = this.generateTimeAxis();
+            var baseValue = params && params.param === 'power' ? 120 : 1.9;
+            return {
+                axis: axis,
+                series: [
+                    { name: '大办', color: '#3c8ce7', data: this.randCurve(baseValue, axis.length) },
+                    { name: '电机', color: '#e74c3c', data: this.randCurve(baseValue + 0.2, axis.length) },
+                    { name: '研发', color: '#00e676', data: this.randCurve(baseValue - 0.1, axis.length) }
+                ]
+            };
+        }
+        try {
+            const dateMode = params.dateMode || 'day';
+            const sql = this.generateSQL_ByEquipment(params.startDate, params.endDate, dateMode);
+            console.log('='.repeat(80));
+            console.log('【按区域查询 SQL】');
+            console.log('查询参数:', { startDate: params.startDate, endDate: params.endDate, dateMode, param: params.param });
+            console.log('='.repeat(80));
+            const response = await this.sendSQL(sql);
+            if (!response || !response.data || response.data.length === 0) {
+                throw new Error('没有查询到数据');
+            }
+            const paramType = params.param || 'cop';
+            return this.processRegionData(response.data, paramType, dateMode, params.startDate, params.endDate);
+        } catch (error) {
+            console.error('按区域查询失败:', error);
+            throw error;
+        }
+    },
+
+    // 处理按区域查询的数据（按 location 聚合）
+    processRegionData: function(rawData, paramType, dateMode, startDate, endDate) {
+        paramType = paramType || 'cop';
+        dateMode = dateMode || 'day';
+        const locationMap = {};
+        rawData.forEach(row => {
+            if (!row.no || !row.location || row.category.includes('全厂') || (row.name_display && row.name_display.includes('总计'))) {
+                return;
+            }
+            let timeKey;
+            if (dateMode === 'month') {
+                timeKey = row.date ? row.date : '';
+            } else {
+                timeKey = row.date ? row.date.substring(0, 16) : '';
+            }
+            if (!timeKey) return;
+            const loc = row.location || '';
+            if (!locationMap[loc]) {
+                locationMap[loc] = { name: loc, dataMap: {} };
+            }
+            const locData = locationMap[loc];
+            if (!locData.dataMap[timeKey]) {
+                locData.dataMap[timeKey] = { elec: 0, heat: 0 };
+            }
+            const elec = row.elec_kwh != null ? parseFloat(row.elec_kwh) : 0;
+            const heat = row.heat_qty != null ? parseFloat(row.heat_qty) : 0;
+            locData.dataMap[timeKey].elec += elec;
+            locData.dataMap[timeKey].heat += heat;
+        });
+        const axis = this.generateCompleteTimeAxis(startDate, endDate, dateMode);
+        let axisLabels;
+        if (dateMode === 'month') {
+            axisLabels = axis.map(dt => dt.substring(5, 7) + '-' + dt.substring(8, 10));
+        } else {
+            const dates = new Set();
+            axis.forEach(dt => dates.add(dt.substring(0, 10)));
+            const isMultiDay = dates.size > 1;
+            axisLabels = axis.map(dt => {
+                const time = dt.substring(11, 16);
+                if (isMultiDay) return dt.substring(5, 7) + '-' + dt.substring(8, 10) + ' ' + time;
+                return time;
+            });
+        }
+        const regionColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'];
+        const series = [];
+        let ci = 0;
+        Object.values(locationMap).forEach(loc => {
+            const data = axis.map(timeKey => {
+                const v = loc.dataMap[timeKey];
+                if (!v) return '';
+                let val;
+                if (paramType === 'power') val = v.elec;
+                else if (paramType === 'heat') val = v.heat;
+                else val = v.elec > 0 ? (v.heat * 1000) / (v.elec * 3.6) : null;
+                if (val == null) return '';
+                var decimals = (paramType === 'power' || paramType === 'heat') ? 1 : 2;
+                return val.toFixed(decimals);
+            });
+            series.push({
+                name: loc.name,
+                color: regionColors[ci % regionColors.length],
+                data: data
+            });
+            ci++;
+        });
+        return { axis: axisLabels, series: series };
     },
 
     // 生成完整的时间轴（多天的小时 或 多天的日期）
