@@ -235,9 +235,13 @@
             unitSelect.empty(); // 清空现有选项
 
             if (mapping[areaCode] && mapping[areaCode].units) {
+                var areaName = (mapping[areaCode].areaName || '').replace('区域', '') || mapping[areaCode].areaName;
+                // 每个区域第一个选项：当前机组全部
+                unitSelect.append(
+                    `<option value="all" data-unit-no="all" data-area-name="${areaName}">全部</option>`
+                );
                 var units = mapping[areaCode].units;
                 units.forEach(function(unit) {
-                    // 机组选项携带unitNo参数（在data属性中存储）
                     unitSelect.append(
                         `<option value="${unit.unitCode}" data-unit-no="${unit.unitNo}">${unit.unitName}</option>`
                     );
@@ -252,18 +256,22 @@
             return selectedOption.attr('data-unit-no') || '';
         }
 		
-		// 获取当前选中机组的名称
+		// 获取当前选中机组的名称（选全部时返回"某某全部"）
         function getSelectedUnitName() {
             var unitSelect = $('#unit-select');
             var selectedOption = unitSelect.find('option:selected');
+            var unitNo = selectedOption.attr('data-unit-no');
+            if (unitNo === 'all') {
+                var areaName = selectedOption.attr('data-area-name') || getSelectedAreaName().replace('区域', '');
+                return areaName + '全部';
+            }
             return selectedOption.text() || '';
         }
 		
 		// 获取当前选中区域的名称
         function getSelectedAreaName() {
-			debugger;
-            var unitSelect = $('#area-select');
-            var selectedOption = unitSelect.find('option:selected');
+            var areaSelect = $('#area-select');
+            var selectedOption = areaSelect.find('option:selected');
             return selectedOption.text() || '';
         }
 
@@ -288,25 +296,37 @@
 
         // ========== 数据加载函数 (调用SQL接口) ==========
         function loadData() {
-            var unitNo = getSelectedUnitNo(); // 获取选中的机组编号
+            var unitNo = getSelectedUnitNo();
 			var unitName = getSelectedUnitName();
-			var AreaName = getSelectedAreaName();//获取选中的区域名称
-            var monthStr = $('#date-input').val(); // 获取选中的月份，格式: "2024-01"
+			var areaName = getSelectedAreaName();
+            var monthStr = $('#date-input').val();
+			var areaCode = $('#area-select').val();
+			var unitNos = null;
+			if (unitNo === 'all' && areaCode) {
+				var mapping = window.REPORT_CONFIG.areaUnitMapping;
+				if (mapping[areaCode] && mapping[areaCode].units) {
+					unitNos = mapping[areaCode].units.map(function(u){ return u.unitNo; });
+				}
+			}
 
             if (!unitNo) {
-                layer.msg('艹！请先选择机组', {icon: 2});
+                layer.msg('请先选择机组', {icon: 2});
+                return;
+            }
+			if (unitNo === 'all' && (!unitNos || unitNos.length === 0)) {
+                layer.msg('该区域暂无机组', {icon: 2});
                 return;
             }
 
             if (!monthStr) {
-                layer.msg('艹！请先选择月份', {icon: 2});
+                layer.msg('请先选择月份', {icon: 2});
                 return;
             }
 
             var idx = layer.load(1, {shade: 0.1});
 
             // 调用SQL查询接口（异步）
-            window.REPORT_CONFIG.fetchSQLData(unitNo, monthStr,AreaName,unitName)
+            window.REPORT_CONFIG.fetchSQLData(unitNo, monthStr, areaName, unitName, unitNos)
                 .then(function(data) {
                     renderTable(data);
                     layer.close(idx);
@@ -318,10 +338,12 @@
                 });
         }
 
+        var lastRenderedColumns = window.REPORT_CONFIG.columns; // 导出时使用
         // ========== 渲染表格 (核心逻辑) ==========
         function renderTable(data) {
             var table = $('#report-table');
-            var columns = window.REPORT_CONFIG.columns;
+            var columns = (data.isRegionAll ? window.REPORT_CONFIG.columnsRegionAll : window.REPORT_CONFIG.columns);
+            lastRenderedColumns = columns;
 
             // 1. 构建表头
             var thead = '<thead><tr>';
@@ -335,7 +357,6 @@
 
             // 2.1 数据行
             data.rows.forEach(function(row) {
-				debugger;
                 tbody += '<tr>';
                 columns.forEach(function(col) {
                     var val = (row[col.field] == null) ?'':row[col.field];
@@ -368,9 +389,9 @@
         // ========== 导出功能 ==========
         $('#btn-export').click(function() {
             try {
-                // 1. 获取表格数据
+                // 1. 获取表格数据（使用上次渲染时的列配置）
                 var table = $('#report-table');
-                var columns = window.REPORT_CONFIG.columns;
+                var columns = lastRenderedColumns;
 
                 // 2. 构建导出数据（包含表头）
                 var dataArr = [];

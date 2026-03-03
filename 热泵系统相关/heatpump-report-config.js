@@ -61,14 +61,24 @@ window.REPORT_CONFIG = {
         { field: 'exception', title: '异常记录' },
         { field: 'remark', title: '备注' }
     ],
+    // 按区域查询时只显示：日期、机组名称、热量、电量、COP
+    columnsRegionAll: [
+        { field: 'date', title: '日期' },
+        { field: 'unitName', title: '机组名称' },
+        { field: 'heat', title: '热量(MJ)' },
+        { field: 'power', title: '电量(Kwh)' },
+        { field: 'cop', title: '能效比(COP)' }
+    ],
 
     // ========== SQL查询接口 (异步) ==========
     // 重要：这里是你后续要接入的真实SQL接口
     // 参数：unitNo (机组编号), monthStr (月份字符串，格式: "2024-01")
     // 返回：Promise对象，解析为 { rows: [], totalRow: {} }
-    fetchSQLData:async function(unitNo, monthStr,areaName,unitName) {
+    fetchSQLData:async function(unitNo, monthStr,areaName,unitName,unitNos) {
 		console.log('🔧 [SQL接口调用] unitNo:', unitNo, 'monthStr:', monthStr,'areaName:', areaName);
-		const sql = buildSQL(unitNo,monthStr);
+		const sql = (unitNo === 'all' && unitNos && unitNos.length) 
+			? buildSQLForArea(unitNos, monthStr) 
+			: buildSQL(unitNo, monthStr);
 		const response = await sendSQL(sql);
 		console.info(response);
         return new Promise(function(resolve, reject) {
@@ -88,16 +98,14 @@ window.REPORT_CONFIG = {
             // 目前先返回模拟数据，等你接入真实接口后删除这段模拟代码
             
             setTimeout(function() {
-                //var mockData = window.REPORT_CONFIG.getMockData();
-				var mockData = window.REPORT_CONFIG.transformData(response.data,areaName,unitName);
+				var isRegionAll = (unitNo === 'all');
+				var mockData = window.REPORT_CONFIG.transformData(response.data,areaName,unitName,isRegionAll);
                 resolve(mockData);
             }, 300);
         });
     },
-	transformData:function(data,areaName,unitName) {
+	transformData:function(data,areaName,unitName,isRegionAll) {
 		var rows = [];
-		//循环添加基础结果
-		// 生成 30 天数据
 		var totalHeat = 0;
         var totalPower = 0;
 		var totaltempIn = 0;
@@ -107,7 +115,8 @@ window.REPORT_CONFIG = {
 		var totaltempSet = 0;
 		var totalrunTime = 0;
         for (var i = 0; i < data.length; i++) {
-
+			var heatVal = data[i].sum_heat != null ? parseFloat(data[i].sum_heat) : 0;
+			var powerVal = data[i].sum_elec != null ? parseFloat(data[i].sum_elec) : 0;
             rows.push({
                 date: data[i].day,
                 area: areaName,
@@ -121,33 +130,32 @@ window.REPORT_CONFIG = {
                 tempIndoor: data[i].D_TEMP,
                 tempSet: data[i].E_TEMP,
                 runTime: data[i].time_1,
-                exception: '', // 还原第一行备注
+                exception: '',
                 remark: ''
             });
-			totalHeat += data[i].sum_heat;
-            totalPower += data[i].sum_elec;
-			totaltempIn += data[i].A_TEMP;
-			totaltempOut += data[i].B_TEMP;
-			totaltempOutdoor += data[i].C_TEMP;
-			totaltempIndoor += data[i].D_TEMP;
-			totaltempSet += data[i].E_TEMP;
-			totalrunTime += data[i].time_1;
-			
+			totalHeat += heatVal;
+            totalPower += powerVal;
+			if (data[i].A_TEMP != null) totaltempIn += parseFloat(data[i].A_TEMP);
+			if (data[i].B_TEMP != null) totaltempOut += parseFloat(data[i].B_TEMP);
+			if (data[i].C_TEMP != null) totaltempOutdoor += parseFloat(data[i].C_TEMP);
+			if (data[i].D_TEMP != null) totaltempIndoor += parseFloat(data[i].D_TEMP);
+			if (data[i].E_TEMP != null) totaltempSet += parseFloat(data[i].E_TEMP);
+			if (data[i].time_1 != null) totalrunTime += parseFloat(data[i].time_1);
         }
+		var validTempCount = data.filter(function(d){ return d.A_TEMP != null; }).length;
 		// 合计行数据
         var totalRow = {
             date: '合计',
             area: areaName,
             unitName: unitName,
-            heat: totalHeat.toFixed(2), // 求和
-            power: totalPower.toFixed(2), // 求和
-            // 【修改 2026-02-10】：电和热都是0时显示0，否则正常计算
+            heat: totalHeat.toFixed(2),
+            power: totalPower.toFixed(2),
             cop: (totalPower == 0 && totalHeat == 0) ? 0 : (totalPower == 0 ? 0 : (totalHeat/(totalPower*3.6)).toFixed(2)),
-            tempIn: (totaltempIn/data.length).toFixed(2),
-            tempOut: (totaltempOut/data.length).toFixed(2),
-            tempOutdoor: (totaltempOutdoor/data.length).toFixed(2),
-            tempIndoor: (totaltempIndoor/data.length).toFixed(2),
-            tempSet: (totaltempSet/data.length).toFixed(2),
+            tempIn: validTempCount > 0 ? (totaltempIn/validTempCount).toFixed(2) : '',
+            tempOut: validTempCount > 0 ? (totaltempOut/validTempCount).toFixed(2) : '',
+            tempOutdoor: validTempCount > 0 ? (totaltempOutdoor/validTempCount).toFixed(2) : '',
+            tempIndoor: validTempCount > 0 ? (totaltempIndoor/validTempCount).toFixed(2) : '',
+            tempSet: validTempCount > 0 ? (totaltempSet/validTempCount).toFixed(2) : '',
             runTime: totalrunTime.toFixed(2),
             exception: '',
             remark: ''
@@ -155,7 +163,8 @@ window.REPORT_CONFIG = {
 
         return {
             rows: rows,
-            totalRow: totalRow
+            totalRow: totalRow,
+            isRegionAll: !!isRegionAll
         };
     },
     // ========== 模拟数据生成 (用于演示，后续接入SQL后可删除) ==========
@@ -219,6 +228,95 @@ window.REPORT_CONFIG = {
         };
     }
 };
+// =========================================
+// SQL 构建函数 - 按区域全部（多机组汇总）
+// =========================================
+function buildSQLForArea(unitNos, monthStr) {
+	var startDate = monthStr + '-01';
+	var today = new Date();
+	var queryDate = new Date(startDate);
+	var isCurrentMonth = (today.getFullYear() === queryDate.getFullYear() && today.getMonth() === queryDate.getMonth());
+	
+	var elecSumExpr = unitNos.map(function(n){ return 'COALESCE(elec_' + n + ',0)'; }).join('+');
+	var heatInList = unitNos.map(function(n){ return "'heat_" + n + "'"; }).join(',');
+	
+	var sql = `
+SELECT DATE_FORMAT(DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL days.n DAY),'%m-%d') AS day,
+	Round(heat.sum_heat * 1000, 1) AS sum_heat,
+	elec.sum_elec,
+	CASE 
+		WHEN heat.sum_heat IS NULL AND elec.sum_elec IS NULL THEN NULL
+		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec = 0 OR elec.sum_elec IS NULL) THEN 0
+		WHEN elec.sum_elec = 0 OR elec.sum_elec IS NULL THEN NULL
+		ELSE ROUND((heat.sum_heat * 1000) / (elec.sum_elec * 3.6), 2)
+	END AS sum_rated,
+	NULL AS A_TEMP, NULL AS B_TEMP, NULL AS C_TEMP, NULL AS D_TEMP, NULL AS E_TEMP,
+	NULL AS time_1
+FROM (SELECT i AS n FROM sys_ints) AS days
+LEFT JOIN (
+	SELECT date, (${elecSumExpr}) AS sum_elec FROM (
+		SELECT DATE_FORMAT(r.jDay, '%Y-%m-%d') AS date,
+			sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) AS elec_420001,
+			sum(case when elec_name in ('elec_420002') then sum_elec else 0 end) AS elec_420002,
+			sum(case when elec_name in ('elec_420003') then sum_elec else 0 end) AS elec_420003,
+			sum(case when elec_name in ('elec_420004') then sum_elec else 0 end) AS elec_420004,
+			sum(case when elec_name in ('elec_420005') then sum_elec else 0 end) AS elec_420005,
+			sum(case when elec_name in ('elec_420006') then sum_elec else 0 end) AS elec_420006,
+			sum(case when elec_name in ('elec_420007') then sum_elec else 0 end) AS elec_420007,
+			sum(case when elec_name in ('elec_420008') then sum_elec else 0 end) AS elec_420008,
+			sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) AS elec_420009,
+			GREATEST(0, sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end)) AS elec_420010,
+			sum(case when elec_name in ('elec_420011') then sum_elec else 0 end) AS elec_420011,
+			sum(case when elec_name in ('elec_420012') then sum_elec else 0 end) AS elec_420012,
+			sum(case when elec_name in ('elec_420013') then sum_elec else 0 end) AS elec_420013,
+			sum(case when elec_name in ('elec_420014') then sum_elec else 0 end) AS elec_420014,
+			sum(case when elec_name in ('elec_420015') then sum_elec else 0 end) AS elec_420015
+		FROM (
+			SELECT DATE_FORMAT(date, '%Y-%m-%d') AS jDay, CONCAT('elec', '_', NO) AS elec_name, SUM(sum_elec) AS sum_elec
+			FROM sum_elec_group_by_day
+			WHERE date <= DATE_FORMAT(DATE_ADD(LAST_DAY('${startDate}'),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
+				AND date >= DATE_FORMAT('${startDate}', '%Y-%m-01')
+				AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)
+			GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')
+			UNION ALL
+			SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d') AS jDay, CONCAT('elec', '_', NO) AS elec_name,
+				IF(LEAD(no,1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00'))=no, LEAD(MIN(KWH),1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')), MAX(KWH))-MIN(KWH) AS sum_elec
+			FROM data_all FORCE INDEX (date_no_KWH)
+			WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
+				AND date >= DATE_FORMAT(now(), '%Y-%m-%d 07:00:00')
+				AND kwh != 0 AND kwh != 99999999
+				AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)
+			GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')
+		) r
+		GROUP BY r.jDay
+	) t
+) elec ON elec.date = DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL days.n DAY)
+LEFT JOIN (
+	SELECT DATE_FORMAT(r.jDay, '%Y-%m-%d') AS date, SUM(CASE WHEN heat_name IN (${heatInList}) THEN sum_heat ELSE 0 END) AS sum_heat
+	FROM (
+		SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d') AS jDay, CONCAT('heat', '_', NO) AS heat_name, SUM(sum_heat) AS sum_heat
+		FROM sum_heat_group_by_hour
+		WHERE date >= DATE_FORMAT('${startDate}', '%Y-%m-01 07:00:00')
+		AND date ` + (isCurrentMonth ? "< DATE_FORMAT(now(), '%Y-%m-%d 07:00:00')" : "<= DATE_FORMAT(DATE_ADD(LAST_DAY('" + startDate + "'),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')") + `
+		AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)
+		GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')
+		` + (isCurrentMonth ? `
+		UNION ALL
+		SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d') AS jDay, CONCAT('heat', '_', NO) AS heat_name,
+			IF(LEAD(no,1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00'))=no, LEAD(MIN(heat_quantity),1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')), MAX(heat_quantity))-MIN(heat_quantity) AS sum_heat
+		FROM data_heat_quantity
+		WHERE date >= DATE_FORMAT(now(), '%Y-%m-%d 07:00:00') AND date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
+		AND heat_quantity != 0 AND heat_quantity != 99999999
+		AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015)
+		GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')` : '') + `
+	) r
+	GROUP BY r.jDay
+) heat ON heat.date = DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL days.n DAY)
+WHERE DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL days.n DAY) <= LAST_DAY('${startDate}')
+`;
+	return sql.trim();
+}
+
 // =========================================
 // SQL 构建函数（示例，根据实际表结构修改）
 // =========================================
