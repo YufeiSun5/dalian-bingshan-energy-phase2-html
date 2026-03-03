@@ -23,6 +23,8 @@ window.HEATPUMP_CONFIG = {
     },
 
     async sendSQL(sql) {
+        console.log('【执行 SQL】');
+        console.log(sql);
         return await this.request(`${this.apiBaseUrl}/api/sql/run-sql`, {
             method: 'POST',
             body: JSON.stringify({ sql })
@@ -1052,8 +1054,12 @@ ORDER BY
             let shouldInclude = false;
             
             if (selectedUnit === 'total') {
-                // 只显示全厂综合
+                // 全部：显示全厂综合
                 shouldInclude = isTotal;
+            } else if (selectedUnit.startsWith('location_')) {
+                // 按区域：大办、电机、研发
+                const locName = selectedUnit.replace('location_', '');
+                shouldInclude = isEquipment && row.location === locName;
             } else if (selectedUnit.startsWith('group_')) {
                 // 显示指定分组的汇总
                 const targetGroup = groupNameMap[selectedUnit];
@@ -1070,6 +1076,8 @@ ORDER BY
             
             if (isTotal) {
                 displayName = '全厂综合';
+            } else if (selectedUnit.startsWith('location_') && isEquipment) {
+                displayName = row.location || '';
             } else if (isGroupSummary) {
                 displayName = row.name_display;
             } else if (isEquipment) {
@@ -1080,15 +1088,19 @@ ORDER BY
                 dateMap[dateKey] = { 
                     displayName: displayName,
                     summaryType: isTotal ? 'total' : (isGroupSummary ? 'group' : 'normal'),
+                    isLocation: selectedUnit.startsWith('location_') && selectedUnit !== 'location_all',
                     data: {}
                 };
             }
 
             if (!dateMap[dateKey].data[time]) {
-                dateMap[dateKey].data[time] = { sum: 0, count: 0 };
+                dateMap[dateKey].data[time] = { sum: 0, count: 0, elec: 0, heat: 0 };
             }
-            dateMap[dateKey].data[time].sum += value;
-            dateMap[dateKey].data[time].count += 1;
+            var td = dateMap[dateKey].data[time];
+            td.sum += value;
+            td.count += 1;
+            if (row.elec_kwh != null) td.elec += parseFloat(row.elec_kwh);
+            if (row.heat_qty != null) td.heat += parseFloat(row.heat_qty);
             timeSet.add(time);
         });
 
@@ -1157,9 +1169,17 @@ ORDER BY
             const data = axis.map(time => {
                 const timeData = dateInfo.data[time];
                 if (timeData) {
-                    const avg = timeData.sum / timeData.count;
+                    var val;
+                    if (dateInfo.isLocation) {
+                        if (paramType === 'power') val = timeData.elec;
+                        else if (paramType === 'heat') val = timeData.heat;
+                        else val = timeData.elec > 0 ? (timeData.heat * 1000) / (timeData.elec * 3.6) : null;
+                    } else {
+                        val = timeData.sum / timeData.count;
+                    }
+                    if (val == null) return '';
                     var decimals = (paramType === 'power' || paramType === 'heat') ? 1 : 2;
-                    return avg.toFixed(decimals);
+                    return val.toFixed(decimals);
                 }
                 return '';  // 改为空字符串
             });
@@ -1177,16 +1197,13 @@ ORDER BY
                 data: data
             };
 
-            // 根据类型设置样式
+            // 按时间模式：每条曲线（每个日期）用不同颜色
+            seriesItem.color = colors[colorIndex % colors.length];
+            colorIndex++;
             if (dateInfo.summaryType === 'total') {
-                seriesItem.color = '#f44336';
                 seriesItem.lineStyle = 'bold';
             } else if (dateInfo.summaryType === 'group') {
-                seriesItem.color = '#ff9800';
                 seriesItem.lineStyle = 'dashed';
-            } else {
-                seriesItem.color = colors[colorIndex % colors.length];
-                colorIndex++;
             }
 
             series.push(seriesItem);

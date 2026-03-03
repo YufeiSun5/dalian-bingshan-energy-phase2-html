@@ -504,21 +504,31 @@
                 unitSelect.prop('disabled', false);
                 unitSelect.css('color', '#fff'); // 恢复颜色
                 unitSelect.html(`
-                    <option value="420001">大办_天加01</option>
-                    <option value="420002">大办_天加02</option>
-                    <option value="420003">电机_冷机</option>
-                    <option value="420004">电机_欧亚</option>
-                    <option value="420008">研发_欧亚1</option>
-                    <option value="420006">研发_欧亚2</option>
-                    <option value="420007">研发_冷机1</option>
-                    <option value="420005">研发_冷机2</option>
-                    <option value="420009">大办_雅士</option>
-                    <option value="420010">大办_冷机</option>
-                    <option value="420011">大办_欧亚</option>
-                    <option value="420012">大办_冰山</option>
-                    <option value="420013">电机_扬子1</option>
-                    <option value="420014">电机_扬子2</option>
-                    <option value="420015">电机_冰山</option>
+                    <optgroup label="全部">
+                        <option value="total">全部</option>
+                    </optgroup>
+                    <optgroup label="区域">
+                        <option value="location_大办">大办</option>
+                        <option value="location_电机">电机</option>
+                        <option value="location_研发">研发</option>
+                    </optgroup>
+                    <optgroup label="机组">
+                        <option value="420001">大办_天加01</option>
+                        <option value="420002">大办_天加02</option>
+                        <option value="420003">电机_冷机</option>
+                        <option value="420004">电机_欧亚</option>
+                        <option value="420008">研发_欧亚1</option>
+                        <option value="420006">研发_欧亚2</option>
+                        <option value="420007">研发_冷机1</option>
+                        <option value="420005">研发_冷机2</option>
+                        <option value="420009">大办_雅士</option>
+                        <option value="420010">大办_冷机</option>
+                        <option value="420011">大办_欧亚</option>
+                        <option value="420012">大办_冰山</option>
+                        <option value="420013">电机_扬子1</option>
+                        <option value="420014">电机_扬子2</option>
+                        <option value="420015">电机_冰山</option>
+                    </optgroup>
                 `);
                 title.text('热泵运行趋势 (多日期)');
             }
