@@ -79,6 +79,7 @@ window.REPORT_CONFIG = {
 		const sql = (unitNo === 'all' && unitNos && unitNos.length) 
 			? buildSQLForArea(unitNos, monthStr) 
 			: buildSQL(unitNo, monthStr);
+		console.log('【执行 SQL】\n' + sql);
 		const response = await sendSQL(sql);
 		console.info(response);
         return new Promise(function(resolve, reject) {
@@ -277,8 +278,10 @@ LEFT JOIN (
 			WHERE date <= DATE_FORMAT(DATE_ADD(LAST_DAY('${startDate}'),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
 				AND date >= DATE_FORMAT('${startDate}', '%Y-%m-01')
 				AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)
-			GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')
+			GROUP BY no, DATE_FORMAT(date, '%Y-%m-%d')
+			` + (isCurrentMonth ? `
 			UNION ALL
+			-- 当前月份：补充今天7点到现在的实时数据
 			SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d') AS jDay, CONCAT('elec', '_', NO) AS elec_name,
 				IF(LEAD(no,1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00'))=no, LEAD(MIN(KWH),1,0) OVER(ORDER BY no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')), MAX(KWH))-MIN(KWH) AS sum_elec
 			FROM data_all FORCE INDEX (date_no_KWH)
@@ -287,6 +290,7 @@ LEFT JOIN (
 				AND kwh != 0 AND kwh != 99999999
 				AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)
 			GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d')
+			` : '') + `
 		) r
 		GROUP BY r.jDay
 	) t
@@ -379,12 +383,12 @@ function buildSQL(no,startDate) {
 						FROM sum_elec_group_by_day
 						WHERE date <= DATE_FORMAT(DATE_ADD(LAST_DAY('${startDate}'),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')
 						AND date >= DATE_FORMAT('${startDate}', '%Y-%m-01')	
-						and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	
-						GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d')
+						and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)
+						GROUP BY no, DATE_FORMAT(date, '%Y-%m-%d')
+						${isCurrentMonth ? `
 						UNION ALL
 						
-						
-						
+						-- 当前月份：补充今天7点到现在的实时数据
 						SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
 						,CONCAT('elec', '_', NO) as elec_name	
 						,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec	
@@ -393,7 +397,8 @@ function buildSQL(no,startDate) {
 						AND date >= DATE_FORMAT(now(), '%Y-%m-%d 07:00:00')
 						and kwh != 0 and kwh != 99999999		
 						and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	
-						GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') 
+						GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d')
+						` : ''}
 				) r 
 				group by r.jDay
 		)t

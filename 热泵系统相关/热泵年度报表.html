@@ -531,42 +531,68 @@
 								ROUND((sum_heat1 * 1000)/(elec.sum_elec1*3.6),3) as office_eff,
 								
 								
-								Round(sum_heat2 * 1000,1) as rd_heat,
-								elec.sum_elec2 as rd_elec,
-								ROUND((sum_heat2 * 1000)/(elec.sum_elec2*3.6),3) as rd_eff,
+								Round(sum_heat3 * 1000,1) as rd_heat,
+								elec.sum_elec3 as rd_elec,
+								ROUND((sum_heat3 * 1000)/(elec.sum_elec3*3.6),3) as rd_eff,
 								
-								Round(sum_heat3 * 1000,1) as motor_heat,
-								elec.sum_elec3 as motor_elec,
-								ROUND((sum_heat3 * 1000)/(elec.sum_elec3*3.6),3) as motor_eff
+								Round(sum_heat2 * 1000,1) as motor_heat,
+								elec.sum_elec2 as motor_elec,
+								ROUND((sum_heat2 * 1000)/(elec.sum_elec2*3.6),3) as motor_eff
             FROM sys_ints t
 
             -- 【电能数据】
             LEFT JOIN (
-                 select 	DATE_FORMAT(r.jDay, '%Y-%m') as date,  
-									sum(case when elec_name in ('elec_420003','elec_420004','elec_420005','elec_420006','elec_420007','elec_420008','elec_420009','elec_420010','elec_420011','elec_420012','elec_420013','elec_420014','elec_420014','elec_420015','elec_320022','elec_320024') then sum_elec else 0 end) as sum_elec, 
-									sum(case when elec_name in ('elec_320022','elec_320024') then sum_elec else 0 end) AS sum_elec1,
-									sum(case when elec_name in ('elec_420003','elec_420004') then sum_elec else 0 end) as sum_elec2,   
-									sum(case when elec_name in ('elec_420005','elec_420006','elec_420007','elec_420008') then sum_elec else 0 end ) as sum_elec3    
-									from (  
-											select DATE_FORMAT(date, '%Y-%m-%d') as jDay  
-											,CONCAT('elec', '_', NO) as elec_name  
-											,sum_elec  
-											from sum_elec_group_by_day  	
-											where no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	 
-											and date <= '${year}-12-31'   
-											AND date >= '${year}-01-01'	
-											union all
-											SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') as jDay 
-											,CONCAT('elec', '_', NO) as elec_name	
-											,if(LEAD(no,1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')) = no , LEAD(MIN(KWH),1,0) over(order by no,DATE_FORMAT(date, '%Y-%m-%d %H:00:00')),   MAX(KWH))- MIN(KWH) AS sum_elec	
-											FROM data_all FORCE INDEX (date_no_KWH) 	
-											WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  
-											AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')	
-											and kwh != 0 and kwh != 99999999		
-											and no in (420001,420002,420003,420004,420005,420006,420007,420008,420009,420010,420011,420012,420013,420014,420015,320022,320024)	
-											GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') 
-									) r 
-									group by DATE_FORMAT(r.jDay, '%Y-%m')
+                /*
+                 * 【重要】电量必须先按天计算、再按月SUM，不能直接按月GROUP BY后做GREATEST。
+                 * 原因：320022是大办总表，420010(冷机)=320022-420001-420002-420009差值计算。
+                 * 若某天总表采集缺失导致差值为负，GREATEST(0,...)按天截断后该天420010=0；
+                 * 若先按月汇总再截断，负值会被其他天的正值抵消，结果偏小，与月度基础数据不一致。
+                 * 大办机组：420001(天加2)+420002(天加1)+420009(冰山2)+420010(冷机,差值)+420011(欧亚)+420012(冰山1)
+                 * 电机机组：420003(冷机)+420004(欧亚)+420013(扬子1)+420014(扬子2)+420015(冰山)
+                 * 研发机组：420005(冷机2)+420006(欧亚2)+420007(冷机1)+420008(欧亚1)
+                 */
+                SELECT DATE_FORMAT(daily.jDay, '%Y-%m') AS date,
+                    SUM(daily.elec_office) AS sum_elec1,
+                    SUM(daily.elec_motor)  AS sum_elec2,
+                    SUM(daily.elec_rd)     AS sum_elec3,
+                    SUM(daily.elec_office + daily.elec_motor + daily.elec_rd) AS sum_elec
+                FROM (
+                    SELECT
+                        r.jDay,
+                        SUM(CASE WHEN no=420001 THEN sum_elec ELSE 0 END)
+                        + SUM(CASE WHEN no=420002 THEN sum_elec ELSE 0 END)
+                        + SUM(CASE WHEN no=420009 THEN sum_elec ELSE 0 END)
+                        + GREATEST(0,
+                            SUM(CASE WHEN no=320022 THEN sum_elec ELSE 0 END)
+                            - SUM(CASE WHEN no=420001 THEN sum_elec ELSE 0 END)
+                            - SUM(CASE WHEN no=420002 THEN sum_elec ELSE 0 END)
+                            - SUM(CASE WHEN no=420009 THEN sum_elec ELSE 0 END)
+                          )
+                        + SUM(CASE WHEN no=420011 THEN sum_elec ELSE 0 END)
+                        + SUM(CASE WHEN no=420012 THEN sum_elec ELSE 0 END) AS elec_office,
+                        SUM(CASE WHEN no IN (420003,420004,420013,420014,420015) THEN sum_elec ELSE 0 END) AS elec_motor,
+                        SUM(CASE WHEN no IN (420005,420006,420007,420008) THEN sum_elec ELSE 0 END) AS elec_rd
+                    FROM (
+                        SELECT DATE_FORMAT(date, '%Y-%m-%d') AS jDay, no, sum_elec
+                        FROM sum_elec_group_by_day
+                        WHERE no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420011,420012,420013,420014,420015,320022)
+                          AND date >= '${year}-01-01'
+                          AND date <= '${year}-12-31'
+                        UNION ALL
+                        SELECT DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR), '%Y-%m-%d') AS jDay, no,
+                            IF(LEAD(no,1,0) OVER(ORDER BY no,DATE_FORMAT(date,'%Y-%m-%d %H:00:00'))=no,
+                               LEAD(MIN(KWH),1,0) OVER(ORDER BY no,DATE_FORMAT(date,'%Y-%m-%d %H:00:00')),
+                               MAX(KWH))-MIN(KWH) AS sum_elec
+                        FROM data_all FORCE INDEX (date_no_KWH)
+                        WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR),'%Y-%m-%d 08:00:00')
+                          AND date >= DATE_FORMAT(now(),'%Y-%m-%d 07:00:00')
+                          AND kwh != 0 AND kwh != 99999999
+                          AND no IN (420001,420002,420003,420004,420005,420006,420007,420008,420009,420011,420012,420013,420014,420015,320022)
+                        GROUP BY no, DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR),'%Y-%m-%d')
+                    ) r
+                    GROUP BY r.jDay
+                ) daily
+                GROUP BY DATE_FORMAT(daily.jDay, '%Y-%m')
 
             ) elec ON DATE_FORMAT( DATE_ADD(DATE_FORMAT('${year}-01-01','%Y-01-01'),INTERVAL t.i month) , '%Y-%m') = elec.date
 
