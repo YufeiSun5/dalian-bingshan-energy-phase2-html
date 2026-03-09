@@ -400,6 +400,48 @@
         let globalData = {};
         let currentActiveIdentifier = '';
 
+        function parseNullableNumber(value) {
+            if (value == null || value === '' || value === '-') {
+                return null;
+            }
+            const numericValue = parseFloat(value);
+            return isNaN(numericValue) ? null : numericValue;
+        }
+
+        function formatNumericDisplay(value, decimals, clampNonNegative) {
+            const numericValue = parseNullableNumber(value);
+            if (numericValue == null) {
+                return '-';
+            }
+            const finalValue = clampNonNegative ? Math.max(0, numericValue) : numericValue;
+            return finalValue.toFixed(decimals);
+        }
+
+        function normalizePowerForCop(value) {
+            const numericValue = parseNullableNumber(value);
+            if (numericValue == null) {
+                return null;
+            }
+            return Math.max(0, numericValue);
+        }
+
+        function calcCopDisplay(heatValue, powerValue, decimals) {
+            const heat = parseNullableNumber(heatValue);
+            const power = normalizePowerForCop(powerValue);
+
+            if (heat == null && power == null) {
+                return '-';
+            }
+            if ((heat == null || heat === 0) && (power == null || power === 0)) {
+                return '0.000'.slice(0, decimals + 2);
+            }
+            if (power == null || power === 0) {
+                return '-';
+            }
+
+            return ((heat || 0) * 1000 / (power * 3.6)).toFixed(decimals);
+        }
+
         // 初始化年份选择器
         laydate.render({
             elem: '#year-selector',
@@ -524,20 +566,40 @@
 								avg_temp,
 								round((sum_heat1 + sum_heat2 + sum_heat3)* 1000,1) as factory_heat,
 								(elec.sum_elec1 +elec.sum_elec2+elec.sum_elec3) as factory_elec,
-								ROUND(((sum_heat1 + sum_heat2 + sum_heat3) * 1000)/((elec.sum_elec1 +elec.sum_elec2+elec.sum_elec3)*3.6),3) as factory_eff,
+                            CASE 
+                                WHEN (sum_heat1 + sum_heat2 + sum_heat3) IS NULL AND (elec.sum_elec1 + elec.sum_elec2 + elec.sum_elec3) IS NULL THEN NULL
+                                WHEN ((sum_heat1 + sum_heat2 + sum_heat3) = 0 OR (sum_heat1 + sum_heat2 + sum_heat3) IS NULL) AND ((elec.sum_elec1 + elec.sum_elec2 + elec.sum_elec3) <= 0 OR (elec.sum_elec1 + elec.sum_elec2 + elec.sum_elec3) IS NULL) THEN 0
+                                WHEN (elec.sum_elec1 + elec.sum_elec2 + elec.sum_elec3) <= 0 OR (elec.sum_elec1 + elec.sum_elec2 + elec.sum_elec3) IS NULL THEN NULL
+                                ELSE ROUND(((sum_heat1 + sum_heat2 + sum_heat3) * 1000)/((elec.sum_elec1 +elec.sum_elec2+elec.sum_elec3)*3.6),3)
+                            END as factory_eff,
 								
 								Round(sum_heat1 * 1000,1) as office_heat,
 								elec.sum_elec1 as office_elec,
-								ROUND((sum_heat1 * 1000)/(elec.sum_elec1*3.6),3) as office_eff,
+                            CASE 
+                                WHEN sum_heat1 IS NULL AND elec.sum_elec1 IS NULL THEN NULL
+                                WHEN (sum_heat1 = 0 OR sum_heat1 IS NULL) AND (elec.sum_elec1 <= 0 OR elec.sum_elec1 IS NULL) THEN 0
+                                WHEN elec.sum_elec1 <= 0 OR elec.sum_elec1 IS NULL THEN NULL
+                                ELSE ROUND((sum_heat1 * 1000)/(elec.sum_elec1*3.6),3)
+                            END as office_eff,
 								
 								
 								Round(sum_heat3 * 1000,1) as rd_heat,
 								elec.sum_elec3 as rd_elec,
-								ROUND((sum_heat3 * 1000)/(elec.sum_elec3*3.6),3) as rd_eff,
+                            CASE 
+                                WHEN sum_heat3 IS NULL AND elec.sum_elec3 IS NULL THEN NULL
+                                WHEN (sum_heat3 = 0 OR sum_heat3 IS NULL) AND (elec.sum_elec3 <= 0 OR elec.sum_elec3 IS NULL) THEN 0
+                                WHEN elec.sum_elec3 <= 0 OR elec.sum_elec3 IS NULL THEN NULL
+                                ELSE ROUND((sum_heat3 * 1000)/(elec.sum_elec3*3.6),3)
+                            END as rd_eff,
 								
 								Round(sum_heat2 * 1000,1) as motor_heat,
 								elec.sum_elec2 as motor_elec,
-								ROUND((sum_heat2 * 1000)/(elec.sum_elec2*3.6),3) as motor_eff
+                            CASE 
+                                WHEN sum_heat2 IS NULL AND elec.sum_elec2 IS NULL THEN NULL
+                                WHEN (sum_heat2 = 0 OR sum_heat2 IS NULL) AND (elec.sum_elec2 <= 0 OR elec.sum_elec2 IS NULL) THEN 0
+                                WHEN elec.sum_elec2 <= 0 OR elec.sum_elec2 IS NULL THEN NULL
+                                ELSE ROUND((sum_heat2 * 1000)/(elec.sum_elec2*3.6),3)
+                            END as motor_eff
             FROM sys_ints t
 
             -- 【电能数据】
@@ -545,8 +607,8 @@
                 /*
                  * 【重要】电量必须先按天计算、再按月SUM，不能直接按月GROUP BY后做GREATEST。
                  * 原因：320022是大办总表，420010(冷机)=320022-420001-420002-420009差值计算。
-                 * 若某天总表采集缺失导致差值为负，GREATEST(0,...)按天截断后该天420010=0；
-                 * 若先按月汇总再截断，负值会被其他天的正值抵消，结果偏小，与月度基础数据不一致。
+                 * 若某天总表采集缺失导致差值为负，不能在汇总前截断为0；
+                 * 否则月度/年度总和会偏大。负数只在页面展示和COP计算时按规则处理。
                  * 大办机组：420001(天加2)+420002(天加1)+420009(冰山2)+420010(冷机,差值)+420011(欧亚)+420012(冰山1)
                  * 电机机组：420003(冷机)+420004(欧亚)+420013(扬子1)+420014(扬子2)+420015(冰山)
                  * 研发机组：420005(冷机2)+420006(欧亚2)+420007(冷机1)+420008(欧亚1)
@@ -562,12 +624,12 @@
                         SUM(CASE WHEN no=420001 THEN sum_elec ELSE 0 END)
                         + SUM(CASE WHEN no=420002 THEN sum_elec ELSE 0 END)
                         + SUM(CASE WHEN no=420009 THEN sum_elec ELSE 0 END)
-                        + GREATEST(0,
-                            SUM(CASE WHEN no=320022 THEN sum_elec ELSE 0 END)
-                            - SUM(CASE WHEN no=420001 THEN sum_elec ELSE 0 END)
-                            - SUM(CASE WHEN no=420002 THEN sum_elec ELSE 0 END)
-                            - SUM(CASE WHEN no=420009 THEN sum_elec ELSE 0 END)
-                          )
+                                                + (
+                                                        SUM(CASE WHEN no=320022 THEN sum_elec ELSE 0 END)
+                                                        - SUM(CASE WHEN no=420001 THEN sum_elec ELSE 0 END)
+                                                        - SUM(CASE WHEN no=420002 THEN sum_elec ELSE 0 END)
+                                                        - SUM(CASE WHEN no=420009 THEN sum_elec ELSE 0 END)
+                                                    )
                         + SUM(CASE WHEN no=420011 THEN sum_elec ELSE 0 END)
                         + SUM(CASE WHEN no=420012 THEN sum_elec ELSE 0 END) AS elec_office,
                         SUM(CASE WHEN no IN (420003,420004,420013,420014,420015) THEN sum_elec ELSE 0 END) AS elec_motor,
@@ -684,43 +746,49 @@
             //const dataMap = new Map(monthlyData.map(item => [item.month, item.values]));
 			debugger;
 			for(let i=0;i<data.length;i++){
+                const factoryElecRaw = parseNullableNumber(data[i].factory_elec) || 0;
+                const officeElecRaw = parseNullableNumber(data[i].office_elec) || 0;
+                const rdElecRaw = parseNullableNumber(data[i].rd_elec) || 0;
+                const motorElecRaw = parseNullableNumber(data[i].motor_elec) || 0;
+                const factoryHeatRaw = parseNullableNumber(data[i].factory_heat) || 0;
+                const officeHeatRaw = parseNullableNumber(data[i].office_heat) || 0;
+                const rdHeatRaw = parseNullableNumber(data[i].rd_heat) || 0;
+                const motorHeatRaw = parseNullableNumber(data[i].motor_heat) || 0;
 				tableData.push({
 					isClickable: true,
 					month: data[i].month, 
 					avg_temp: data[i].avg_temp == null ? "-":data[i].avg_temp, 
 					remark: '',
-					factory_heat : data[i].factory_heat == null ? "-":data[i].factory_heat, 
-					factory_elec : data[i].factory_elec == null ? "-":data[i].factory_elec, 
-					factory_eff : data[i].factory_eff == null ? "-":data[i].factory_eff,
-					office_heat : data[i].office_heat == null ? "-":data[i].office_heat, 
-					office_elec : data[i].office_elec == null ? "-":data[i].office_elec, 
-					office_eff : data[i].office_eff == null ? "-":data[i].office_eff,
-					rd_heat : data[i].rd_heat == null ? "-":data[i].rd_heat, 
-					rd_elec : data[i].rd_elec == null ? "-":data[i].rd_elec, 
-					rd_eff : data[i].rd_eff == null ? "-":data[i].rd_eff,
-					motor_heat : data[i].motor_heat == null ? "-":data[i].motor_heat, 
-					motor_elec : data[i].motor_elec == null ? "-":data[i].motor_elec, 
-					motor_eff : data[i].motor_eff == null ? "-":data[i].motor_eff,
+                    factory_heat : formatNumericDisplay(data[i].factory_heat, 1, false), 
+                    factory_elec : formatNumericDisplay(data[i].factory_elec, 1, true), 
+                    factory_eff : calcCopDisplay(data[i].factory_heat, data[i].factory_elec, 3),
+                    office_heat : formatNumericDisplay(data[i].office_heat, 1, false), 
+                    office_elec : formatNumericDisplay(data[i].office_elec, 1, true), 
+                    office_eff : calcCopDisplay(data[i].office_heat, data[i].office_elec, 3),
+                    rd_heat : formatNumericDisplay(data[i].rd_heat, 1, false), 
+                    rd_elec : formatNumericDisplay(data[i].rd_elec, 1, true), 
+                    rd_eff : calcCopDisplay(data[i].rd_heat, data[i].rd_elec, 3),
+                    motor_heat : formatNumericDisplay(data[i].motor_heat, 1, false), 
+                    motor_elec : formatNumericDisplay(data[i].motor_elec, 1, true), 
+                    motor_eff : calcCopDisplay(data[i].motor_heat, data[i].motor_elec, 3),
 
 				});
 				// 累加合计
-                sumElecFactory += data[i].factory_elec;
-                sumElecOffice += data[i].office_elec;
-                sumElecRd += data[i].rd_elec;
-                sumElecMotor += data[i].motor_elec;
+                sumElecFactory += factoryElecRaw;
+                sumElecOffice += officeElecRaw;
+                sumElecRd += rdElecRaw;
+                sumElecMotor += motorElecRaw;
 				
-				sumHeatFactory += data[i].factory_heat;
-                sumHeatOffice += data[i].office_heat;
-                sumHeatRd += data[i].rd_heat;
-                sumHeatMotor += data[i].motor_heat;
+                sumHeatFactory += factoryHeatRaw;
+                sumHeatOffice += officeHeatRaw;
+                sumHeatRd += rdHeatRaw;
+                sumHeatMotor += motorHeatRaw;
 			}
 			
-			if(sumElecFactory != 0){
-				sumRatioFactory = Math.round((sumHeatFactory * 1000 )/(sumElecFactory * 3.6))/1000 ;
-				sumRatioOffice = Math.round((sumHeatOffice * 1000 )/(sumElecOffice * 3.6))/1000 ;
-				sumRatioRd = Math.round((sumHeatRd * 1000 )/(sumElecRd * 3.6))/1000 ;
-				sumRatioMotor = Math.round((sumHeatMotor * 1000 )/(sumElecMotor * 3.6))/1000 ;
-			}
+            sumRatioFactory = calcCopDisplay(sumHeatFactory, sumElecFactory, 3);
+            sumRatioOffice = calcCopDisplay(sumHeatOffice, sumElecOffice, 3);
+            sumRatioRd = calcCopDisplay(sumHeatRd, sumElecRd, 3);
+            sumRatioMotor = calcCopDisplay(sumHeatMotor, sumElecMotor, 3);
 			// 合计行
             tableData.push({
                 month: '合计', 
@@ -728,17 +796,17 @@
 				remark: '', 
 				isTotal: true, 
 				isClickable: true,
-                factory_heat: sumHeatFactory.toFixed(1), 
-				factory_elec: sumElecFactory.toFixed(1), 
+                factory_heat: formatNumericDisplay(sumHeatFactory, 1, false), 
+                factory_elec: formatNumericDisplay(sumElecFactory, 1, false), 
 				factory_eff: sumRatioFactory,
-                office_heat: sumHeatOffice.toFixed(1), 
-				office_elec: sumElecOffice.toFixed(1), 
+                office_heat: formatNumericDisplay(sumHeatOffice, 1, false), 
+                office_elec: formatNumericDisplay(sumElecOffice, 1, false), 
 				office_eff: sumRatioOffice,
-                rd_heat: sumHeatRd.toFixed(1), 
-				rd_elec: sumElecRd.toFixed(1), 
+                rd_heat: formatNumericDisplay(sumHeatRd, 1, false), 
+                rd_elec: formatNumericDisplay(sumElecRd, 1, false), 
 				rd_eff: sumRatioRd,
-                motor_heat: sumHeatMotor.toFixed(1), 
-				motor_elec: sumElecMotor.toFixed(1), 
+                motor_heat: formatNumericDisplay(sumHeatMotor, 1, false), 
+                motor_elec: formatNumericDisplay(sumElecMotor, 1, false), 
 				motor_eff: sumRatioMotor
             });
             /*for (let i = 1; i <= 12; i++) {
@@ -943,20 +1011,20 @@
             const getElecVal = (src, catName) => {
 				debugger;
                 if (!src) return 0;
-                if (catName === '工厂') return src['factory_elec']||0;
-                if (catName === '大办') return src['office_elec'] || 0;
-                if (catName === '研发') return src['rd_elec'] || 0;
-                if (catName === '电机') return src['motor_elec'] || 0;
+                if (catName === '工厂') return Math.max(0, parseNullableNumber(src['factory_elec']) || 0);
+                if (catName === '大办') return Math.max(0, parseNullableNumber(src['office_elec']) || 0);
+                if (catName === '研发') return Math.max(0, parseNullableNumber(src['rd_elec']) || 0);
+                if (catName === '电机') return Math.max(0, parseNullableNumber(src['motor_elec']) || 0);
                 return 0;
             };
             // 取值辅助函数 (复用映射逻辑)
             const getVal = (src, catName) => {
 				debugger;
                 if (!src) return 0;
-                if (catName === '工厂') return src['factory_eff']||0;
-                if (catName === '大办') return src['office_eff'] || 0;
-                if (catName === '研发') return src['rd_eff'] || 0;
-                if (catName === '电机') return src['motor_eff'] || 0;
+                if (catName === '工厂') return parseFloat(calcCopDisplay(src['factory_heat'], src['factory_elec'], 3)) || 0;
+                if (catName === '大办') return parseFloat(calcCopDisplay(src['office_heat'], src['office_elec'], 3)) || 0;
+                if (catName === '研发') return parseFloat(calcCopDisplay(src['rd_heat'], src['rd_elec'], 3)) || 0;
+                if (catName === '电机') return parseFloat(calcCopDisplay(src['motor_heat'], src['motor_elec'], 3)) || 0;
                 return 0;
             };
 

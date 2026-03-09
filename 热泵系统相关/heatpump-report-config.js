@@ -2,9 +2,36 @@
  * 热泵月度基础数据报表配置
  * 
  * 修改记录：
+ * - 2026-03-09: 页面显示电量不允许为负数，但汇总仍按原始负数参与计算 (修改人: GitHub Copilot)
  * - 2026-02-10: 添加电量负数处理，使用GREATEST函数确保420010设备差值计算不会出现负数 (修改人: SunYufei)
  * - 2026-02-10: 修复能效比显示逻辑，电和热都是0时显示0，都是空时显示空 (修改人: SunYufei)
  */
+function formatNonNegativeDisplay(value, decimals) {
+	if (value == null || value === '') {
+		return value;
+	}
+
+	var numericValue = parseFloat(value);
+	if (isNaN(numericValue)) {
+		return value;
+	}
+
+	return Math.max(0, numericValue).toFixed(decimals);
+}
+
+function normalizePowerForCop(value) {
+	if (value == null || value === '') {
+		return null;
+	}
+
+	var numericValue = parseFloat(value);
+	if (isNaN(numericValue)) {
+		return null;
+	}
+
+	return Math.max(0, numericValue);
+}
+
 window.REPORT_CONFIG = {
     // ========== 区域和机组对应关系配置 ==========
     // 重要：这个配置用于初始化下拉框，你可以根据实际情况手动调整
@@ -109,6 +136,7 @@ window.REPORT_CONFIG = {
 		var rows = [];
 		var totalHeat = 0;
         var totalPower = 0;
+		var totalPowerForCop = 0;
 		var totaltempIn = 0;
 		var totaltempOut = 0;
 		var totaltempOutdoor = 0;
@@ -118,13 +146,15 @@ window.REPORT_CONFIG = {
         for (var i = 0; i < data.length; i++) {
 			var heatVal = data[i].sum_heat != null ? parseFloat(data[i].sum_heat) : 0;
 			var powerVal = data[i].sum_elec != null ? parseFloat(data[i].sum_elec) : 0;
+			var powerForCop = normalizePowerForCop(data[i].sum_elec);
+			var powerDisplay = formatNonNegativeDisplay(data[i].sum_elec, 2);
             rows.push({
                 date: data[i].day,
                 area: areaName,
                 unitName: unitName,
                 heat: data[i].sum_heat,
-                power: data[i].sum_elec,
-                cop: data[i].sum_rated,
+				power: powerDisplay,
+				cop: data[i].sum_rated,
                 tempIn: data[i].A_TEMP,
                 tempOut: data[i].B_TEMP,
                 tempOutdoor: data[i].C_TEMP,
@@ -136,6 +166,7 @@ window.REPORT_CONFIG = {
             });
 			totalHeat += heatVal;
             totalPower += powerVal;
+			if (powerForCop != null) totalPowerForCop += powerForCop;
 			if (data[i].A_TEMP != null) totaltempIn += parseFloat(data[i].A_TEMP);
 			if (data[i].B_TEMP != null) totaltempOut += parseFloat(data[i].B_TEMP);
 			if (data[i].C_TEMP != null) totaltempOutdoor += parseFloat(data[i].C_TEMP);
@@ -144,14 +175,14 @@ window.REPORT_CONFIG = {
 			if (data[i].time_1 != null) totalrunTime += parseFloat(data[i].time_1);
         }
 		var validTempCount = data.filter(function(d){ return d.A_TEMP != null; }).length;
-		// 合计行数据
+		// 合计行数据继续使用原始值，确保负数仍参与汇总计算
         var totalRow = {
             date: '合计',
             area: areaName,
             unitName: unitName,
             heat: totalHeat.toFixed(2),
             power: totalPower.toFixed(2),
-            cop: (totalPower == 0 && totalHeat == 0) ? 0 : (totalPower == 0 ? 0 : (totalHeat/(totalPower*3.6)).toFixed(2)),
+			cop: (totalPowerForCop == 0 && totalHeat == 0) ? 0 : (totalPowerForCop == 0 ? 0 : (totalHeat/(totalPowerForCop*3.6)).toFixed(2)),
             tempIn: validTempCount > 0 ? (totaltempIn/validTempCount).toFixed(2) : '',
             tempOut: validTempCount > 0 ? (totaltempOut/validTempCount).toFixed(2) : '',
             tempOutdoor: validTempCount > 0 ? (totaltempOutdoor/validTempCount).toFixed(2) : '',
@@ -247,8 +278,8 @@ SELECT DATE_FORMAT(DATE_ADD(DATE_FORMAT('${startDate}', '%Y-%m-01'), INTERVAL da
 	elec.sum_elec,
 	CASE 
 		WHEN heat.sum_heat IS NULL AND elec.sum_elec IS NULL THEN NULL
-		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec = 0 OR elec.sum_elec IS NULL) THEN 0
-		WHEN elec.sum_elec = 0 OR elec.sum_elec IS NULL THEN NULL
+		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec <= 0 OR elec.sum_elec IS NULL) THEN 0
+		WHEN elec.sum_elec <= 0 OR elec.sum_elec IS NULL THEN NULL
 		ELSE ROUND((heat.sum_heat * 1000) / (elec.sum_elec * 3.6), 2)
 	END AS sum_rated,
 	NULL AS A_TEMP, NULL AS B_TEMP, NULL AS C_TEMP, NULL AS D_TEMP, NULL AS E_TEMP,
@@ -266,7 +297,7 @@ LEFT JOIN (
 			sum(case when elec_name in ('elec_420007') then sum_elec else 0 end) AS elec_420007,
 			sum(case when elec_name in ('elec_420008') then sum_elec else 0 end) AS elec_420008,
 			sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) AS elec_420009,
-			GREATEST(0, sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end)) AS elec_420010,
+			sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) AS elec_420010,
 			sum(case when elec_name in ('elec_420011') then sum_elec else 0 end) AS elec_420011,
 			sum(case when elec_name in ('elec_420012') then sum_elec else 0 end) AS elec_420012,
 			sum(case when elec_name in ('elec_420013') then sum_elec else 0 end) AS elec_420013,
@@ -342,8 +373,8 @@ function buildSQL(no,startDate) {
 	-- 【修改 2026-02-10】：电和热都是0时能效比为0，都是空时能效比为空，其他情况正常计算
 	CASE 
 		WHEN heat.sum_heat IS NULL AND elec.sum_elec IS NULL THEN NULL
-		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec = 0 OR elec.sum_elec IS NULL) THEN 0
-		WHEN elec.sum_elec = 0 OR elec.sum_elec IS NULL THEN NULL
+		WHEN (heat.sum_heat = 0 OR heat.sum_heat IS NULL) AND (elec.sum_elec <= 0 OR elec.sum_elec IS NULL) THEN 0
+		WHEN elec.sum_elec <= 0 OR elec.sum_elec IS NULL THEN NULL
 		ELSE ROUND((heat.sum_heat * 1000) / (elec.sum_elec * 3.6), 2)
 	END as sum_rated,
 	A_TEMP,
@@ -369,8 +400,8 @@ function buildSQL(no,startDate) {
 				sum(case when elec_name in ('elec_420007') then sum_elec else 0 end) as elec_420007,
 				sum(case when elec_name in ('elec_420008') then sum_elec else 0 end) as elec_420008,
 				sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) as elec_420009,
-				-- 【修改 2026-02-10】：使用GREATEST确保420010电量差值不为负数
-				GREATEST(0, sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end)- sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end)) as elec_420010,
+				-- 保留420010原始差值，负数仅在页面展示时处理
+				sum(case when elec_name in ('elec_320022') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420002') then sum_elec else 0 end)- sum(case when elec_name in ('elec_420001') then sum_elec else 0 end) - sum(case when elec_name in ('elec_420009') then sum_elec else 0 end) as elec_420010,
 				sum(case when elec_name in ('elec_420011') then sum_elec else 0 end) as elec_420011,
 				sum(case when elec_name in ('elec_420012') then sum_elec else 0 end) AS elec_420012,
 				sum(case when elec_name in ('elec_420013') then sum_elec else 0 end) AS elec_420013,   
