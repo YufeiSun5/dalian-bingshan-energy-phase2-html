@@ -8,6 +8,7 @@ class TotalPowerFinal {
             apiBaseUrl: 'http://192.168.7.229:8004',
             updateInterval: 60000, 
             retryTimes: 3
+            
         };
 
         this.state = {
