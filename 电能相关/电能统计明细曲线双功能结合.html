@@ -1408,7 +1408,7 @@
 						for(let j=0; j<children.length; j++){
 							if(children[j].no != undefined){
 								normalDevices.push(children[j].no);
-								deviceNames[children[j].no] = checkedData[i].title + "_" + children[j].title.replaceAll('&nbsp;','');
+								deviceNames[children[j].no] = checkedData[i].title + "_" + children[j].title.replace(/&nbsp;/g, '');
 							}
 						}
 					}
@@ -1921,7 +1921,7 @@
 							showData.push(children[j].id);
 							if(children[j].no != undefined){
 								noArr.push(children[j].no);
-								namesql += " when "+children[j].no+" then '"+checkedData[i].title+"_" +children[j].title.replaceAll('&nbsp;','') +"' \n";
+								namesql += " when "+children[j].no+" then '"+checkedData[i].title+"_" +children[j].title.replace(/&nbsp;/g, '') +"' \n";
 							}
 						}
 					}
