@@ -44,8 +44,7 @@ window.PAGE_CONFIG = {
                         if (!Array.isArray(params)) params = [params];
                         let result = params[0].axisValue + '<br/>';
                         params.forEach(p => {
-                            // 艹！把null、undefined、NaN这些憨批全部过滤掉，只显示有效数值
-                            if (p.value !== null && p.value !== undefined && !isNaN(p.value)) {
+                            if (p.value !== null && p.value !== undefined) {
                                 result += `${p.marker} ${p.seriesName}: ${p.value} Nm³/台<br/>`;
                             }
                         });
@@ -53,15 +52,17 @@ window.PAGE_CONFIG = {
                     }
                 },
                 yAxis: {
+                    max: 50,
                     min: 0,
+                    interval: 10,
                     name: 'Nm³/台'
                 },
                 xAxis: {
                     axisLabel: {
                         rotate: 45,
                         fontSize: 9,
-                        interval: 'auto',
-                        hideOverlap: true
+                        interval: 0,
+                        hideOverlap: false
                     }
                 }
             }
@@ -81,8 +82,7 @@ window.PAGE_CONFIG = {
                         if (!Array.isArray(params)) params = [params];
                         let result = params[0].axisValue + '<br/>';
                         params.forEach(p => {
-                            // 艹！把null、undefined、NaN这些憨批全部过滤掉，只显示有效数值
-                            if (p.value !== null && p.value !== undefined && !isNaN(p.value)) {
+                            if (p.value !== null && p.value !== undefined) {
                                 result += `${p.marker} ${p.seriesName}: ${p.value} Nm³/台<br/>`;
                             }
                         });
@@ -90,15 +90,17 @@ window.PAGE_CONFIG = {
                     }
                 },
                 yAxis: {
+                    max: 10,
                     min: 0,
+                    interval: 2,
                     name: 'Nm³/台'
                 },
                 xAxis: {
                     axisLabel: {
                         rotate: 45,
                         fontSize: 9,
-                        interval: 'auto',
-                        hideOverlap: true
+                        interval: 0,
+                        hideOverlap: false
                     }
                 }
             }
@@ -118,8 +120,7 @@ window.PAGE_CONFIG = {
                         if (!Array.isArray(params)) params = [params];
                         let result = params[0].axisValue + '<br/>';
                         params.forEach(p => {
-                            // 艹！把null、undefined、NaN这些憨批全部过滤掉，只显示有效数值
-                            if (p.value !== null && p.value !== undefined && !isNaN(p.value)) {
+                            if (p.value !== null && p.value !== undefined) {
                                 result += `${p.marker} ${p.seriesName}: ${p.value} Nm³/台<br/>`;
                             }
                         });
@@ -127,27 +128,29 @@ window.PAGE_CONFIG = {
                     }
                 },
                 yAxis: {
+                    max: 10,
                     min: 0,
+                    interval: 2,
                     name: 'Nm³/台'
                 },
                 xAxis: {
                     axisLabel: {
                         rotate: 45,
                         fontSize: 9,
-                        interval: 'auto',
-                        hideOverlap: true
+                        interval: 0,
+                        hideOverlap: false
                     }
                 }
             }
         },
         {
-            title: '组装1单台用气量',
+            title: '组装单台用气量',
             unit: '单位：Nm³/台',
             flex: 1,
             option: {
-                legend: {
+                legend: { 
                     show: true,
-                    data: ['组装1单台用气量'],
+                    data: ['组装单台用气量'],
                     textStyle: { color: '#d0d2e0' }
                 },
                 tooltip: {
@@ -155,45 +158,7 @@ window.PAGE_CONFIG = {
                         if (!Array.isArray(params)) params = [params];
                         let result = params[0].axisValue + '<br/>';
                         params.forEach(p => {
-                            // 艹！把null、undefined、NaN这些憨批全部过滤掉，只显示有效数值
-                            if (p.value !== null && p.value !== undefined && !isNaN(p.value)) {
-                                result += `${p.marker} ${p.seriesName}: ${p.value} Nm³/台<br/>`;
-                            }
-                        });
-                        return result;
-                    }
-                },
-                yAxis: {
-                    min: 0,
-                    name: 'Nm³/台'
-                },
-                xAxis: {
-                    axisLabel: {
-                        rotate: 45,
-                        fontSize: 9,
-                        interval: 'auto',
-                        hideOverlap: true
-                    }
-                }
-            }
-        },
-        {
-            title: '组装2单台用气量',
-            unit: '单位：Nm³/台',
-            flex: 1,
-            option: {
-                legend: {
-                    show: true,
-                    data: ['组装2单台用气量'],
-                    textStyle: { color: '#d0d2e0' }
-                },
-                tooltip: {
-                    formatter: function(params) {
-                        if (!Array.isArray(params)) params = [params];
-                        let result = params[0].axisValue + '<br/>';
-                        params.forEach(p => {
-                            // 艹！把null、undefined、NaN这些憨批全部过滤掉，只显示有效数值
-                            if (p.value !== null && p.value !== undefined && !isNaN(p.value)) {
+                            if (p.value !== null && p.value !== undefined) {
                                 result += `${p.marker} ${p.seriesName}: ${p.value} Nm³/台<br/>`;
                             }
                         });
@@ -203,14 +168,15 @@ window.PAGE_CONFIG = {
                 yAxis: {
                     max: 20,
                     min: 0,
+                    interval: 4,
                     name: 'Nm³/台'
                 },
                 xAxis: {
                     axisLabel: {
                         rotate: 45,
                         fontSize: 9,
-                        interval: 'auto',
-                        hideOverlap: true
+                        interval: 0,
+                        hideOverlap: false
                     }
                 }
             }
@@ -263,7 +229,7 @@ window.PAGE_CONFIG = {
 function buildSQL(startDate, endDate, timeType) {
     //let dateFormat, groupBy, tableName, dateCondition;
 	
-	var sql = " select  gas.day as time_label,total_exhaust,machining,assembly,assembly2,motor,rd,difference,offline_output,machining_output,assembly_output,assembly2_output,motor_output,IFNULL(ROUND(total_exhaust / NULLIF(offline_output, 0), 3), 0) as total_per_unit,IFNULL(ROUND(machining / NULLIF(machining_output, 0), 3), 0) as machining_per_unit,IFNULL(ROUND(assembly / NULLIF(assembly_output, 0), 3), 0) as assembly_per_unit,IFNULL(ROUND(assembly2 / NULLIF(assembly2_output, 0), 3), 0) as assembly2_per_unit,IFNULL(ROUND(motor / NULLIF(motor_output, 0), 3), 0) as motor_per_unit from ( ";
+	var sql = " select  gas.day as time_label,total_exhaust,machining,assembly,motor,rd,difference,offline_output,machining_output,assembly_output,motor_output,ROUND(total_exhaust / NULLIF(offline_output, 0), 3) as total_per_unit,ROUND(machining / NULLIF(machining_output, 0), 3) as machining_per_unit,ROUND(assembly / NULLIF(assembly_output, 0), 3) as assembly_per_unit,ROUND(motor / NULLIF(motor_output, 0), 3) as motor_per_unit from ( ";
 	
 	
 	//计算气量的部分
@@ -271,19 +237,13 @@ function buildSQL(startDate, endDate, timeType) {
 	if(timeType == "month"){
 		sql+="	DATE_FORMAT(r.jDay, '%m-%d') as day, \n";	
 	}else if(timeType == "year"){
-		// 年模式：如果传入的是年份（4位），则转换为完整日期范围
-		// 如果传入的是完整日期，则保持原样
-		if(startDate && startDate.length === 4) {
-			// 只有年份，转换为整年范围
-			endDate = startDate+"-12-31";
-			startDate = startDate+"-01-01";
-		}
-		// 如果是完整日期格式（YYYY-MM-DD），则保持用户输入的范围
+		endDate = startDate+"-12-31";
+		startDate = startDate+"-01-01";
+		sql+="	DATE_FORMAT(r.jDay, '%Y-%m') as day, \n";
 	}
 		sql+="	sum(case when gas_name in ('gas_1') then sum_FLOW_total else 0 end) as total_exhaust, \n" 
 		+"	sum(case when gas_name in ('gas_3') then sum_FLOW_total else 0 end) + sum(case when gas_name in ('gas_8') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_9') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_6') then sum_FLOW_total else 0 end) as machining, \n"
-		+"	sum(case when gas_name in ('gas_2') then sum_FLOW_total else 0 end) + sum(case when gas_name in ('gas_9') then sum_FLOW_total else 0 end) as assembly, \n"
-		+"	sum(case when gas_name in ('gas_4') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_7') then sum_FLOW_total else 0 end) as assembly2, \n"
+		+"	sum(case when gas_name in ('gas_2') then sum_FLOW_total else 0 end) + sum(case when gas_name in ('gas_9') then sum_FLOW_total else 0 end) + sum(case when gas_name in ('gas_4') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_7') then sum_FLOW_total else 0 end) as assembly, \n"
 		+"	sum(case when gas_name in ('gas_6') then sum_FLOW_total else 0 end) as motor ,	\n"
 		+"	sum(case when gas_name in ('gas_7') then sum_FLOW_total else 0 end) as rd ,	\n"
 		+"	sum(case when gas_name in ('gas_1') then sum_FLOW_total else 0 end)  - sum(case when gas_name in ('gas_3') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_8') then sum_FLOW_total else 0 end) - sum(case when gas_name in ('gas_2') then sum_FLOW_total else 0 end) -sum(case when gas_name in ('gas_4') then sum_FLOW_total else 0 end)  as difference \n" 
@@ -314,7 +274,7 @@ function buildSQL(startDate, endDate, timeType) {
 	sql+=" 	) r \n" 
 			+" where r.jDay >= '"+startDate+"' and r.jDay <= '"+endDate+"' \n" ;
 	if(timeType == "month"){
-		sql += " group by DATE_FORMAT(r.jDay, '%m-%d')  order BY r.jDay \n" ;		
+		sql += " group by DATE_FORMAT(r.jDay, '%m-%d')  order BY DATE_FORMAT(r.jDay, '%m-%d') \n" ;		
 	}else if (timeType == "year"){
 		sql += " group by DATE_FORMAT(r.jDay, '%Y-%m')  order BY DATE_FORMAT(r.jDay, '%Y-%m') \n" ;	
 	}
@@ -336,7 +296,7 @@ function buildSQL(startDate, endDate, timeType) {
 		sql+="	DATE_FORMAT(r.jDay, '%Y-%m') as day, \n";
 	}
 		 
-		sql+=" sum(offline_output) as offline_output,sum(machining_output) as machining_output,sum(assembly_output) as assembly_output,sum(assembly2_output) as assembly2_output,sum(motor_output) as motor_output \n" 
+		sql+=" offline_output,machining_output,assembly_output,motor_output \n" 
 			+" from (  \n" ;
 			
 	if(timeType == "month" || timeType == "year"){
@@ -345,8 +305,7 @@ function buildSQL(startDate, endDate, timeType) {
 	}	
 		sql +=" ,finished as offline_output \n" 
 			+" 	,machining as machining_output \n" 
-			+" 	,assembly as assembly_output \n"
-			+" 	,assembly2 as assembly2_output \n"
+			+" 	,assembly as assembly_output \n" 
 			+" 	,motor as motor_output \n" 
 			+" 	from data_input_compressor  \n" 
 			+" 	where 	\n" 
@@ -380,7 +339,6 @@ function generateMonthData(startDate, endDate) {
     const machiningPerUnitValues = [];
     const motorPerUnitValues = [];
     const assemblyPerUnitValues = [];
-    const assembly2PerUnitValues = []; // 新增组装2单台用气量数组
     
     const start = new Date(startDate);
     const today = new Date(endDate);  // 今天的日期，用于判断是否有数据
@@ -447,26 +405,22 @@ function generateMonthData(startDate, endDate) {
             machiningPerUnitValues.push(data.machining);
             motorPerUnitValues.push(data.motor);
             assemblyPerUnitValues.push(data.assembly);
-            assembly2PerUnitValues.push((data.assembly * 0.8).toFixed(3)); // 模拟组装2数据，为组装1的80%
-
+            
             rows.push({
                 time_label: dayLabel,
                 total_exhaust: data.totalExhaust,
                 machining: data.machiningUsage,
                 assembly: data.assemblyUsage,
-                assembly2: (data.assemblyUsage * 0.8).toFixed(2), // 模拟组装2用气量
                 motor: data.motorUsage,
                 rd: data.rdUsage,
                 difference: data.difference,
                 offline_output: data.offlineOutput,
                 machining_output: data.machiningOutput,
                 assembly_output: data.assemblyOutput,
-                assembly2_output: Math.floor(data.assemblyOutput * 0.8), // 模拟组装2产量
                 motor_output: data.motorOutput,
                 total_per_unit: data.total,
                 machining_per_unit: data.machining,
                 assembly_per_unit: data.assembly,
-                assembly2_per_unit: (data.assembly * 0.8).toFixed(3), // 模拟组装2单台用气量
                 motor_per_unit: data.motor
             });
         } else {
@@ -475,26 +429,22 @@ function generateMonthData(startDate, endDate) {
             machiningPerUnitValues.push(0);
             motorPerUnitValues.push(0);
             assemblyPerUnitValues.push(0);
-            assembly2PerUnitValues.push(0);
-
+            
             rows.push({
                 time_label: dayLabel,
                 total_exhaust: 0,
                 machining: 0,
                 assembly: 0,
-                assembly2: 0,
                 motor: 0,
                 rd: 0,
                 difference: 0,
                 offline_output: 0,
                 machining_output: 0,
                 assembly_output: 0,
-                assembly2_output: 0,
                 motor_output: 0,
                 total_per_unit: 0,
                 machining_per_unit: 0,
                 assembly_per_unit: 0,
-                assembly2_per_unit: 0,
                 motor_per_unit: 0
             });
         }
@@ -506,8 +456,7 @@ function generateMonthData(startDate, endDate) {
         totalPerUnitValues,
         machiningPerUnitValues,
         motorPerUnitValues,
-        assemblyPerUnitValues,
-        assembly2PerUnitValues
+        assemblyPerUnitValues
     };
 }
 
@@ -519,29 +468,25 @@ function generateYearData(year) {
     const machiningPerUnitValues = [];
     const motorPerUnitValues = [];
     const assemblyPerUnitValues = [];
-    const assembly2PerUnitValues = []; // 新增组装2单台用气量数组
 
     for (let m = 1; m <= 12; m++) {
         const monthLabel = `${m}月`;
-
+        
         // 模拟月度数据
         const total = (Math.random() * 15 + 30).toFixed(2);
         const machining = (Math.random() * 2 + 2).toFixed(2);
         const motor = (Math.random() * 3 + 2).toFixed(2);
         const assembly = (Math.random() * 5 + 12).toFixed(2);
-        const assembly2 = (parseFloat(assembly) * 0.8).toFixed(2); // 模拟组装2数据，为组装1的80%
-
+        
         chartLabels.push(monthLabel);
         totalPerUnitValues.push(parseFloat(total));
         machiningPerUnitValues.push(parseFloat(machining));
         motorPerUnitValues.push(parseFloat(motor));
         assemblyPerUnitValues.push(parseFloat(assembly));
-        assembly2PerUnitValues.push(parseFloat(assembly2));
 
         const totalExhaust = Math.floor(Math.random() * 20000 + 100000);
         const machiningUsage = Math.floor(totalExhaust * 0.55);
         const assemblyUsage = Math.floor(totalExhaust * 0.35);
-        const assembly2Usage = Math.floor(assemblyUsage * 0.8); // 模拟组装2用气量
         const motorUsage = Math.floor(totalExhaust * 0.08);
         const rdUsage = 8;
         const difference = totalExhaust - machiningUsage - assemblyUsage - motorUsage - rdUsage;
@@ -549,7 +494,6 @@ function generateYearData(year) {
         const offlineOutput = Math.floor(Math.random() * 1500 + 2500);
         const machiningOutput = Math.floor(offlineOutput * 6);
         const assemblyOutput = Math.floor(offlineOutput * 0.8);
-        const assembly2Output = Math.floor(assemblyOutput * 0.8); // 模拟组装2产量
         const motorOutput = Math.floor(offlineOutput * 0.75);
 
         rows.push({
@@ -557,19 +501,16 @@ function generateYearData(year) {
             total_exhaust: totalExhaust,
             machining: machiningUsage,
             assembly: assemblyUsage,
-            assembly2: assembly2Usage,
             motor: motorUsage,
             rd: rdUsage,
             difference: difference,
             offline_output: offlineOutput,
             machining_output: machiningOutput,
             assembly_output: assemblyOutput,
-            assembly2_output: assembly2Output,
             motor_output: motorOutput,
             total_per_unit: parseFloat(total),
             machining_per_unit: parseFloat(machining),
             assembly_per_unit: parseFloat(assembly),
-            assembly2_per_unit: parseFloat(assembly2),
             motor_per_unit: parseFloat(motor)
         });
     }
@@ -580,8 +521,7 @@ function generateYearData(year) {
         totalPerUnitValues,
         machiningPerUnitValues,
         motorPerUnitValues,
-        assemblyPerUnitValues,
-        assembly2PerUnitValues
+        assemblyPerUnitValues
     };
 }
 
@@ -602,7 +542,7 @@ function getMockData(timeType, startDate, endDate) {
             mockData = generateMonthData(startDate, endDate);
     }
 
-    const { rows, chartLabels, totalPerUnitValues, machiningPerUnitValues, motorPerUnitValues, assemblyPerUnitValues, assembly2PerUnitValues } = mockData;
+    const { rows, chartLabels, totalPerUnitValues, machiningPerUnitValues, motorPerUnitValues, assemblyPerUnitValues } = mockData;
 
     // 表格列定义 - 按照二级表头结构
     const columns = [
@@ -617,8 +557,7 @@ function getMockData(timeType, startDate, endDate) {
             children: [
                 { field: 'total_exhaust', title: '总排气量', type: 'number', decimal: 2 },
                 { field: 'machining', title: '机加工', type: 'number', decimal: 2 },
-                { field: 'assembly', title: '组装1', type: 'number', decimal: 2 },
-                { field: 'assembly2', title: '组装2', type: 'number', decimal: 2 },
+                { field: 'assembly', title: '组装', type: 'number', decimal: 2 },
                 { field: 'motor', title: '电机', type: 'number', decimal: 2 },
                 { field: 'rd', title: '研发', type: 'number', decimal: 2 },
                 { field: 'difference', title: '差值', type: 'number', decimal: 2, highlight: true }
@@ -629,8 +568,7 @@ function getMockData(timeType, startDate, endDate) {
             children: [
                 { field: 'offline_output', title: '下线产量', type: 'number', decimal: 0 },
                 { field: 'machining_output', title: '机加工', type: 'number', decimal: 0 },
-                { field: 'assembly_output', title: '组装1', type: 'number', decimal: 0 },
-                { field: 'assembly2_output', title: '组装2', type: 'number', decimal: 0 },
+                { field: 'assembly_output', title: '组装', type: 'number', decimal: 0 },
                 { field: 'motor_output', title: '电机', type: 'number', decimal: 0 }
             ]
         },
@@ -639,15 +577,14 @@ function getMockData(timeType, startDate, endDate) {
             children: [
                 { field: 'total_per_unit', title: '总', type: 'number', decimal: 3, highlight: true },
                 { field: 'machining_per_unit', title: '机加工', type: 'number', decimal: 3 },
-                { field: 'assembly_per_unit', title: '组装1', type: 'number', decimal: 3 },
-                { field: 'assembly2_per_unit', title: '组装2', type: 'number', decimal: 3 },
+                { field: 'assembly_per_unit', title: '组装', type: 'number', decimal: 3 },
                 { field: 'motor_per_unit', title: '电机', type: 'number', decimal: 3 }
             ]
         }
     ];
 
     return {
-        // 图表数据 - 5个柱状图
+        // 图表数据 - 4个柱状图
         charts: [
             // 图表1：总单台用气量
             {
@@ -666,14 +603,8 @@ function getMockData(timeType, startDate, endDate) {
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
-                        },
+                            fontSize: 9
+                        }
                     }
                 ]
             },
@@ -694,13 +625,7 @@ function getMockData(timeType, startDate, endDate) {
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
@@ -722,27 +647,21 @@ function getMockData(timeType, startDate, endDate) {
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
             },
-            // 图表4：组装1单台用气量
+            // 图表4：组装单台用气量
             {
                 xAxis: { data: chartLabels },
-                legend: {
+                legend: { 
                     show: true,
-                    data: ['组装1单台用气量']
+                    data: ['组装单台用气量']
                 },
                 series: [
                     {
-                        name: '组装1单台用气量',
+                        name: '组装单台用气量',
                         type: 'bar',
                         data: assemblyPerUnitValues,
                         itemStyle: { color: '#1e88e5' },
@@ -750,41 +669,7 @@ function getMockData(timeType, startDate, endDate) {
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
-                        }
-                    }
-                ]
-            },
-            // 图表5：组装2单台用气量
-            {
-                xAxis: { data: chartLabels },
-                legend: {
-                    show: true,
-                    data: ['组装2单台用气量']
-                },
-                series: [
-                    {
-                        name: '组装2单台用气量',
-                        type: 'bar',
-                        data: assembly2PerUnitValues,
-                        itemStyle: { color: '#1e88e5' },
-                        label: {
-                            show: true,
-                            position: 'top',
-                            color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
@@ -806,17 +691,15 @@ function transformData(data, timeType){
 	let machiningPerUnitValues = [];
 	let motorPerUnitValues = [];
 	let assemblyPerUnitValues = [];
-	let assembly2PerUnitValues = [];
+    
 
-
-    //const { rows, chartLabels, totalPerUnitValues, machiningPerUnitValues, motorPerUnitValues, assemblyPerUnitValues, assembly2PerUnitValues } = mockData;
+    //const { rows, chartLabels, totalPerUnitValues, machiningPerUnitValues, motorPerUnitValues, assemblyPerUnitValues } = mockData;
 	for(let i=0;i<data.length;i++){
 		chartLabels.push(data[i].time_label);
 		totalPerUnitValues.push(parseFloat(data[i].total_per_unit));
 		machiningPerUnitValues.push(parseFloat(data[i].machining_per_unit));
 		motorPerUnitValues.push(parseFloat(data[i].motor_per_unit));
 		assemblyPerUnitValues.push(parseFloat(data[i].assembly_per_unit));
-		assembly2PerUnitValues.push(parseFloat(data[i].assembly2_per_unit || 0)); // 如果没有assembly2_per_unit字段，默认为0
 	}
     // 表格列定义 - 按照二级表头结构
     const columns = [
@@ -831,8 +714,7 @@ function transformData(data, timeType){
             children: [
                 { field: 'total_exhaust', title: '总排气量', type: 'number', decimal: 2 },
                 { field: 'machining', title: '机加工', type: 'number', decimal: 2 },
-                { field: 'assembly', title: '组装1', type: 'number', decimal: 2 },
-                { field: 'assembly2', title: '组装2', type: 'number', decimal: 2 },
+                { field: 'assembly', title: '组装', type: 'number', decimal: 2 },
                 { field: 'motor', title: '电机', type: 'number', decimal: 2 },
                 { field: 'rd', title: '研发', type: 'number', decimal: 2 },
                 { field: 'difference', title: '差值', type: 'number', decimal: 2 }
@@ -843,8 +725,7 @@ function transformData(data, timeType){
             children: [
                 { field: 'offline_output', title: '下线产量', type: 'number', decimal: 0 },
                 { field: 'machining_output', title: '机加工', type: 'number', decimal: 0 },
-                { field: 'assembly_output', title: '组装1', type: 'number', decimal: 0 },
-                { field: 'assembly2_output', title: '组装2', type: 'number', decimal: 0 },
+                { field: 'assembly_output', title: '组装', type: 'number', decimal: 0 },
                 { field: 'motor_output', title: '电机', type: 'number', decimal: 0 }
             ]
         },
@@ -853,15 +734,14 @@ function transformData(data, timeType){
             children: [
                 { field: 'total_per_unit', title: '总', type: 'number', decimal: 3 },
                 { field: 'machining_per_unit', title: '机加工', type: 'number', decimal: 3 },
-                { field: 'assembly_per_unit', title: '组装1', type: 'number', decimal: 3 },
-                { field: 'assembly2_per_unit', title: '组装2', type: 'number', decimal: 3 },
+                { field: 'assembly_per_unit', title: '组装', type: 'number', decimal: 3 },
                 { field: 'motor_per_unit', title: '电机', type: 'number', decimal: 3 }
             ]
         }
     ];
 
     return {
-        // 图表数据 - 5个柱状图
+        // 图表数据 - 4个柱状图
         charts: [
             // 图表1：总单台用气量
             {
@@ -880,13 +760,7 @@ function transformData(data, timeType){
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
@@ -908,13 +782,7 @@ function transformData(data, timeType){
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
@@ -936,27 +804,21 @@ function transformData(data, timeType){
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]
             },
-            // 图表4：组装1单台用气量
+            // 图表4：组装单台用气量
             {
                 xAxis: { data: chartLabels },
-                legend: {
+                legend: { 
                     show: true,
-                    data: ['组装1单台用气量']
+                    data: ['组装单台用气量']
                 },
                 series: [
                     {
-                        name: '组装1单台用气量',
+                        name: '组装单台用气量',
                         type: 'bar',
                         data: assemblyPerUnitValues,
                         itemStyle: { color: '#1e88e5' },
@@ -964,41 +826,7 @@ function transformData(data, timeType){
                             show: true,
                             position: 'top',
                             color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
-                        }
-                    }
-                ]
-            },
-            // 图表5：组装2单台用气量
-            {
-                xAxis: { data: chartLabels },
-                legend: {
-                    show: true,
-                    data: ['组装2单台用气量']
-                },
-                series: [
-                    {
-                        name: '组装2单台用气量',
-                        type: 'bar',
-                        data: assembly2PerUnitValues,
-                        itemStyle: { color: '#1e88e5' },
-                        label: {
-                            show: true,
-                            position: 'top',
-                            color: '#d0d2e0',
-                            fontSize: 9,
-                            formatter: function(params) {
-                                if (params.value !== null && params.value !== undefined && !isNaN(params.value)) {
-                                    return params.value.toFixed(2);
-                                }
-                                return '';
-                            }
+                            fontSize: 9
                         }
                     }
                 ]

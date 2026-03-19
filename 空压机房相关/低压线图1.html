@@ -83,9 +83,9 @@
                     }
                 },
                 legend: { top: 10, left: 'center', orient: 'horizontal' },
-                grid: { top: 50, bottom: 30, left: 50, right: 50 },  // 减小 bottom 值
+                     grid: { top: 50, bottom: 300, left: 60, right: 100, containLabel: true },
                 xAxis: { type: 'category', boundaryGap: false, data: [] },
-                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
+                yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } },min:0.35,max:0.7 },
                 series: [],
                 animation: false  // 禁用所有动画
             });
@@ -311,6 +311,10 @@
                     }
                 }
 
+                if (config.grid) {
+                    finalOption.grid = Object.assign({ containLabel: true }, config.grid);
+                }
+
                 // --- F. 处理其他任意 ECharts 属性 (透传) ---
                 const { data, backgroundGradient, legendPosition, seriesConfig, autoPlay, ...others } = config;
                 Object.assign(finalOption, others);
@@ -325,7 +329,7 @@
                 
                 // 打印日志
                 const logParts = [];
-                if(data) logParts.push(`数据更新 [${data.labels?.length || 0}个点位]`);
+                if(data) logParts.push(`数据更新 [${data.labels && data.labels.length ? data.labels.length : 0}个点位]`);
                 if(backgroundGradient) logParts.push(`背景渐变`);
                 if(legendPosition) logParts.push(`图例位置 [${legendPosition}]`);
                 if(seriesConfig) logParts.push(`系列配置 [${seriesConfig.length}条线]`);
@@ -543,7 +547,7 @@ updateChart({
         axisLine: { lineStyle: { color: '#fff' } },
         splitLine: { lineStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }
     },
-    grid: { top: 60, bottom: 50, left: 60, right: 50 },
+    grid: { top: 60, bottom: 500, left: 60, right: 50 },
     autoPlay: { enabled: true, interval: 1500 }  // 1.5秒间隔自动播放
 });
 

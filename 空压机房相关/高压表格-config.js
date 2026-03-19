@@ -11,10 +11,10 @@
 
 window.PAGE_CONFIG = {
     // 页面标题
-    title: '空压站电气比统计',
+    title: '空压站-高压',
 
     // 图表区域标题
-    chartsTitle: '空压站电气比（月报）',
+    chartsTitle: '电气比',
 
     // 表格区域标题
     tablesTitle: '数据明细',
@@ -30,7 +30,7 @@ window.PAGE_CONFIG = {
     // =========================================
     charts: [
         {
-            title: '空压站电气比（月报）',
+            title: '电气比',
             flex: 1,  // 占满整个图表区域
             option: {
                 legend: { 
@@ -649,25 +649,25 @@ function transformData(data,data1, timeType){
         },
         {
             field: 'compressor_1',
-            title: '1#英格索兰',
+            title: '1#英格索兰（h）',
             type: 'number',
             decimal: 1
         },
         {
             field: 'compressor_2',
-            title: '2#英格索兰',
+            title: '2#英格索兰（h）',
             type: 'number',
             decimal: 1
         },
         {
             field: 'compressor_3',
-            title: '3#英格索兰',
+            title: '3#英格索兰（h）',
             type: 'number',
             decimal: 1
         },
         {
             field: 'compressor_4',
-            title: '4#英格索兰',
+            title: '4#英格索兰（h）',
             type: 'number',
             decimal: 1
         }
@@ -683,21 +683,21 @@ function transformData(data,data1, timeType){
         },
         {
             field: 'total_elec',
-            title: '总电量',
+            title: '总电量（kwh）',
             type: 'number',
             decimal: 0,
             highlight: true  // 黄色高亮
         },
         {
             field: 'total_gas',
-            title: '空压机总排量',
+            title: '空压机总排量（m³）',
             type: 'number',
             decimal: 2,
             highlight: true  // 黄色高亮
         },
         {
             field: 'elec_ratio',
-            title: '电气比',
+            title: '电气比（kwh/m³）',
             type: 'number',
             decimal: 3,
             highlight: true  // 黄色高亮

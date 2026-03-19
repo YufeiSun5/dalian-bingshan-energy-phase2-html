@@ -16,13 +16,13 @@
 
 window.PAGE_CONFIG = {
     // 页面标题
-    title: '空压站电气比',
+    title: '空压站-低压',
     
     // 图表区域标题
-    chartsTitle: '空压站电气比',
+    chartsTitle: '电气比',
     
     // 表格区域标题
-    tablesTitle: '空压机电量数据',
+    tablesTitle: '数据明细',
     
     // 是否自动加载数据
     autoLoad: true,
@@ -35,7 +35,7 @@ window.PAGE_CONFIG = {
     // =========================================
     charts: [
         {
-            title: '空压站电气比',
+            title: '空压站-低压',
             unit: '单位：kWh/m³',
             flex: 1,
             option: {
@@ -52,7 +52,9 @@ window.PAGE_CONFIG = {
                     }
                 },
                 yAxis: {
-                    min: 0
+                    max: 0.25,
+                    min: 0,
+                    interval: 0.05
                 }
             }
         }
@@ -109,7 +111,7 @@ window.PAGE_CONFIG = {
 function buildSQL(startDate, endDate, timeType) {
     //let dateFormat, groupBy, tableName, dateCondition;
 	
-	var sql = " select  elec.day as time_label,shenggang1,shenggang2,shenggang3,shenggang4,shouli24,shouli3,lengganji,total_elec,sum_FLOW_total as total_gas,ROUND(total_elec / NULLIF(sum_FLOW_total, 0), 3) as elec_ratio from ( ";
+	var sql = " select  elec.day as time_label,shenggang1,shenggang2,shenggang3,shenggang4,shouli2,shouli4,shouli3,lengganji,total_elec,sum_FLOW_total as total_gas,ROUND(total_elec / NULLIF(sum_FLOW_total, 0), 3) as elec_ratio from ( ";
 	
 	
 	//计算电能的部分
@@ -131,12 +133,13 @@ function buildSQL(startDate, endDate, timeType) {
 	}
 		 
 		
-		sql+=" sum(case when elec_name in ('elec_120010','elec_410004','elec_120011','elec_120005','elec_410003','elec_410002','elec_410001','elec_410006') then sum_elec else 0 end) as total_elec, \n" 
+		sql+=" sum(case when elec_name in ('elec_120010','elec_230008','elec_120011','elec_120005','elec_410003','elec_410002','elec_410001','elec_410006') then sum_elec else 0 end) as total_elec, \n" 
 			+" sum(case when elec_name in ('elec_120010') then sum_elec else 0 end) as shenggang1, \n" 
-			+" sum(case when elec_name in ('elec_410004') then sum_elec else 0 end) as shenggang2, \n" 
+			+" sum(case when elec_name in ('elec_230008') then sum_elec else 0 end) as shenggang2, \n" 
 			+" sum(case when elec_name in ('elec_120011') then sum_elec else 0 end) as shenggang3, \n" 
 			+" sum(case when elec_name in ('elec_120005') then sum_elec else 0 end) as shenggang4, \n" 
-			+" sum(case when elec_name in ('elec_410003','elec_410002') then sum_elec else 0 end) as shouli24, \n" 
+			+" sum(case when elec_name in ('elec_410003') then sum_elec else 0 end) as shouli2, \n" 
+			+" sum(case when elec_name in ('elec_410002') then sum_elec else 0 end) as shouli4, \n" 
 			+" sum(case when elec_name in ('elec_410001') then sum_elec else 0 end) as shouli3, \n" 
 			+" sum(case when elec_name in ('elec_410006') then sum_elec else 0 end) as lengganji \n" 
 			+" from (  " ;
@@ -152,7 +155,7 @@ function buildSQL(startDate, endDate, timeType) {
 			+" 	,sum_elec \n" 
 			+" 	from sum_elec_group_by_hour \n" ;
 	}		
-		sql+=" 	where no in (120010,410004,120011,120005,410003,410002,410001,410006)	\n" 
+		sql+=" 	where no in (120010,230008,120011,120005,410003,410002,410001,410006)	\n" 
 			+" 	and date <= '"+endDate+"'  \n" 
 			+" 	AND date >= '"+startDate+"'	\n"; 
 	debugger;
@@ -174,7 +177,7 @@ function buildSQL(startDate, endDate, timeType) {
 			+" 	WHERE date <= DATE_FORMAT(DATE_ADD(now(),INTERVAL 24 HOUR), '%Y-%m-%d 08:00:00')  \n" 
 			+" 	AND date >= DATE_FORMAT(now() , '%Y-%m-%d 07:00:00')	\n" 
 			+" 	and kwh != 0 and kwh != 99999999		\n" 
-			+" 	and no in (120010,410004,120011,120005,410003,410002,410001,410006)	\n";
+			+" 	and no in (120010,230008,120011,120005,410003,410002,410001,410006)	\n";
 		if(timeType == "month" || timeType == "year"){
 			sql += " 	GROUP BY no,DATE_FORMAT(DATE_SUB(date,INTERVAL 7 HOUR ), '%Y-%m-%d') \n" ;
 		}else{
@@ -454,17 +457,18 @@ function getMockData(timeType, startDate, endDate) {
     // 注意：只有最后三列（总电量、空压机总排气量、电气比）设置 highlight: true
     const columns = [
         { field: 'time_label', title: '日期', type: 'text' },
-        { field: 'shenggang1', title: '神钢1', type: 'number', decimal: 0 },
-        { field: 'shenggang2', title: '神钢2', type: 'number', decimal: 0 },
-        { field: 'shenggang3', title: '神钢3', type: 'number', decimal: 0 },
-        { field: 'shenggang4', title: '神钢4', type: 'number', decimal: 0 },
-        { field: 'shouli24', title: '寿力2/4', type: 'number', decimal: 0 },
-        { field: 'shouli3', title: '寿力3', type: 'number', decimal: 0 },
-        { field: 'lengganji', title: '冷干机', type: 'number', decimal: 0 },
+        { field: 'shenggang1', title: '神钢1（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang2', title: '神钢2（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang3', title: '神钢3（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang4', title: '神钢4（kwh）', type: 'number', decimal: 0 },
+        { field: 'shouli2', title: '寿力2（kwh）', type: 'number', decimal: 0 },
+		{ field: 'shouli4', title: '寿力4（kwh）', type: 'number', decimal: 0 },
+        { field: 'shouli3', title: '寿力3（kwh）', type: 'number', decimal: 0 },
+        { field: 'lengganji', title: '冷干机（kwh）', type: 'number', decimal: 0 },
         // 以下三列高亮显示（黄色背景）
-        { field: 'total_elec', title: '总电量', type: 'number', decimal: 0, highlight: true },
-        { field: 'total_gas', title: '空压机总排气量', type: 'number', decimal: 2, highlight: true },
-        { field: 'elec_ratio', title: '电气比', type: 'ratio', decimal: 3, highlight: true }
+        { field: 'total_elec', title: '总电量（kwh）', type: 'number', decimal: 0, highlight: true },
+        { field: 'total_gas', title: '空压机总排气量（m³）', type: 'number', decimal: 2, highlight: true },
+        { field: 'elec_ratio', title: '电气比（kwh/m³）', type: 'ratio', decimal: 3, highlight: true }
     ];
     
     return {
@@ -552,17 +556,18 @@ function transformData(data, timeType) {
     // 注意：只有最后三列（总电量、空压机总排气量、电气比）设置 highlight: true
     const columns = [
         { field: 'time_label', title: '日期', type: 'text' },
-        { field: 'shenggang1', title: '神钢1', type: 'number', decimal: 0 },
-        { field: 'shenggang2', title: '神钢2', type: 'number', decimal: 0 },
-        { field: 'shenggang3', title: '神钢3', type: 'number', decimal: 0 },
-        { field: 'shenggang4', title: '神钢4', type: 'number', decimal: 0 },
-        { field: 'shouli24', title: '寿力2/4', type: 'number', decimal: 0 },
-        { field: 'shouli3', title: '寿力3', type: 'number', decimal: 0 },
-        { field: 'lengganji', title: '冷干机', type: 'number', decimal: 0 },
+        { field: 'shenggang1', title: '神钢1（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang2', title: '神钢2（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang3', title: '神钢3（kwh）', type: 'number', decimal: 0 },
+        { field: 'shenggang4', title: '神钢4（kwh）', type: 'number', decimal: 0 },
+        { field: 'shouli2', title: '寿力2（kwh）', type: 'number', decimal: 0 },
+		{ field: 'shouli4', title: '寿力4（kwh）', type: 'number', decimal: 0 },
+        { field: 'shouli3', title: '寿力3（kwh）', type: 'number', decimal: 0 },
+        { field: 'lengganji', title: '冷干机（kwh）', type: 'number', decimal: 0 },
         // 以下三列高亮显示（黄色背景）
-        { field: 'total_elec', title: '总电量', type: 'number', decimal: 0, highlight: true },
-        { field: 'total_gas', title: '空压机总排气量', type: 'number', decimal: 2, highlight: true },
-        { field: 'elec_ratio', title: '电气比', type: 'ratio', decimal: 3, highlight: true }
+        { field: 'total_elec', title: '总电量（kwh）', type: 'number', decimal: 0, highlight: true },
+        { field: 'total_gas', title: '空压机总排气量（m³）', type: 'number', decimal: 2, highlight: true },
+        { field: 'elec_ratio', title: '电气比（kwh/m³）', type: 'ratio', decimal: 3, highlight: true }
     ];
     
     return {

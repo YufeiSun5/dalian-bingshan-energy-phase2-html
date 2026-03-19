@@ -342,7 +342,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 axisLine: { lineStyle: { color: '#fff' } },
                 splitLine: { lineStyle: { color: 'rgba(255,255,255,0.2)', type: 'dashed' } }
             },
-            grid: { top: 10, bottom: 20, left: 30, right: 15 }
+            grid: { top: 10, bottom: 200, left: 30, right: 15, containLabel: true }
         });
         
         // 2. 启动自动更新（会立即加载一次数据）

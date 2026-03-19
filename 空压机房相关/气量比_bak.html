@@ -150,14 +150,14 @@
             min-height: 0;
         }
 
-        /* ========== 图表区域 - 占比约 1/2（更高以支持两行布局） ========== */
+        /* ========== 图表区域 - 占比约 2/5 ========== */
         .charts-section {
             background: #1d386f;
             border: 1px solid #2a6dc8;
             border-radius: 4px;
             display: flex;
             flex-direction: column;
-            flex: 5;  /* 艹！从3改到5，让图表更高更舒服 */
+            flex: 2;
             min-height: 0;
             overflow: hidden;
         }
@@ -197,7 +197,7 @@
 
         /* 图表容器 - 无边框 */
         .chart-wrapper {
-            width: calc((100% - 12px) / 3);  /* 每行3个：(100% - 2*6px) / 3 */
+            flex: 1 1 calc(50% - 3px);  /* 每行2个，减去gap的一半 */
             min-width: 300px;  /* 最小宽度，防止过窄 */
             display: flex;
             flex-direction: column;
@@ -207,11 +207,6 @@
             overflow: hidden;
             margin: 0;
             position: relative;
-        }
-
-        /* 第二行的图表占50%宽度（2个一行） */
-        .chart-wrapper.row-second {
-            width: calc((100% - 6px) / 2);  /* 每行2个：(100% - 6px) / 2 */
         }
 
         .chart-body {
@@ -231,9 +226,9 @@
             height: 100%;  /* 确保高度100% */
         }
 
-        /* ========== 表格区域 - 占比约 4/7 ========== */
+        /* ========== 表格区域 - 占比约 3/5 ========== */
         .tables-section {
-            flex: 4;
+            flex: 3;
             background: #1d386f;
             border: 1px solid #2a6dc8;
             border-radius: 4px;
@@ -455,7 +450,7 @@
                 <!-- 月/年 切换按钮组 -->
                 <div class="time-type-group">
                     <button class="time-type-btn active" data-type="month">月</button>
-                    <!--<button class="time-type-btn" data-type="year">年</button>-->
+                    <button class="time-type-btn" data-type="year">年</button>
                 </div>
             </div>
             <div class="toolbar-center">
@@ -654,12 +649,13 @@
                 container.innerHTML = '';
 
                 const chartsConfig = this.config.charts || [];
-
+                
                 chartsConfig.forEach((chartConfig, index) => {
                     const wrapper = document.createElement('div');
-                    // 艹！第4和第5个图表（index=3,4）添加row-second类，让它们占50%宽度在第二行
-                    wrapper.className = 'chart-wrapper' + (index >= 3 ? ' row-second' : '');
-                    // 艹！不再设置inline flex样式，让CSS的width生效
+                    wrapper.className = 'chart-wrapper';
+                    if (chartConfig.flex) {
+                        wrapper.style.flex = chartConfig.flex;
+                    }
 
                     wrapper.innerHTML = `
                         <div class="chart-body">
@@ -915,18 +911,18 @@
                 let row2 = '<tr>';
                 let hasRow2 = false;
 
-                columns.forEach((col, colIndex) => {
+                columns.forEach(col => {
                     const cls = col.highlight ? 'highlight-col' : '';
 
                     if (col.children && col.children.length > 0) {
                         hasRow2 = true;
                         row1 += `<th class="${cls}" colspan="${col.children.length}">${col.title}</th>`;
-
                         col.children.forEach(child => {
                             const childCls = child.highlight ? 'highlight-col' : '';
                             row2 += `<th class="${childCls}">${child.title}</th>`;
                         });
                     } else {
+                        // 支持自定义rowSpan
                         const rowSpan = col.rowSpan || 2;
                         row1 += `<th class="${cls}" rowspan="${rowSpan}">${col.title}</th>`;
                     }
@@ -959,8 +955,8 @@
                         // 格式化数值
                         let displayValue = value;
                         if (col.type === 'number' && typeof value === 'number') {
-                            displayValue = col.decimal !== undefined
-                                ? value.toFixed(col.decimal)
+                            displayValue = col.decimal !== undefined 
+                                ? value.toFixed(col.decimal) 
                                 : value.toLocaleString();
                         }
 

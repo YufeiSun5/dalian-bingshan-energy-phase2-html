@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="user-scalable=0, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, width=device-width"/>
-    <title>单台用气量统计</title>
+    <title>通用上面图下面表</title>
     <!-- 核心依赖 -->
     <link href="../js/css/layui.css" rel="stylesheet">
     <script src="../js/echarts.js"></script>
@@ -12,7 +12,7 @@
         layui.config({ base: '../js/layui_exts/' }).extend({ excel: 'excel' });
     </script>
     <!-- 配置文件（数据和配置由此文件提供） -->
-    <script src="./气量比-config.js?v=20251218v4"></script>
+    <script src="./chart-table-config.js"></script>
     <style>
         /* ========== 基础样式重置 ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -140,6 +140,14 @@
             gap: 5px;
         }
 
+        .btn-primary {
+            /* Layui 默认样式 */
+        }
+
+        .btn-export {
+            /* Layui 橙色样式 */
+        }
+
         /* ========== 内容区域 ========== */
         .content-area {
             flex: 1;
@@ -150,14 +158,14 @@
             min-height: 0;
         }
 
-        /* ========== 图表区域 - 占比约 1/2（更高以支持两行布局） ========== */
+        /* ========== 图表区域 - 占比约 2/5 ========== */
         .charts-section {
             background: #1d386f;
             border: 1px solid #2a6dc8;
             border-radius: 4px;
             display: flex;
             flex-direction: column;
-            flex: 5;  /* 艹！从3改到5，让图表更高更舒服 */
+            flex: 2;
             min-height: 0;
             overflow: hidden;
         }
@@ -188,37 +196,28 @@
         .charts-body {
             flex: 1;
             display: flex;
-            flex-wrap: wrap;  /* 允许换行，支持2x2布局 */
-            gap: 6px;
-            padding: 6px;
+            gap: 10px;
+            padding: 10px;
             min-height: 0;
             overflow: hidden;
         }
 
         /* 图表容器 - 无边框 */
         .chart-wrapper {
-            width: calc((100% - 12px) / 3);  /* 每行3个：(100% - 2*6px) / 3 */
-            min-width: 300px;  /* 最小宽度，防止过窄 */
+            flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
             background: #102a5c;
             border-radius: 4px;
             border: 1px solid #3c8ce7;
             overflow: hidden;
-            margin: 0;
-            position: relative;
-        }
-
-        /* 第二行的图表占50%宽度（2个一行） */
-        .chart-wrapper.row-second {
-            width: calc((100% - 6px) / 2);  /* 每行2个：(100% - 6px) / 2 */
         }
 
         .chart-body {
             flex: 1;
             min-height: 0;
             position: relative;
-            width: 100%;  /* 确保宽度100% */
         }
 
         .chart-container {
@@ -227,13 +226,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            width: 100%;  /* 确保宽度100% */
-            height: 100%;  /* 确保高度100% */
         }
 
-        /* ========== 表格区域 - 占比约 4/7 ========== */
+        /* ========== 表格区域 - 占比约 3/5 ========== */
         .tables-section {
-            flex: 4;
+            flex: 3;
             background: #1d386f;
             border: 1px solid #2a6dc8;
             border-radius: 4px;
@@ -314,19 +311,8 @@
             color: #fff;
             font-weight: bold;
             position: sticky;
-            z-index: 10;
-        }
-
-        /* 第一行表头固定在顶部 */
-        .data-table thead tr:first-child th {
             top: 0;
-            z-index: 11;
-        }
-
-        /* 第二行表头固定在第一行下方 */
-        .data-table thead tr:nth-child(2) th {
-            top: 40px; /* 第一行表头的高度，根据实际调整 */
-            z-index: 12;
+            z-index: 10;
         }
 
         .data-table tbody td {
@@ -334,13 +320,9 @@
             color: #fff;
         }
 
-        /* 第一列（时间列）需要更高的z-index，确保在冻结时显示在最上层 */
-        .data-table thead tr:first-child th:first-child {
-            z-index: 16;
-        }
 
-        .data-table thead tr:nth-child(2) th:first-child {
-            z-index: 17;
+        .data-table thead th:first-child {
+            z-index: 15;
         }
 
         /* 高亮列（最后三列）- 黄色 */
@@ -416,16 +398,6 @@
             border-color: transparent;
         }
 
-        .layui-btn-normal {
-            background-color: #1e88e5 !important;
-            border-color: #1e88e5 !important;
-        }
-
-        .layui-btn-normal:hover {
-            background-color: #1565c0 !important;
-            border-color: #1565c0 !important;
-        }
-
         .layui-bg-orange {
             background-color: #ffb800 !important;
             color: #fff !important;
@@ -452,22 +424,17 @@
                     <span class="date-separator" id="date-separator">-</span>
                     <input type="text" id="end-date" placeholder="结束日期" autocomplete="off">
                 </div>
-                <!-- 月/年 切换按钮组 -->
+                <!-- 日/月/年 切换按钮组 -->
                 <div class="time-type-group">
+                    <button class="time-type-btn" data-type="day">日</button>
                     <button class="time-type-btn active" data-type="month">月</button>
-                    <!--<button class="time-type-btn" data-type="year">年</button>-->
+                    <button class="time-type-btn" data-type="year">年</button>
                 </div>
             </div>
             <div class="toolbar-center">
                 <span class="toolbar-title" id="page-title">数据统计报表</span>
             </div>
             <div class="toolbar-right">
-                <button type="button" id="btn-to-input" class="btn layui-btn layui-btn-normal">
-                    <i class="layui-icon layui-icon-edit"></i>
-                    <span style="margin-left:5px">数据录入</span>
-                </button>
-
-
                 <button type="button" id="btn-search" class="btn layui-btn">
                     <i class="layui-icon layui-icon-search"></i>
                     <span style="margin-left:5px">查询</span>
@@ -588,6 +555,24 @@
                 const now = new Date();
 
                 switch (this.currentTimeType) {
+                    case 'day':
+                        // 日查询：只选择一个日期
+                        dateLabel.textContent = '选择日期';
+                        startInput.style.display = 'block';
+                        startInput.style.width = '120px';
+                        separator.style.display = 'none';
+                        endInput.style.display = 'none';
+                        
+                        laydate.render({
+                            elem: '#start-date',
+                            type: 'date',
+                            format: 'yyyy-MM-dd',
+                            value: now
+                        });
+                        // 设置隐藏的结束日期与开始日期相同
+                        endInput.value = '';
+                        break;
+                    
                     case 'month':
                         // 月查询：选择日期范围
                         dateLabel.textContent = '日期范围';
@@ -596,16 +581,16 @@
                         separator.style.display = 'inline';
                         endInput.style.display = 'block';
                         endInput.style.width = '120px';
-
+                        
                         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
+                        
                         laydate.render({
                             elem: '#start-date',
                             type: 'date',
                             format: 'yyyy-MM-dd',
                             value: monthStart
                         });
-
+                        
                         laydate.render({
                             elem: '#end-date',
                             type: 'date',
@@ -613,7 +598,7 @@
                             value: now
                         });
                         break;
-
+                    
                     case 'year':
                         // 年查询：只选择一个年份
                         dateLabel.textContent = '选择年份';
@@ -621,7 +606,7 @@
                         startInput.style.width = '80px';
                         separator.style.display = 'none';
                         endInput.style.display = 'none';
-
+                        
                         laydate.render({
                             elem: '#start-date',
                             type: 'year',
@@ -636,9 +621,6 @@
 
             // 设置事件监听
             setupEventListeners() {
-                document.getElementById('btn-to-input').addEventListener('click', () => {
-                    window.location.href = '压缩机产量数据录入.html';
-                });
                 document.getElementById('btn-search').addEventListener('click', () => this.loadData());
                 document.getElementById('btn-export').addEventListener('click', () => this.exportData());
                 
@@ -654,12 +636,13 @@
                 container.innerHTML = '';
 
                 const chartsConfig = this.config.charts || [];
-
+                
                 chartsConfig.forEach((chartConfig, index) => {
                     const wrapper = document.createElement('div');
-                    // 艹！第4和第5个图表（index=3,4）添加row-second类，让它们占50%宽度在第二行
-                    wrapper.className = 'chart-wrapper' + (index >= 3 ? ' row-second' : '');
-                    // 艹！不再设置inline flex样式，让CSS的width生效
+                    wrapper.className = 'chart-wrapper';
+                    if (chartConfig.flex) {
+                        wrapper.style.flex = chartConfig.flex;
+                    }
 
                     wrapper.innerHTML = `
                         <div class="chart-body">
@@ -719,32 +702,17 @@
                         }
                     },
                     grid: {
-                        top: 60,
-                        right: 20,
-                        bottom: 10,
-                        left: 30,
+                        top: 50,
+                        right: 60,
+                        bottom: 30,
+                        left: 50,
                         containLabel: true
                     },
                     xAxis: {
                         type: 'category',
                         data: [],
                         axisLine: { lineStyle: { color: '#2a6dc8' } },
-                        axisLabel: { 
-                            color: '#d0d2e0', 
-                            fontSize: 9,
-                            rotate: 0,
-                            overflow: 'truncate',
-                            hideOverlap: true,  // 自动隐藏重叠标签
-                            showMinLabel: true,  // 显示最小值标签
-                            showMaxLabel: true,  // 显示最大值标签
-                            formatter: function(value) {
-                                // 如果标签太长，截断显示
-                                if (value && value.length > 5) {
-                                    return value.substring(0, 5);
-                                }
-                                return value;
-                            }
-                        }
+                        axisLabel: { color: '#d0d2e0', fontSize: 11 }
                     },
                     yAxis: {
                         type: 'value',
@@ -794,16 +762,16 @@
             getQueryParams() {
                 const startDate = document.getElementById('start-date').value;
                 let endDate = document.getElementById('end-date').value;
-
-                // 年查询只有一个日期，结束日期设为与开始日期相同
-                if (this.currentTimeType === 'year') {
+                
+                // 日查询和年查询只有一个日期，结束日期设为与开始日期相同
+                if (this.currentTimeType === 'day' || this.currentTimeType === 'year') {
                     endDate = startDate;
                 }
-
+                
                 return {
                     startDate: startDate,
                     endDate: endDate,
-                    timeType: this.currentTimeType  // month | year
+                    timeType: this.currentTimeType  // day | month | year
                 };
             },
 
@@ -846,12 +814,89 @@
 
                 this.data.charts.forEach((chartData, index) => {
                     if (this.charts[index]) {
-                        // 先 resize 确保容器尺寸正确
-                        this.charts[index].resize();
-                        // 然后更新数据
                         this.charts[index].setOption(chartData, { notMerge: false });
                     }
                 });
+            },
+
+            // 设置报警线（markLine）
+            // config: { value: 0.25, name: '预警线', color: '#ff0000', width: 2 }
+            // 或者数组形式: [{ value: 0.25, name: '预警线', color: '#ff0000', width: 2 }]
+            setMarkLine(config) {
+                if (!config) {
+                    console.error('setMarkLine 需要传入配置对象或数组');
+                    return;
+                }
+
+                // 统一转换为数组格式
+                const markLineConfigs = Array.isArray(config) ? config : [config];
+
+                // 更新所有图表
+                Object.keys(this.charts).forEach(chartIndex => {
+                    const chart = this.charts[chartIndex];
+                    if (!chart) return;
+
+                    const option = chart.getOption();
+                    const series = option.series || [];
+
+                    // 为每个系列添加标线
+                    const updatedSeries = series.map(seriesItem => {
+                        const markLineData = markLineConfigs.map(mark => ({
+                            yAxis: mark.value,
+                            name: mark.name || '预警线',
+                            label: {
+                                show: mark.label !== false,
+                                position: mark.labelPosition || 'end',
+                                formatter: mark.name || `${mark.value}`,
+                                color: mark.labelColor || mark.color || '#ff0000'
+                            },
+                            lineStyle: {
+                                type: mark.lineType || 'dashed',
+                                color: mark.color || '#ff0000',
+                                width: mark.width || 2
+                            }
+                        }));
+
+                        return {
+                            ...seriesItem,
+                            markLine: {
+                                symbol: 'none',
+                                data: markLineData
+                            }
+                        };
+                    });
+
+                    chart.setOption({
+                        series: updatedSeries
+                    }, { notMerge: false });
+                });
+
+                console.log(`%c[MarkLine] 已设置 ${markLineConfigs.length} 条报警线`, "color: #6c5ce7; background: #eee; padding: 2px 5px;");
+                markLineConfigs.forEach((mark, index) => {
+                    console.log(`  ${index + 1}. ${mark.name || '预警线'}: ${mark.value} (颜色: ${mark.color || '#ff0000'})`);
+                });
+            },
+
+            // 清除所有报警线
+            clearMarkLine() {
+                Object.keys(this.charts).forEach(chartIndex => {
+                    const chart = this.charts[chartIndex];
+                    if (!chart) return;
+
+                    const option = chart.getOption();
+                    const series = option.series || [];
+
+                    const updatedSeries = series.map(seriesItem => ({
+                        ...seriesItem,
+                        markLine: undefined
+                    }));
+
+                    chart.setOption({
+                        series: updatedSeries
+                    }, { notMerge: false });
+                });
+
+                console.log(`%c[MarkLine] 已清除所有报警线`, "color: #e17055; background: #eee; padding: 2px 5px;");
             },
 
             // 更新表格
@@ -868,19 +913,6 @@
 
                     // 渲染表头
                     thead.innerHTML = this.renderTableHeader(tableData.columns, tableConfig);
-
-                    // 动态设置二级表头第二行的top值
-                    const firstRow = thead.querySelector('tr:first-child');
-                    const secondRow = thead.querySelector('tr:nth-child(2)');
-                    if (firstRow && secondRow) {
-                        // 等待DOM渲染完成后再计算高度
-                        setTimeout(() => {
-                            const firstRowHeight = firstRow.offsetHeight;
-                            secondRow.querySelectorAll('th').forEach(th => {
-                                th.style.top = firstRowHeight + 'px';
-                            });
-                        }, 0);
-                    }
 
                     // 渲染表体
                     tbody.innerHTML = this.renderTableBody(tableData.rows, tableData.columns, tableConfig);
@@ -915,20 +947,18 @@
                 let row2 = '<tr>';
                 let hasRow2 = false;
 
-                columns.forEach((col, colIndex) => {
+                columns.forEach(col => {
                     const cls = col.highlight ? 'highlight-col' : '';
-
+                    
                     if (col.children && col.children.length > 0) {
                         hasRow2 = true;
                         row1 += `<th class="${cls}" colspan="${col.children.length}">${col.title}</th>`;
-
                         col.children.forEach(child => {
                             const childCls = child.highlight ? 'highlight-col' : '';
                             row2 += `<th class="${childCls}">${child.title}</th>`;
                         });
                     } else {
-                        const rowSpan = col.rowSpan || 2;
-                        row1 += `<th class="${cls}" rowspan="${rowSpan}">${col.title}</th>`;
+                        row1 += `<th class="${cls}" rowspan="2">${col.title}</th>`;
                     }
                 });
 
@@ -959,8 +989,8 @@
                         // 格式化数值
                         let displayValue = value;
                         if (col.type === 'number' && typeof value === 'number') {
-                            displayValue = col.decimal !== undefined
-                                ? value.toFixed(col.decimal)
+                            displayValue = col.decimal !== undefined 
+                                ? value.toFixed(col.decimal) 
                                 : value.toLocaleString();
                         }
 
@@ -989,8 +1019,8 @@
             // 更新信息
             updateInfo() {
                 const info = document.getElementById('tables-info');
-                const timeTypeText = { month: '日级', year: '月级' };
-
+                const timeTypeText = { day: '小时级', month: '日级', year: '月级' };
+                
                 if (this.data && this.data.tables && this.data.tables[0]) {
                     const rowCount = this.data.tables[0].rows?.length || 0;
                     info.textContent = `共 ${rowCount} 条记录（${timeTypeText[this.currentTimeType] || ''}数据）`;
@@ -1006,7 +1036,7 @@
 
                 try {
                     const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
-                    const timeTypeText = { month: '月报', year: '年报' };
+                    const timeTypeText = { day: '日报', month: '月报', year: '年报' };
                     const filename = `${this.config.title || '数据导出'}_${timeTypeText[this.currentTimeType] || ''}_${timestamp}.xlsx`;
 
                     // 准备导出数据 - 完全按照电能统计页面的方式
@@ -1072,13 +1102,69 @@
         // =========================================
         window.PageManager = PageManager;
 
+        // 暴露报警线更新方法（方便F12控制台调用）
+        window.setMarkLine = function(config) {
+            return PageManager.setMarkLine(config);
+        };
+		
+        window.clearMarkLine = function() {
+            return PageManager.clearMarkLine();
+        };
+
         // =========================================
         // 3. 自动初始化（如果配置存在）
         // =========================================
         if (window.PAGE_CONFIG) {
             PageManager.init(window.PAGE_CONFIG);
+            
+            // 输出控制台帮助信息
+            setTimeout(() => {
+                console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #666;');
+                console.log('%c 📊 报警线更新方法（F12控制台可用）', 'color: #1e88e5; font-weight: bold; font-size: 16px;');
+                console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #666;');
+                console.log(`
+%c设置单条报警线：
+setMarkLine({ value: 0.25, name: '预警线', color: '#ff0000', width: 2 })
+
+%c设置多条报警线：
+setMarkLine([
+    { value: 0.25, name: '预警线', color: '#ff0000', width: 2 },
+    { value: 0.20, name: '安全线', color: '#00ff00', width: 1 }
+])
+
+%c清除所有报警线：
+clearMarkLine()
+
+%c参数说明：
+• value: 报警线的Y轴数值（必填）
+• name: 报警线名称（可选，默认：'预警线'）
+• color: 线条颜色（可选，默认：'#ff0000'红色）
+• width: 线条宽度（可选，默认：2）
+• lineType: 线条类型（可选，默认：'dashed'虚线，可选：'solid'实线）
+• label: 是否显示标签（可选，默认：true）
+• labelPosition: 标签位置（可选，默认：'end'，可选：'start'|'middle'|'end'）
+• labelColor: 标签颜色（可选，默认使用color）
+
+%c示例：
+// 将预警线改为0.3
+setMarkLine({ value: 0.3, name: '新预警线' })
+
+// 设置红色预警线和绿色安全线
+setMarkLine([
+    { value: 0.25, name: '预警线', color: '#ff0000' },
+    { value: 0.15, name: '安全线', color: '#00ff00' }
+])
+                `, 
+                'color: #333;', 
+                'color: #333;', 
+                'color: #333;', 
+                'color: #6c5ce7; font-weight: bold;',
+                'color: #00b894;'
+                );
+                console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'color: #666;');
+            }, 1000);
         } else {
-            console.warn('未找到 PAGE_CONFIG，请在 气量比-config.js 中定义配置');
+            console.warn('未找到 PAGE_CONFIG，请在 chart-table-config.js 中定义配置');
         }
     });
     </script>
