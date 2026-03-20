@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事业计划电能录入</title>
+    <link href="../js/css/layui.css" rel="stylesheet">
+    <script type="text/javascript" src="../js/layui.js"></script>
+    <script type="text/javascript">
+        layui.config({
+            base: '../js/layui_exts/'
+        });
+    </script>
+
+    <style>
+        /* ========== 全局样式 ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body {
+            height: 100%;
+            font-family: 'PingFang SC', "Microsoft YaHei", sans-serif;
+            background: #0f266c;
+            color: #fff;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .page-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            position: relative;
+            height: 60px;
+        }
+
+        .toolbar-left { display: flex; align-items: center; gap: 20px; }
+        .toolbar-center { position: absolute; left: 50%; transform: translateX(-50%); }
+        .toolbar-title { font-size: 18px; font-weight: bold; color: #fff7ca; }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+
+        /* 日期组 */
+        .date-group { display: flex; align-items: center; gap: 8px; }
+        .date-group label { color: #b9d3f4; font-weight: bold; }
+        .date-group input {
+            background: rgba(40, 80, 167, 1);
+            border: 1px solid rgba(40, 80, 167, 0);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .date-group input:focus { border-color: #409eff; outline: none; }
+
+        .layui-btn { height: 32px; line-height: 32px; font-size: 13px; }
+        .layui-btn-normal { background-color: #1e88e5 !important; }
+        .layui-btn-warm { background-color: #ffb800 !important; }
+
+        /* 内容区域 */
+        .content-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+        }
+
+        /* 表格容器 */
+        .table-container {
+            background: #1d386f;
+            border: 1px solid #2a6dc8;
+            border-radius: 4px;
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .info-tip {
+            background: rgba(30, 136, 229, 0.2);
+            border-left: 3px solid #1e88e5;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            color: #b9d3f4;
+            font-size: 12px;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #3c8ce7;
+            padding: 10px 8px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .data-table thead th {
+            background: #0c6ed3;
+            color: #fff;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody td {
+            background: #1e4e89;
+        }
+
+        .data-table tbody tr.row-existing td {
+            background: #196e57;
+        }
+
+        .data-table tbody tr.row-existing:hover td {
+            background: #196e57;
+        }
+
+        .data-table tbody tr.row-new td {
+            background: #1e4e89;
+        }
+
+        .data-table tbody tr.row-new:hover td {
+            background: rgba(48, 127, 190, 0.9);
+        }
+
+        /* 输入框样式 */
+        .data-table input[type="number"] {
+            background: rgba(40, 80, 167, 0.6);
+            border: 1px solid #2a6dc8;
+            color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .data-table input[type="number"]:focus {
+            border-color: #409eff;
+            outline: none;
+            background: rgba(40, 80, 167, 0.8);
+        }
+
+        .data-table input[type="number"]::placeholder {
+            color: rgba(185, 211, 244, 0.5);
+        }
+
+        /* 状态标识 */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .status-empty {
+            background: rgba(255, 152, 0, 0.3);
+            color: #ffa726;
+        }
+
+        .status-filled {
+            background: rgba(76, 175, 80, 0.3);
+            color: #66bb6a;
+        }
+
+        .status-modified {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffd54f;
+        }
+
+        .status-new {
+            background: rgba(33, 150, 243, 0.28);
+            color: #7fc7ff;
+        }
+
+        /* 底部按钮区 */
+        .footer-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2a6dc8;
+            margin-top: 15px;
+        }
+
+        .footer-actions .layui-btn {
+            min-width: 150px;
+            height: 38px;
+            line-height: 38px;
+        }
+
+        /* 修复 layui 弹窗样式 - 确保文字可见 */
+        .layui-layer-content {
+            color: #333 !important;
+        }
+        
+        .layui-layer-prompt input {
+            color: #333 !important;
+        }
+        
+        .layui-layer-msg {
+            color: #333 !important;
+        }
+        
+        .layui-layer-dialog .layui-layer-content {
+            color: #333 !important;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #3c8ce7 0%, #2a6dc8 50%, #1e5aa8 100%);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #4a9aff 0%, #3c8ce7 50%, #2a6dc8 100%);
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1d386f;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="date-group">
+                    <label>计划年份</label>
+                    <input type="text" id="date-input" readonly>
+                </div>
+            </div>
+            <div class="toolbar-center">
+                <span class="toolbar-title">事业计划电能录入</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="table-container">
+                <div class="info-tip">
+                    <i class="layui-icon layui-icon-tips"></i> 
+                    按年份查询 plan_elec_config 表中的计划电能记录，默认展示该年度 1 至 12 月。每个月一行，填写后保存即新增或修改，清空后保存即删除。
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="data-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th width="18%">状态</th>
+                                <th width="30%">年月</th>
+                                <th width="40%">计划电能</th>
+                                <th width="12%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="footer-actions">
+                    <button type="button" id="btn-submit-all" class="layui-btn layui-btn-warm">
+                        <i class="layui-icon layui-icon-ok"></i> 一键提交全部
+                    </button>
+                    <button type="button" id="btn-refresh-table" class="layui-btn layui-btn-normal">
+                        <i class="layui-icon layui-icon-refresh"></i> 刷新数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    layui.use(['laydate', 'layer', 'jquery'], function() {
+        var laydate = layui.laydate;
+        var layer = layui.layer;
+        var $ = layui.$;
+        
+        // API配置
+        var API_BASE_URL = 'http://192.168.7.229:8004';
+        
+        // 当前选择的年份
+        var currentYear = getCurrentYear();
+        
+        // 存储当前年份 12 个月记录
+        var yearRecords = [];
+        
+        // 初始化日期选择器
+        laydate.render({ 
+            elem: '#date-input', 
+            type: 'year',
+            value: currentYear,
+            theme: '#1e88e5',
+            done: function(value, date){
+                currentYear = value;
+                loadYearData(value);
+            }
+        });
+        
+        // 获取当前年份
+        function getCurrentYear() {
+            var now = new Date();
+            return String(now.getFullYear());
+        }
+        
+        // HTTP请求封装
+        async function request(url, options = {}) {
+            try {
+                const res = await fetch(url, { 
+                    ...options, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return await res.json();
+            } catch (e) {
+                console.error('[请求错误]', e);
+                throw e;
+            }
+        }
+        
+        // 执行SQL
+        async function sendSQL(sql) {
+            return await request(API_BASE_URL + '/api/sql/run-sql', {
+                method: 'POST',
+                body: JSON.stringify({ sql: sql })
+            });
+        }
+        
+        // 加载年度数据
+        function loadYearData(yearText) {
+            console.log('[数据加载] 查询年份:', yearText);
+            
+            var idx = layer.load(2, { shade: 0.1 });
+            var year = parseInt(yearText, 10);
+
+            var sql = `
+                SELECT id, year, month, date, creation_date, update_date, plan_elec
+                FROM plan_elec_config
+                WHERE year = ${year}
+                ORDER BY month ASC, update_date DESC, id DESC
+            `;
+            
+            console.log('[数据加载] 执行SQL:', sql);
+            
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+
+                yearRecords = buildYearRecords(year, result && result.data ? result.data : []);
+
+                renderTable();
+                layer.msg('已加载 ' + year + ' 年计划电能数据', { icon: 1 });
+            }).catch(function(error) {
+                layer.close(idx);
+                yearRecords = buildYearRecords(year, []);
+                renderTable();
+                console.error('[数据加载] 失败:', error);
+                layer.msg('数据加载失败，请检查网络连接', { icon: 2 });
+            });
+        }
+
+        function buildYearRecords(year, rows) {
+            var latestByMonth = {};
+
+            rows.forEach(function(row) {
+                var month = parseInt(row.month, 10);
+                if (!month || month < 1 || month > 12) {
+                    return;
+                }
+
+                if (!latestByMonth[month]) {
+                    latestByMonth[month] = row;
+                }
+            });
+
+            var records = [];
+            for (var month = 1; month <= 12; month++) {
+                var row = latestByMonth[month];
+                records.push({
+                    id: row ? row.id : null,
+                    year: year,
+                    month: month,
+                    date: row ? row.date : null,
+                    creationDate: row ? row.creation_date : null,
+                    updateDate: row ? row.update_date : null,
+                    planElec: row ? row.plan_elec : '',
+                    exists: !!row
+                });
+            }
+
+            return records;
+        }
+
+        function getActionMeta(record, inputValue) {
+            var hasInput = inputValue !== '' && inputValue !== null && inputValue !== undefined;
+
+            if (record.exists) {
+                return {
+                    text: '修改',
+                    icon: 'layui-icon-edit'
+                };
+            }
+
+            return {
+                text: hasInput ? '保存' : '保存',
+                icon: 'layui-icon-ok'
+            };
+        }
+        
+        // 渲染表格
+        function renderTable() {
+            console.log('[渲染表格] 开始渲染');
+            console.log('[渲染表格] yearRecords:', yearRecords);
+            
+            var tbody = $('#table-body');
+            tbody.empty();
+
+            yearRecords.forEach(function(record, index) {
+                var statusHtml = record.exists
+                    ? '<span class="status-badge status-filled">已保存</span>'
+                    : '<span class="status-badge status-empty">未填写</span>';
+                var rowClass = record.exists ? 'row-existing' : 'row-new';
+                var planElec = record.planElec !== null && record.planElec !== undefined ? record.planElec : '';
+                var actionMeta = getActionMeta(record, planElec);
+                var row = `
+                    <tr data-index="${index}" class="${rowClass}">
+                        <td>${statusHtml}</td>
+                        <td>${record.year || ''}年${record.month || ''}月</td>
+                        <td><input type="number" step="0.01" class="input-plan-elec" value="${planElec}" placeholder="请输入计划电能"></td>
+                        <td>
+                            <button class="layui-btn layui-btn-xs layui-btn-normal btn-save-row">
+                                <i class="layui-icon ${actionMeta.icon}"></i> <span class="btn-save-text">${actionMeta.text}</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+
+            tbody.find('.input-plan-elec').on('input', function() {
+                var $row = $(this).closest('tr');
+                var index = parseInt($row.attr('data-index'), 10);
+                var record = yearRecords[index] || {};
+                var value = $(this).val();
+                if (value === '') {
+                    $row.find('.status-badge').removeClass('status-filled status-modified').addClass('status-empty').text('未填写');
+                } else {
+                    $row.find('.status-badge').removeClass('status-filled status-empty').addClass('status-modified').text('待保存');
+                }
+
+                var actionMeta = getActionMeta(record, value);
+                $row.find('.btn-save-row i').attr('class', 'layui-icon ' + actionMeta.icon);
+                $row.find('.btn-save-text').text(actionMeta.text);
+            });
+
+            tbody.find('.btn-save-row').on('click', function() {
+                saveRow($(this).closest('tr'));
+            });
+        }
+
+        function getRowData($row) {
+            var index = parseInt($row.attr('data-index'), 10);
+            var planElecVal = $row.find('.input-plan-elec').val();
+            var record = yearRecords[index] || {};
+
+            return {
+                index: index,
+                id: record.id || null,
+                year: record.year,
+                month: record.month,
+                planElec: planElecVal !== '' && planElecVal !== null ? parseFloat(planElecVal) : null,
+                exists: !!record.exists
+            };
+        }
+
+        function saveRow($row) {
+            var rowData = getRowData($row);
+            var sql = buildRowSQL(rowData);
+
+            if (!sql) {
+                layer.msg('该月份暂无数据，无需处理', { icon: 0 });
+                return;
+            }
+
+            var idx = layer.load(2, { shade: 0.1 });
+
+            sendSQL(sql).then(function(result) {
+                layer.close(idx);
+                console.log('[保存成功]', result);
+                if (rowData.planElec === null && rowData.id) {
+                    layer.msg('记录删除成功', { icon: 1, time: 1500 });
+                } else {
+                    layer.msg(rowData.id ? '记录更新成功' : '记录新增成功', { icon: 1, time: 1500 });
+                }
+                loadYearData(currentYear);
+            }).catch(function(error) {
+                layer.close(idx);
+                console.error('[保存失败]', error);
+                layer.msg('保存失败：' + (error.message || '请检查网络连接'), { icon: 2 });
+            });
+        }
+
+        function buildRowSQL(rowData) {
+            if (rowData.planElec === null) {
+                if (!rowData.id) {
+                    return '';
+                }
+
+                return 'DELETE FROM plan_elec_config WHERE id = ' + rowData.id;
+            }
+
+            if (isNaN(rowData.planElec)) {
+                return null;
+            }
+
+            if (rowData.id) {
+                return `
+                    UPDATE plan_elec_config SET
+                        plan_elec = ${rowData.planElec},
+                        update_date = NOW()
+                    WHERE id = ${rowData.id}
+                `;
+            }
+
+            var monthDate = rowData.year + '-' + String(rowData.month).padStart(2, '0') + '-01 00:00:00';
+            return `
+                INSERT INTO plan_elec_config
+                (year, month, date, creation_date, update_date, plan_elec)
+                VALUES
+                (${rowData.year}, ${rowData.month}, '${monthDate}', NOW(), NOW(), ${rowData.planElec})
+            `;
+        }
+
+        function submitAllRows() {
+            var sqlStatements = [];
+
+            $('#table-body tr').each(function() {
+                var rowData = getRowData($(this));
+                var sql = buildRowSQL(rowData);
+                if (sql === null) {
+                    sqlStatements = null;
+                    return false;
+                }
+                if (sql) {
+                    sqlStatements.push(sql);
+                }
+            });
+
+            if (sqlStatements === null) {
+                layer.msg('请检查计划电能输入格式', { icon: 0 });
+                return;
+            }
+
+            if (!sqlStatements.length) {
+                layer.msg('没有需要提交的数据', { icon: 0 });
+                return;
+            }
+
+            var idx = layer.load(2, { shade: 0.1 });
+            var combinedSQL = sqlStatements.join('; ');
+
+            sendSQL(combinedSQL).then(function(result) {
+                layer.close(idx);
+                console.log('[批量提交成功]', result);
+                layer.msg('全部数据提交成功', { icon: 1, time: 1500 });
+                loadYearData(currentYear);
+            }).catch(function(error) {
+                layer.close(idx);
+                console.error('[批量提交失败]', error);
+                layer.msg('批量提交失败：' + (error.message || '请检查网络连接'), { icon: 2 });
+            });
+        }
+
+        $('#btn-submit-all').click(function() {
+            submitAllRows();
+        });
+        
+        // 刷新表格数据按钮
+        $('#btn-refresh-table').click(function() {
+            loadYearData(currentYear);
+        });
+        
+        // 页面加载时自动加载当前年份数据
+        loadYearData(currentYear);
+    });
+    </script>
+</body>
+</html>
+
